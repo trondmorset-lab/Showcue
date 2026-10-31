@@ -128,7 +128,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             Engine.ApplySettings(_settings);
             Remote.Apply(_settings);
             ApplyFeedbackSettings();
-            if (!string.IsNullOrEmpty(_settings.LastShowPath) && File.Exists(_settings.LastShowPath))
+            // Dobbeltklikk på en .showcue-fil starter ShowCue med fila som argument.
+            var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(a => File.Exists(a));
+            if (arg != null) TryOpen(arg);
+            else if (!string.IsNullOrEmpty(_settings.LastShowPath) && File.Exists(_settings.LastShowPath))
                 TryOpen(_settings.LastShowPath);
             Activate();
             CueGrid.Focus();

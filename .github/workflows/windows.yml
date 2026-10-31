@@ -18,11 +18,24 @@ jobs:
       - name: Publiser
         working-directory: Windows
         run: dotnet publish ShowCue/ShowCue.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      - name: Lag installasjonsprogram
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          $version = (Get-Content VERSION -Raw).Trim()
+          & $iscc "/DAppVersion=$version" Windows\installer\ShowCue.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - uses: actions/upload-artifact@v4
         continue-on-error: true   # full lagringskvote skal ikke gjøre bygget rødt
         with:
           name: ShowCue-Windows
-          path: Windows/publish/ShowCue.exe
+          path: |
+            Windows/publish/ShowCue.exe
+            Windows/publish/ShowCue-Setup.exe
           retention-days: 7
 
       # Ferdig program legges i releasen «siste» og i versjonsutgivelsen v<VERSION> (teller ikke mot artefaktkvoten).
@@ -31,4 +44,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/release.sh "Windows/publish/ShowCue.exe"
+        run: bash .github/scripts/release.sh "Windows/publish/ShowCue-Setup.exe" "Windows/publish/ShowCue.exe"

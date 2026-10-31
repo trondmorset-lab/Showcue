@@ -10,7 +10,9 @@ GO-knapp med cueliste, hurtigtaster for jingler og walk-in, og utgang til projek
 3. Ferdig program: `publish\ShowCue.exe` (én fil, trenger ingen installasjon – kan kopieres til show-PC-en).
 
 Alternativt: åpne `ShowCue.sln` i Visual Studio 2022 og trykk F5.
-Legger du hele prosjektet på GitHub, bygger `.github/workflows/windows.yml` exe-fila automatisk.
+GitHub Actions bygger både `ShowCue.exe` og installasjonsprogrammet `ShowCue-Setup.exe` (Inno Setup, skriptet ligger i
+`installer/ShowCue.iss`) og legger dem under *Releases*. Installasjonsprogrammet lager snarvei i Start-menyen,
+valgfritt skrivebordsikon og kobler `.showcue`-filer til ShowCue, og kan installere for én bruker uten administratorrettigheter.
 
 Krever Windows 10 (1809) eller nyere, 64-bit.
 

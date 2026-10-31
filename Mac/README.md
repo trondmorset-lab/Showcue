@@ -19,10 +19,14 @@ open build/ShowCue.app
 ```
 Dra `build/ShowCue.app` til Programmer-mappa.
 
-**Med GitHub:** legger du prosjektet i et GitHub-repo, bygger `.github/workflows/mac.yml` appen og kjører testene automatisk.
-Den ferdige appen ligger under *Actions → siste kjøring → Artifacts → ShowCue-Mac*.
-Apper lastet ned fra nettet er ikke signert. Høyreklikk og velg **Åpne** første gang, eller kjør
-`xattr -dr com.apple.quarantine /Applications/ShowCue.app`.
+`./make-dmg.sh` lager i tillegg `build/ShowCue-Mac.dmg` (diskbilde med appen og en snarvei til Programmer).
+
+**Ferdig app fra GitHub:** GitHub Actions bygger appen, kjører testene og legger `ShowCue-Mac.dmg` og `ShowCue-Mac.zip`
+under *Releases*. Åpne dmg-fila og dra ShowCue til *Programmer*.
+
+Appen er ikke notarisert av Apple ennå, så macOS stopper den første gang. Fra macOS 15 virker ikke lenger
+«høyreklikk → Åpne»: åpne *Systeminnstillinger → Personvern og sikkerhet*, bla ned og trykk **Åpne likevel**.
+Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/ShowCue.app`.
 
 Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. Si ja, ellers virker ikke OSC.
 
