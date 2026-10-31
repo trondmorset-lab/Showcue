@@ -27,7 +27,7 @@ public interface IShowControl
 /// <summary>
 /// Tar imot OSC og MIDI og oversetter til kommandoer.
 ///
-/// OSC (port 53000 som standard, samme som QLab):
+/// OSC (port 53000 som standard):
 ///   /go                         GO (neste cue)
 ///   /stop  /panic  /hardstop    stopp alt (med fade / Esc-oppførsel / umiddelbart)
 ///   /next  /previous            flytt GO-markøren

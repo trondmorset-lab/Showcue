@@ -1,6 +1,6 @@
 # ShowCue
 
-Cue-basert avspillingsprogram for Windows, i samme ånd som QLab. Laget for konsert og event:
+Cue-basert avspillingsprogram for Windows. Laget for konsert og event:
 GO-knapp med cueliste, hurtigtaster for jingler og walk-in, og utgang til projektor.
 
 ## Bygge programmet
@@ -76,7 +76,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 
 ## Fjernstyring: OSC og MIDI inn
 
-**OSC** (UDP, port 53000 som standard – samme som QLab, så mange Companion-oppsett kan gjenbrukes):
+**OSC** (UDP, port 53000 som standard):
 
 | Adresse | Funksjon |
 |---|---|
@@ -162,7 +162,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 ## Utseende
 
 Tre fargetemaer, som byttes med en gang via ☀-knappen i verktøylinja eller *Innstillinger → Utseende*:
-**Mørk** (grafitt, som QLab 5), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
+**Mørk** (grafitt), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
 Tittellinja i Windows følger temaet.
 
 **Cuefarger:** gi cuer en farge (rød, oransje, gul, grønn, blå, lilla, grå) i panelet til høyre. Raden blir tonet,

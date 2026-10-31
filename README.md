@@ -2,7 +2,7 @@
 
 Showavvikling for Windows og Mac.
 
-Cue-basert avspillingsprogram for konsert, event og teater, i samme ånd som QLab.
+Cue-basert avspillingsprogram for konsert, event og teater.
 Det finnes i to utgaver som deler showformat:
 
 | Mappe | Plattform | Teknologi | Bygging |
@@ -17,9 +17,9 @@ Begge har:
 - Hurtigtaster og MIDI-triggere per cue
 - **Lydpatch** for flerkanals lydkort og Dante, med routingmatrise per cue, testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
-- **Fjernstyring** med OSC inn (QLab-lignende kommandoer), MIDI inn og MSC
+- **Fjernstyring** med OSC inn, MIDI inn og MSC
 - **Status til Companion** over OSC: neste cue, hva som spiller og tid igjen
-- **Lys, mørk og nattmodus**, og cuefarger som i QLab
+- **Lys, mørk og nattmodus**, og fargemerking av cuer
 
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,
 eller i en undermappe `Media`.
