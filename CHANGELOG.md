@@ -4,6 +4,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.6.0 – 2026-11-01
+
+### Nytt
+- **Installasjonsprogram for Windows** (`ShowCue-Setup.exe`): snarvei i Start-menyen, valgfritt skrivebordsikon,
+  `.showcue`-filer åpnes med ShowCue, og avinstallering fra Innstillinger → Apper. Kan installeres uten administratorrettigheter.
+- **Diskbilde for Mac** (`ShowCue-Mac.dmg`): dra ShowCue til Programmer.
+- Dobbeltklikk på en `.showcue`-fil åpner showet i ShowCue (Windows og Mac).
+
+### Endret
+- Riktig fremgangsmåte for å åpne appen første gang på nyere macOS (Systeminnstillinger → Personvern og sikkerhet → Åpne likevel).
+
 ## 0.5.0 – 2026-10-30
 
 ### Nytt

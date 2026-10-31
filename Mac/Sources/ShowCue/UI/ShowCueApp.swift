@@ -46,10 +46,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         model.startup()
+        launched = true
+        if let url = pendingOpen { pendingOpen = nil; model.open(url, confirm: false) }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
             guard let self else { return e }
             return KeyHandler.handle(e, model: self.model) ? nil : e
         }
+    }
+
+    private var launched = false
+    private var pendingOpen: URL?
+
+    /// Dobbeltklikk på en .showcue-fil i Finder (eller dra den til ikonet i Dock).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let url = urls.first(where: { $0.pathExtension.lowercased() == "showcue" }) else { return }
+        if launched { model.open(url) } else { pendingOpen = url }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

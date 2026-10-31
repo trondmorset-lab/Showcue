@@ -51,11 +51,17 @@ jobs:
         working-directory: Mac/build
         run: ditto -c -k --keepParent ShowCue.app ShowCue-Mac.zip
 
+      - name: Lag diskbilde (.dmg)
+        working-directory: Mac
+        run: ./make-dmg.sh
+
       - uses: actions/upload-artifact@v4
         continue-on-error: true   # full lagringskvote skal ikke gjøre bygget rødt
         with:
           name: ShowCue-Mac
-          path: Mac/build/ShowCue-Mac.zip
+          path: |
+            Mac/build/ShowCue-Mac.zip
+            Mac/build/ShowCue-Mac.dmg
           retention-days: 7
 
       # Ferdig program legges i releasen «siste» og i versjonsutgivelsen v<VERSION> (teller ikke mot artefaktkvoten).
@@ -64,4 +70,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/release.sh "Mac/build/ShowCue-Mac.zip"
+        run: bash .github/scripts/release.sh "Mac/build/ShowCue-Mac.dmg" "Mac/build/ShowCue-Mac.zip"

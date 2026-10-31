@@ -30,7 +30,14 @@ Ferdige programmer ligger under **Releases** på GitHub:
 - **ShowCue x.y.z** – utgitte versjoner, med endringene i utgivelsesteksten.
 - **Siste bygg** – bygges automatisk ved hver endring på main, for å teste det nyeste.
 
-Windows: `ShowCue.exe`. Mac: `ShowCue-Mac.zip` (pakk ut, høyreklikk på appen og velg *Åpne* første gang).
+| | Installasjon | Uten installering |
+|---|---|---|
+| **Windows** | `ShowCue-Setup.exe` – snarvei i Start-menyen, valgfritt skrivebordsikon, `.showcue`-filer åpnes med ShowCue, avinstalleres fra Innstillinger → Apper | `ShowCue.exe` – én fil som kan kopieres rett til show-PC-en |
+| **Mac** | `ShowCue-Mac.dmg` – åpne og dra ShowCue til *Programmer* | `ShowCue-Mac.zip` |
+
+Programmene er ikke kodesignert ennå:
+- **Windows** viser «Windows beskyttet PCen din» første gang. Trykk *Mer informasjon* → *Kjør likevel*.
+- **Mac** stopper appen første gang. Åpne *Systeminnstillinger → Personvern og sikkerhet*, bla ned og trykk *Åpne likevel*.
 
 ## Versjoner og endringslogg
 
