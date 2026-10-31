@@ -26,5 +26,5 @@ Første utgave på GitHub, for både Windows og Mac.
 - Lydpatch for flerkanals lydkort (Dante, ASIO/CoreAudio) med routingmatrise per cue.
 - Lyden i videoer går gjennom lydpatchen og holdes i synk med bildet.
 - Fjernstyring med OSC, MIDI og MSC, og status tilbake til Companion over OSC.
-- Lyst, mørkt og natt-tema, og cuefarger som i QLab.
+- Lyst, mørkt og natt-tema, og fargemerking av cuer.
 - Showfiler kan deles mellom Windows og Mac.

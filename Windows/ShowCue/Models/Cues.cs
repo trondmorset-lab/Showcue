@@ -7,7 +7,7 @@ namespace ShowCue.Models;
 public enum ContinueMode { None, AutoContinue, AutoFollow }
 public enum VisualStretch { Uniform, UniformToFill, Fill, None }
 public enum MidiMessageType { NoteOn, NoteOff, ProgramChange, ControlChange, MscGo }
-/// <summary>Fargemerking av cuer i lista (som i QLab).</summary>
+/// <summary>Fargemerking av cuer i lista.</summary>
 public enum CueColor { None, Red, Orange, Yellow, Green, Blue, Purple, Gray }
 
 /// <summary>Cuer med start- og sluttpunkt i en mediefil (lyd og video) – brukes av bølgeform-redigereren.</summary>
