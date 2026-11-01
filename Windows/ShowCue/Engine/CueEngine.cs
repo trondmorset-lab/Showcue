@@ -19,6 +19,9 @@ public sealed class CueEngine : IDisposable
     private OutputWindow? _output;
 
     public AudioEngine Audio { get; } = new();
+    /// <summary>Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.</summary>
+    public AudioEngine PreviewAudio { get; } = new();
+    private string _previewDevice = "";
     /// <summary>Forhåndslytting i bølgeformredigeringen (går gjennom lydpatchen, men er ikke en del av showet).</summary>
     public AudioPreview Preview { get; }
     public MidiEngine Midi { get; } = new();
@@ -35,10 +38,20 @@ public sealed class CueEngine : IDisposable
     {
         Settings = settings;
         _cueList = cueList;
-        Preview = new AudioPreview(() => Audio.Mixer);
+        Preview = new AudioPreview(PreviewTarget);
         _timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
+    }
+
+    /// <summary>Hvor forhåndslyttingen skal spilles (se Innstillinger → Lyd).</summary>
+    private AudioPreview.Target? PreviewTarget()
+    {
+        if (!string.IsNullOrEmpty(Settings.PreviewDeviceId))
+            return PreviewAudio.Mixer is { } pm ? new AudioPreview.Target(pm, 1) : null; // aldri til salen hvis hodetelefonene mangler
+        if (Audio.Mixer is not { } m) return null;
+        int bus = Settings.PreviewBus is > 0 && Settings.PreviewBus <= m.BusCount ? Settings.PreviewBus : 0;
+        return new AudioPreview.Target(m, bus);
     }
 
     /// <summary>Ta i bruk nye innstillinger. Lyden startes bare på nytt (og alt stoppes) hvis lydoppsettet er endret.</summary>
@@ -49,6 +62,16 @@ public sealed class CueEngine : IDisposable
         {
             StopAll(0);
             Audio.Start(s);
+        }
+        if (s.PreviewDeviceId != _previewDevice || (restartAudio && s.PreviewDeviceId != ""))
+        {
+            Preview.Stop();
+            _previewDevice = s.PreviewDeviceId;
+            if (_previewDevice == "") PreviewAudio.StopOutput();
+            else PreviewAudio.Start(new AppSettings
+            {
+                AudioDriver = AudioDriverType.Wasapi, WasapiDeviceId = _previewDevice, LatencyMs = s.LatencyMs, Buses = PatchBus.DefaultPatch(2),
+            }, fallbackToDefault: false);
         }
         if (_output != null)
         {
@@ -199,6 +222,7 @@ public sealed class CueEngine : IDisposable
         _timer.Stop();
         StopAll(0);
         Audio.Dispose();
+        PreviewAudio.Dispose();
         Midi.Dispose();
         if (_output != null) { _output.AllowClose = true; _output.Close(); }
     }

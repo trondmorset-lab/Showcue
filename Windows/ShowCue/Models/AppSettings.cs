@@ -71,6 +71,12 @@ public sealed class AppSettings
     public int MscInDeviceId { get; set; } = 127;
     public int LatencyMs { get; set; } = 60;
 
+    // ---- Forhåndslytting (bølgeformen) ----
+    /// <summary>Egen lydenhet for forhåndslytting, f.eks. hodetelefonutgangen (WASAPI-ID). Tom = ingen.</summary>
+    public string PreviewDeviceId { get; set; } = "";
+    /// <summary>Første av to utganger i lydpatchen for forhåndslytting. 0 = cuens egne utganger (salen).</summary>
+    public int PreviewBus { get; set; }
+
     /// <summary>-1 = eget vindu (for testing på én skjerm), ellers skjermindeks.</summary>
     public int VideoScreen { get; set; } = -1;
 

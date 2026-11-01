@@ -69,12 +69,18 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
+| ⌘Z, ⇧⌘Z | Angre, gjør om |
+| ⌘L | Showmodus (lås redigering) av/på |
 | ⇧⌘T | Bytt tema |
 | ⇧⌘U | Vis/skjul utgangsvinduet |
 | ⌘, | Innstillinger |
 
 Klikk velger, ⌘-klikk velger flere og ⇧-klikk velger et område. Dobbeltklikk tester cuen. Høyreklikk åpner en meny med farge, aktiver/deaktiver og dupliser.
 Du kan dra filer fra Finder rett inn i lista.
+
+Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagring`), sikkerhetskopier
+(`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
+i README i Windows-mappa.
 
 ## Oppbygning
 

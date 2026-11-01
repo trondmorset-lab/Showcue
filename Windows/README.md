@@ -154,6 +154,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Lagre / åpne / nytt show |
+| **Ctrl+Z / Ctrl+Y** | Angre / gjør om (også Ctrl+Shift+Z) |
+| **Ctrl+L** | Showmodus av/på |
 | **Enter** (i et felt) | Bekreft og gå tilbake til lista |
 
 - **Dra filer** fra Utforsker rett inn i cuelista.
@@ -161,6 +163,20 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - Hurtigtaster på lyd/bilde/video fungerer som av/på: trykk én gang for å starte, én gang til for å stoppe (med cuens fade ut).
 - F-tastene virker også mens du skriver i et felt; bokstaver og tall gjør det ikke.
 - GO har dobbel-GO-sperre (300 ms) så tasteprell ikke hopper over en cue.
+
+## Trygt under forestillingen
+
+- **Showmodus** (🔒-knappen eller Ctrl+L): låser all redigering. GO, stopp, Esc, hurtigtaster, fjernstyring og
+  hurtigknapper virker som vanlig, men ingenting kan flyttes, slettes eller endres ved et uhell. Tittellinja viser SHOWMODUS.
+- **Angre/gjør om** (Ctrl+Z / Ctrl+Y, ↶ ↷ i verktøylinja): angrer endringer i showet – nye, slettede og flyttede cuer
+  og alle felt. I et tekstfelt angrer Ctrl+Z skrivingen i feltet.
+- **Autolagring:** ulagrede endringer skrives hvert 30. sekund til `%AppData%\ShowCue\Autolagring`. Krasjer programmet
+  eller går strømmen, tilbys endringene gjenopprettet neste gang showet åpnes.
+- **Sikkerhetskopier:** hver gang du lagrer, kopieres forrige versjon til `%AppData%\ShowCue\Sikkerhetskopier`
+  (de 20 siste per show beholdes).
+- **Forhåndslytting til hodetelefoner:** under *Innstillinger → Lyd* velger du en egen lydenhet (f.eks. PC-ens
+  hodetelefonutgang) eller en utgang i lydpatchen for lyttingen i bølgeformen. Da høres ikke lyttingen i salen.
+  Uten dette går lyttingen ut på cuens vanlige utganger, og bølgeformen viser en advarsel.
 
 ## Utseende
 

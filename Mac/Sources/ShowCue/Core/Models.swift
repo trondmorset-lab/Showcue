@@ -89,6 +89,14 @@ struct AudioRoute: Codable, Hashable {
         if fileChannels <= 1 { return [AudioRoute(1, 1), AudioRoute(1, 2)] }
         return (1...fileChannels).map { AudioRoute($0, $0) }
     }
+
+    /// Alt til ett stereopar (f.eks. hodetelefoner): mono → begge, ellers annenhver kanal venstre/høyre.
+    /// Flerkanals filer dempes 3 dB så summen ikke blir for sterk.
+    static func downmix(fileChannels: Int, leftBus: Int) -> [AudioRoute] {
+        if fileChannels <= 1 { return [AudioRoute(1, leftBus), AudioRoute(1, leftBus + 1)] }
+        let gain: Double = fileChannels > 2 ? -3 : 0
+        return (1...fileChannels).map { AudioRoute($0, leftBus + ($0 - 1) % 2, gain) }
+    }
 }
 
 // MARK: - Cue

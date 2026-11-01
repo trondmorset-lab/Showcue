@@ -88,11 +88,20 @@ public static class WaveformCache
 /// <summary>Forhåndslytting: spiller lyden i en cue fra et valgfritt punkt, gjennom lydpatchen, uten å påvirke showet.</summary>
 public sealed class AudioPreview
 {
-    private readonly Func<PatchMixer?> _mixer;
+    /// <summary>Hvor forhåndslyttingen spilles: en mikser, og første av to utganger (0 = cuens egne utganger).</summary>
+    public readonly record struct Target(PatchMixer Mixer, int LeftBus);
+
+    private readonly Func<Target?> _target;
     private CuePlayback? _pb;
     private double _from;
 
-    public AudioPreview(Func<PatchMixer?> mixer) { _mixer = mixer; }
+    public AudioPreview(Func<Target?> target) { _target = target; }
+
+    /// <summary>Forhåndslytt gjennom cuens egne utganger i <paramref name="mixer"/>.</summary>
+    public AudioPreview(Func<PatchMixer?> mixer) : this(() => mixer() is { } m ? new Target(m, 0) : null) { }
+
+    /// <summary>True når lyttingen går ut på cuens egne utganger (dvs. til salen), ikke til en egen lytteutgang.</summary>
+    public bool GoesToShowOutputs => _target() is not { LeftBus: > 0 };
 
     public Cue? Cue { get; private set; }
     public bool IsPlaying => _pb is { IsFinished: false };
@@ -104,8 +113,9 @@ public sealed class AudioPreview
     public bool Play(Cue cue, double from, double to = 0)
     {
         Stop();
-        var mixer = _mixer();
-        if (mixer == null || cue is not IRoutedAudio routed || cue is not IFileCue fc || !File.Exists(fc.FilePath)) return false;
+        if (_target() is not { } target) return false;
+        var mixer = target.Mixer;
+        if (cue is not IRoutedAudio routed || cue is not IFileCue fc || !File.Exists(fc.FilePath)) return false;
         WaveStream? reader;
         try { reader = cue is VideoCue ? VideoAudio.Open(fc.FilePath) : new AudioFileReader(fc.FilePath); }
         catch { reader = null; }
@@ -115,6 +125,7 @@ public sealed class AudioPreview
         if (to > 0 && to <= from + 0.05) to = 0;   // startet etter sluttpunktet: spill til filslutt
         var o = new CuePlayback.Options(routed.VolumeDb, from, to, false, 0.01, 0.02);
         var pb = new CuePlayback(cue, reader, routed, o, mixer.WaveFormat.SampleRate);
+        if (target.LeftBus > 0) pb.SetRouting(AudioRoute.Downmix(pb.FileChannels, target.LeftBus));
         pb.Finished += p => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             p.Dispose();

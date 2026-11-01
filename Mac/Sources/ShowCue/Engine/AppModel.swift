@@ -46,6 +46,22 @@ final class AppModel: ObservableObject, ShowControl {
     private var lastGo = Date.distantPast
     private var lastPanic = Date.distantPast
     private var cueSubs: [AnyCancellable] = []
+
+    // Angre og showmodus
+    private let history = UndoHistory()
+    @Published private(set) var canUndo = false
+    @Published private(set) var canRedo = false
+    /// Showmodus: bare GO, stopp og hurtigtaster virker – ingenting kan endres ved et uhell.
+    @Published var showMode = false {
+        didSet {
+            guard showMode != oldValue else { return }
+            NSApp.keyWindow?.makeFirstResponder(nil)
+            if showMode { engine.preview.stop() }
+            refreshUndo()
+            statusText = showMode ? "Showmodus: redigering er låst (⌘L for å låse opp)." : "Redigering er låst opp."
+        }
+    }
+    var isEditable: Bool { !showMode }
     private var subs: Set<AnyCancellable> = []
 
     init() {
@@ -67,11 +83,14 @@ final class AppModel: ObservableObject, ShowControl {
     /// Startes når vinduet er vist.
     func startup() {
         audio.start(settings)
+        engine.configurePreview(settings)
         output.configure(screen: settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
         if !settings.lastShowPath.isEmpty, FileManager.default.fileExists(atPath: settings.lastShowPath) {
             open(URL(fileURLWithPath: settings.lastShowPath), confirm: false)
+        } else {
+            offerRecovery()
         }
     }
 
@@ -187,6 +206,13 @@ final class AppModel: ObservableObject, ShowControl {
         }
     }
 
+    /// Bare cuene (uten tittel), brukt til angre-historikken.
+    private func cueData() -> Data {
+        var doc = ShowDocument()
+        doc.cues = cues
+        return (try? doc.jsonData()) ?? Data()
+    }
+
     private func currentData() -> Data {
         var doc = ShowDocument()
         doc.title = showURL?.deletingPathExtension().lastPathComponent ?? "Show"
@@ -197,9 +223,70 @@ final class AppModel: ObservableObject, ShowControl {
     func updateDirty() {
         let d = currentData() != savedData
         if d != isDirty { isDirty = d }
+        if history.record(cueData()) { refreshUndo() }
     }
 
-    var windowTitle: String { (showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn") + (isDirty ? " •" : "") + " — ShowCue " + AppModel.version }
+    var windowTitle: String {
+        (showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn") + (isDirty ? " •" : "") + (showMode ? "  🔒 SHOWMODUS" : "")
+            + " — ShowCue " + AppModel.version
+    }
+
+    // MARK: - Angre / gjør om
+
+    private func refreshUndo() {
+        canUndo = isEditable && history.canUndo
+        canRedo = isEditable && history.canRedo
+    }
+
+    func undo() {
+        guard isEditable else { return }
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        updateDirty() // ta med endringer som ikke er registrert ennå
+        if let d = history.undo() { replaceCues(d); statusText = "Angret." }
+    }
+
+    func redo() {
+        guard isEditable else { return }
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        updateDirty()
+        if let d = history.redo() { replaceCues(d); statusText = "Gjort om." }
+    }
+
+    /// Bytt ut cuene med en lagret tilstand. Showfil, innstillinger og det som spiller røres ikke.
+    private func replaceCues(_ data: Data) {
+        guard let doc = try? JSONDecoder().decode(ShowDocument.self, from: data) else { return }
+        let idx = playhead.flatMap(index(of:)) ?? 0
+        cues = doc.cues
+        select(cues.isEmpty ? nil : cues[min(max(0, idx), cues.count - 1)])
+        updateDirty()
+        refreshUndo()
+    }
+
+    // MARK: - Autolagring og gjenoppretting
+
+    private func autosave() {
+        updateDirty()
+        guard isDirty else { return }
+        do { try ShowSafety.writeAutosave(for: showURL, data: currentData()) }
+        catch { statusText = "Autolagring feilet: \(error.localizedDescription)" }
+    }
+
+    /// Tilby å hente tilbake ulagrede endringer etter krasj eller strømbrudd.
+    func offerRecovery() {
+        guard let file = ShowSafety.pendingAutosave(for: showURL) else { return }
+        let date = ((try? FileManager.default.attributesOfItem(atPath: file.path))?[.modificationDate] as? Date) ?? Date()
+        let f = DateFormatter()
+        f.dateFormat = "dd.MM HH:mm"
+        let a = NSAlert()
+        a.messageText = "Gjenopprette ulagrede endringer?"
+        a.informativeText = "Det finnes ulagrede endringer i «\(showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn")» fra \(f.string(from: date)) (programmet ble ikke avsluttet normalt)."
+        a.addButton(withTitle: "Hent tilbake")
+        a.addButton(withTitle: "Forkast")
+        guard a.runModal() == .alertFirstButtonReturn else { ShowSafety.deleteAutosave(for: showURL); return }
+        guard let data = try? Data(contentsOf: file) else { alert("Kunne ikke lese autolagringen."); return }
+        replaceCues(data)
+        statusText = "Ulagrede endringer er hentet tilbake. Husk å lagre."
+    }
 
     /// Programversjonen fra Info.plist (settes fra VERSION-fila når appen bygges).
     static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev" }
@@ -214,7 +301,7 @@ final class AppModel: ObservableObject, ShowControl {
         a.addButton(withTitle: "Avbryt")
         switch a.runModal() {
         case .alertFirstButtonReturn: return save(as: false)
-        case .alertSecondButtonReturn: return true
+        case .alertSecondButtonReturn: ShowSafety.deleteAutosave(for: showURL); return true
         default: return false
         }
     }
@@ -241,6 +328,7 @@ final class AppModel: ObservableObject, ShowControl {
             settings.lastShowPath = url.path
             settings.save()
             if !statusText.hasPrefix("Advarsel") { statusText = "Åpnet \(url.path)" }
+            offerRecovery()
         } catch {
             alert("Kunne ikke åpne showet: \(error.localizedDescription)")
         }
@@ -262,7 +350,10 @@ final class AppModel: ObservableObject, ShowControl {
             var doc = ShowDocument()
             doc.title = target.deletingPathExtension().lastPathComponent
             doc.cues = cues
+            ShowSafety.backup(target) // forrige versjon, før den lagres over
             try doc.save(to: target)
+            ShowSafety.deleteAutosave(for: showURL)
+            ShowSafety.deleteAutosave(for: target)
             showURL = target
             savedData = currentData()
             isDirty = false
@@ -289,6 +380,8 @@ final class AppModel: ObservableObject, ShowControl {
         for c in cues where c.type == .video && c.fileChannels < 0 { probeVideo(c) }
         savedData = currentData()
         isDirty = false
+        history.reset(cueData())
+        refreshUndo()
         select(cues.first { !$0.disabled })
         let missing = cues.filter { $0.isFileCue && !$0.filePath.isEmpty && !FileManager.default.fileExists(atPath: $0.filePath) }
         missing.forEach { $0.error = "Fila finnes ikke: \($0.filePath)" }
@@ -309,6 +402,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func insert(_ new: [Cue], at: Int? = nil) {
+        guard isEditable else { return }
         var i = min(at ?? insertIndex, cues.count)
         var list = cues
         for c in new {
@@ -355,6 +449,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func addFiles(_ urls: [URL], at: Int? = nil) {
+        guard isEditable else { return }
         let new = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }.compactMap(cue(forFile:))
         if new.isEmpty { statusText = "Ingen støttede filer."; return }
         insert(new, at: at)
@@ -369,6 +464,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func add(_ type: CueType) {
+        guard isEditable else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         switch type {
         case .audio: addFiles(pickFiles(AppModel.audioExt, multiple: true))
@@ -387,6 +483,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func browseFile(for c: Cue) {
+        guard isEditable else { return }
         let ext: [String]
         switch c.type {
         case .audio: ext = AppModel.audioExt
@@ -409,12 +506,14 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func duplicateSelected() {
+        guard isEditable else { return }
         let sel = selectedCues
         guard !sel.isEmpty else { return }
         insert(sel.map { let k = $0.clone(); k.number = ""; k.hotkey = ""; k.midiTrigger = ""; return k })
     }
 
     func deleteSelected() {
+        guard isEditable else { return }
         let sel = selectedCues
         guard !sel.isEmpty else { return }
         let a = NSAlert()
@@ -430,6 +529,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func moveSelected(_ delta: Int) {
+        guard isEditable else { return }
         guard let c = playhead, let i = index(of: c) else { return }
         let j = i + delta
         guard j >= 0 && j < cues.count else { return }
@@ -438,6 +538,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func renumber() {
+        guard isEditable else { return }
         let a = NSAlert()
         a.messageText = "Gi alle cuer nye nummer 1, 2, 3 …?"
         a.informativeText = "Fade- og stopp-cuer oppdateres automatisk."
@@ -456,10 +557,12 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     func setColor(_ color: CueColor) {
+        guard isEditable else { return }
         (selectedCues.isEmpty ? [playhead].compactMap { $0 } : selectedCues).forEach { $0.color = color }
     }
 
     func pdfNextPage(_ c: Cue) {
+        guard isEditable else { return }
         let k = c.clone()
         k.number = ""; k.hotkey = ""; k.midiTrigger = ""; k.name = ""
         k.page = c.page + 1
@@ -469,6 +572,7 @@ final class AppModel: ObservableObject, ShowControl {
     // MARK: - Videolyd
 
     func extractVideoAudio(_ v: Cue) {
+        guard isEditable else { return }
         guard v.type == .video, FileManager.default.fileExists(atPath: v.filePath) else { return }
         statusText = "Pakker ut lyd fra \(v.fileName) …"
         let src = URL(fileURLWithPath: v.filePath)
@@ -512,6 +616,7 @@ final class AppModel: ObservableObject, ShowControl {
             engine.stopAll(fade: 0)
             audio.start(settings)
         }
+        engine.configurePreview(settings)
         output.configure(screen: settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
@@ -579,6 +684,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     private func tick() {
         tickCount += 1
+        if tickCount % 1800 == 0 { autosave() } // hvert 30. sekund
         if tickCount % 2 == 0, let m = audio.mixer {
             live.meterL = max(MeterMath.fraction(m.busLevel(0)), live.meterL - 0.05)
             live.meterR = max(MeterMath.fraction(m.busLevel(1)), live.meterR - 0.05)
