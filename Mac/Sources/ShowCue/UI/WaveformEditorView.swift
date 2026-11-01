@@ -69,6 +69,10 @@ struct WaveformEditorView: View {
                 Button("▶ Fra markør") { play(from: cursor) }.help("Lytt fra den blå markøren. Klikk i bølgeformen for å flytte den, dobbeltklikk for å lytte derfra.")
                 Button("▶ Slutten") { play(from: max(cue.startTime, effectiveEnd - 5)) }.help("Lytt til de siste 5 sekundene før sluttpunktet")
                 Button("■ Stopp") { preview.stop() }.disabled(!previewingThis)
+                Button("▶ Kjør herfra") {
+                    preview.stop()
+                    model.engine.fire(cue, offset: max(0, currentPoint - cue.startTime))
+                }.help("Kjør cuen på de vanlige utgangene, fra markøren (start fra tid)")
             }.buttonStyle(PanelButtonStyle())
             if preview.goesToShowOutputs {
                 Text("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.")

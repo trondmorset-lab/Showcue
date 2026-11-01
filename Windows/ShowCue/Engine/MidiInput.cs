@@ -96,7 +96,7 @@ public sealed class MidiInput : IDisposable
 /// <summary>En MIDI Show Control-melding: F0 7F &lt;dev&gt; 02 &lt;format&gt; &lt;kommando&gt; [cue 00 liste 00 sti] F7</summary>
 public sealed record MscCommand(int DeviceId, int CommandFormat, int Command, string CueNumber)
 {
-    public const int Go = 0x01, Stop = 0x02, AllOff = 0x08, Reset = 0x0A;
+    public const int Go = 0x01, Stop = 0x02, Resume = 0x03, AllOff = 0x08, Reset = 0x0A;
 
     public static MscCommand? Parse(byte[]? b)
     {

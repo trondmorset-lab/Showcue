@@ -131,10 +131,10 @@ public sealed class AudioEngine : IDisposable
         StatusChanged?.Invoke(s);
     }
 
-    public CuePlayback Play(AudioCue cue)
+    public CuePlayback Play(AudioCue cue, double offset = 0)
     {
         if (_mixer == null) throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
-        var pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate);
+        var pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate, offset);
         _mixer.Add(pb);
         return pb;
     }

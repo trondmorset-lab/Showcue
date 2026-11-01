@@ -13,14 +13,14 @@ final class LayerPair {
         self.preview = preview
     }
 
-    func setOpacity(_ value: Float, duration: Double) {
+    func setOpacity(_ value: Float, duration: Double, curve: FadeCurve = .db) {
         for l in [output, preview] {
             CATransaction.begin()
             if duration <= 0 {
                 CATransaction.setDisableActions(true)
             } else {
                 CATransaction.setAnimationDuration(duration)
-                CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .linear))
+                CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: curve == .sCurve ? .easeInEaseOut : .linear))
             }
             l.opacity = value
             CATransaction.commit()

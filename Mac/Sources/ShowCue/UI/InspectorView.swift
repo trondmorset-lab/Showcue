@@ -137,6 +137,8 @@ struct CueInspector: View {
         case .stop: stopSection
         case .osc: oscSection
         case .midi: midiSection
+        case .playlist: playlistSection
+        case .goto: gotoSection
         }
     }
 
@@ -248,6 +250,10 @@ struct CueInspector: View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel("Mål-cue (nummer)"); TextInput($cue.target, mono: true)
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600)
+            FieldLabel("Kurve")
+            Picker("", selection: $cue.curve) {
+                ForEach(FadeCurve.allCases, id: \.self) { Text($0.label).tag($0) }
+            }.labelsHidden()
             Toggle("Fade lyd til nivå (dB):", isOn: $cue.fadeAudio).padding(.top, 8)
             NumberInput(value: $cue.targetDb, range: -60...12).disabled(!cue.fadeAudio).padding(.leading, 20).padding(.top, 4)
             Hint("−60 eller lavere = stille.").padding(.leading, 20)
@@ -260,7 +266,49 @@ struct CueInspector: View {
     private var stopSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel("Mål-cue (nummer, tomt = stopp alt)"); TextInput($cue.target, mono: true)
-            FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600)
+            Toggle("Slipp loop (devamp) i stedet for å stoppe", isOn: $cue.release).padding(.top, 8)
+            Hint("Mål-cuen spiller ferdig loopen og fortsetter til slutten av fila.")
+            FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600).disabled(cue.release)
+        }
+    }
+
+    private var gotoSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Mål-cue (nummer)"); TextInput($cue.target, mono: true)
+            Toggle("Kjør mål-cuen med en gang (ellers flyttes bare GO-markøren)", isOn: $cue.fire).padding(.top, 8)
+        }
+    }
+
+    private var playlistSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Spor")
+            VStack(alignment: .leading, spacing: 2) {
+                if cue.files.isEmpty { Text("(ingen spor)").foregroundColor(theme.muted).font(.system(size: 12)) }
+                ForEach(Array(cue.files.enumerated()), id: \.offset) { i, f in
+                    HStack(spacing: 4) {
+                        Text("\(i + 1). \((f as NSString).lastPathComponent)").font(.system(size: 12)).lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading).help(f)
+                        Button("↑") { if i > 0 { cue.files.swapAt(i, i - 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == 0)
+                        Button("↓") { if i < cue.files.count - 1 { cue.files.swapAt(i, i + 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == cue.files.count - 1)
+                        Button("✕") { cue.files.remove(at: i) }.buttonStyle(PanelButtonStyle()).help("Fjern sporet")
+                    }
+                }
+            }
+            .padding(6)
+            .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
+            .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
+            Button("+ Legg til spor …") { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
+            Pair {
+                FieldLabel("Nivå (dB)"); NumberInput(value: $cue.volumeDb, range: -60...12)
+            } _: {
+                FieldLabel("Krysstoning (s)"); NumberInput(value: $cue.crossfade, range: 0...30)
+            }
+            Toggle("Tilfeldig rekkefølge", isOn: $cue.shuffle).padding(.top, 8)
+            Toggle("Start forfra etter siste spor", isOn: $cue.loop).padding(.top, 4)
+            FieldLabel("Fade ut ved stopp (s)"); NumberInput(value: $cue.fadeOut, range: 0...600)
+            FieldLabel("Utganger (dB per filkanal → utgang)").padding(.top, 6)
+            RoutingMatrixView(cue: cue)
+            Hint("Stopp-cue med «slipp loop» lar spillelista spille ferdig sporet som går og stoppe.")
         }
     }
 

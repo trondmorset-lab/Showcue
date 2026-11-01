@@ -22,6 +22,10 @@ public interface IShowControl
     void RemoteLog(string text);
     /// <summary>Send all status på nytt (Companion ba om det).</summary>
     void RefreshFeedback();
+    /// <summary>Pause alt (true), fortsett (false) eller veksle (null).</summary>
+    void SetPaused(bool? paused);
+    /// <summary>Slipp loopen i en cue («devamp»).</summary>
+    bool ReleaseCue(string number);
 }
 
 /// <summary>
@@ -36,6 +40,8 @@ public interface IShowControl
 ///   /cue/{nr}/stop              stopp cue (med cuens fade ut)
 ///   /cue/{nr}/go                sett markøren og kjør GO
 ///   /hotkey/{tast}              som å trykke hurtigtasten (f.eks. /hotkey/F1)
+///   /pause  /resume  /pause/toggle   pause / fortsett alt
+///   /cue/{nr}/devamp            slipp loopen i cuen (spill ferdig og fortsett til slutten)
 ///   /refresh                    send all status tilbake på nytt
 ///   Cuenummer kan også sendes som argument: /cue/start "12"
 /// </summary>
@@ -138,6 +144,9 @@ public sealed class RemoteControl : IDisposable
                 if (string.IsNullOrEmpty(m.CueNumber)) _show.StopAll();
                 else ok = _show.StopCue(m.CueNumber);
                 break;
+            case MscCommand.Resume:
+                _show.SetPaused(false);
+                break;
             case MscCommand.AllOff:
             case MscCommand.Reset:
                 _show.StopAll();
@@ -180,6 +189,9 @@ public sealed class RemoteControl : IDisposable
             case "panic" when parts.Length == 1: _show.Panic(); return true;
             case "hardstop" when parts.Length == 1: _show.HardStop(); return true;
             case "refresh" or "status" when parts.Length == 1: _show.RefreshFeedback(); return true;
+            case "pause" when parts.Length == 1: _show.SetPaused(true); return true;
+            case "pause" when parts.Length == 2 && parts[1].Equals("toggle", StringComparison.OrdinalIgnoreCase): _show.SetPaused(null); return true;
+            case "resume" when parts.Length == 1: _show.SetPaused(false); return true;
             case "next" when parts.Length == 1: _show.MovePlayhead(1); return true;
             case "previous" or "prev" when parts.Length == 1: _show.MovePlayhead(-1); return true;
             case "playhead" or "select":
@@ -201,6 +213,7 @@ public sealed class RemoteControl : IDisposable
                     "start" => _show.StartCue(number),
                     "stop" => _show.StopCue(number),
                     "go" => _show.GoCue(number),
+                    "devamp" or "release" => _show.ReleaseCue(number),
                     "select" or "playhead" => _show.SelectCue(number),
                     _ => false
                 };

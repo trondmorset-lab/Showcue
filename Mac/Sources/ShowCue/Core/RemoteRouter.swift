@@ -16,12 +16,17 @@ protocol ShowControl: AnyObject {
     func fireMidiTrigger(_ trigger: String) -> Int
     func remoteLog(_ text: String)
     func refreshFeedback()
+    /// Pause alt (true), fortsett (false) eller veksle (nil).
+    func setPaused(_ paused: Bool?)
+    /// Slipp loopen i en cue («devamp»).
+    @discardableResult func releaseCue(_ number: String) -> Bool
 }
 
 /// Oversetter OSC, MIDI og MSC til kommandoer. Samme kommandoer som Windows-versjonen:
 ///
 ///   /go  /go/{nr}  /stop  /panic  /hardstop  /next  /previous  /refresh
-///   /playhead/{nr}  /select/{nr}  /cue/{nr}/start|stop|go|select  /hotkey/{tast}
+///   /playhead/{nr}  /select/{nr}  /cue/{nr}/start|stop|go|select|devamp  /hotkey/{tast}
+///   /pause  /resume  /pause/toggle
 ///   Cuenummer kan også sendes som argument: /cue/start "12". Prefikset /showcue/ er tillatt.
 final class RemoteRouter {
     weak var show: ShowControl?
@@ -69,6 +74,9 @@ final class RemoteRouter {
         case ("next", 1): show.movePlayhead(1); return true
         case ("previous", 1), ("prev", 1): show.movePlayhead(-1); return true
         case ("refresh", 1), ("status", 1): show.refreshFeedback(); return true
+        case ("pause", 1): show.setPaused(true); return true
+        case ("pause", 2) where parts[1].lowercased() == "toggle": show.setPaused(nil); return true
+        case ("resume", 1): show.setPaused(false); return true
         case ("playhead", _), ("select", _):
             if parts.count == 2 && parts[1] == "next" { show.movePlayhead(1); return true }
             if parts.count == 2 && (parts[1] == "previous" || parts[1] == "prev") { show.movePlayhead(-1); return true }
@@ -87,6 +95,7 @@ final class RemoteRouter {
             case "stop": return show.stopCue(number)
             case "go": return show.goCue(number)
             case "select", "playhead": return show.selectCue(number)
+            case "devamp", "release": return show.releaseCue(number)
             default: return false
             }
         default:
@@ -128,6 +137,8 @@ final class RemoteRouter {
             if m.cueNumber.isEmpty { show.go() } else { ok = show.goCue(m.cueNumber) }
         case MscCommand.stop:
             if m.cueNumber.isEmpty { show.stopAll() } else { ok = show.stopCue(m.cueNumber) }
+        case MscCommand.resume:
+            show.setPaused(false)
         case MscCommand.allOff, MscCommand.reset:
             show.stopAll()
         default:

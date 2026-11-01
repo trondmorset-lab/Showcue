@@ -8,6 +8,8 @@ class ActiveCue: ObservableObject, Identifiable {
     let cue: Cue
     unowned let engine: CueEngine
     var startAt: Double = 0
+    /// Start så mange sekunder inn i cuen (prøver: «spill fra her»).
+    var startOffset: Double = 0
 
     @Published private(set) var started = false
     @Published var elapsed: Double = 0
@@ -44,6 +46,13 @@ class ActiveCue: ObservableObject, Identifiable {
 
     func applyFade(_ fade: Cue) {}
 
+    /// Pause / fortsett (tiden for pre-wait og fader står stille av seg selv, se `CueEngine.pauseAll`).
+    func pause() {}
+    func resume() {}
+
+    /// Slipp loopen («devamp»): spill ferdig og fortsett til slutten. False hvis cuen ikke looper.
+    func release() -> Bool { false }
+
     func complete() {
         guard !done else { return }
         done = true
@@ -76,7 +85,7 @@ final class AudioActive: ActiveCue {
 
     override func onBegin() throws {
         guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
-        let pb = try engine.audio.makePlayback(audio: cue)
+        let pb = try engine.audio.makePlayback(audio: cue, offset: startOffset)
         playback = pb
         pb.onFinished = { [weak self] in self?.complete() }
         duration = cue.loop ? 0 : (pb.passLength ?? 0)
@@ -104,10 +113,20 @@ final class AudioActive: ActiveCue {
         guard let pb = playback else { return }
         if f.fadeAudio {
             if f.stopWhenDone { wasStopped = true; isStopping = true }
-            pb.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: f.stopWhenDone)
+            pb.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: f.stopWhenDone, curve: f.curve)
         } else if f.stopWhenDone {
             stop(fade: 0)
         }
+    }
+
+    override func pause() { playback?.pause() }
+    override func resume() { playback?.resume() }
+
+    override func release() -> Bool {
+        guard let pb = playback, pb.isLooping else { return false }
+        pb.releaseLoop()
+        duration = 0 // ukjent til fila er ferdig
+        return true
     }
 
     override func onComplete() {
@@ -164,7 +183,7 @@ class VisualActive: ActiveCue {
 
     override func applyFade(_ f: Cue) {
         guard let l = layers, !done else { return }
-        if f.fadeVisual { l.setOpacity(Float(f.targetOpacity / 100), duration: f.fadeTime) }
+        if f.fadeVisual { l.setOpacity(Float(f.targetOpacity / 100), duration: f.fadeTime, curve: f.curve) }
         if f.stopWhenDone {
             wasStopped = true
             isStopping = true
@@ -221,6 +240,8 @@ final class VideoActive: VisualActive {
     private var lastResync: Double = 0
     private var lastLoop: Double = -10
     private var seekedToStart = false
+    private var released = false
+    /// Hvor i fila avspillingen starter (startpunkt + eventuell «spill fra her»). Loopen går også hit.
     private var startTime: Double = 0
     private var endTime: Double = 0
     private var subs: Set<AnyCancellable> = []
@@ -228,7 +249,7 @@ final class VideoActive: VisualActive {
 
     override func makeLayers() throws -> LayerPair {
         let item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath))
-        startTime = max(0, cue.startTime)
+        startTime = max(0, cue.startTime) + startOffset
         endTime = cue.endTime > startTime ? cue.endTime : 0
         if endTime > 0 { item.forwardPlaybackEndTime = CMTime(seconds: endTime, preferredTimescale: 600) }
         let p = AVPlayer(playerItem: item)
@@ -238,7 +259,7 @@ final class VideoActive: VisualActive {
         player = p
 
         if !(cue.routes?.isEmpty ?? false) {
-            audio = engine.audio.makePlayback(videoAudio: cue)
+            audio = engine.audio.makePlayback(videoAudio: cue, start: startTime)
             if let a = audio { if cue.fileChannels != a.fileChannels { cue.fileChannels = a.fileChannels } }
             else if engine.audio.isRunning, cue.fileChannels != 0 { cue.fileChannels = 0 }
         }
@@ -291,7 +312,7 @@ final class VideoActive: VisualActive {
 
     private func reachedEnd() {
         guard !done else { return }
-        if cue.loop && !isStopping {
+        if cue.loop && !isStopping && !released {
             guard engine.now - lastLoop > 0.3 else { return } // både sluttvarsel og takt kan melde samme slutt
             lastLoop = engine.now
             player?.seek(to: CMTime(seconds: startTime, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
@@ -333,7 +354,20 @@ final class VideoActive: VisualActive {
 
     override func applyFade(_ f: Cue) {
         super.applyFade(f)
-        if f.fadeAudio { audio?.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: false) }
+        if f.fadeAudio { audio?.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: false, curve: f.curve) }
+    }
+
+    override func pause() { player?.pause(); audio?.pause() }
+    override func resume() { player?.play(); audio?.resume(); lastResync = engine.now }
+
+    override func release() -> Bool {
+        guard cue.loop, !released, !isStopping else { return false }
+        released = true
+        endTime = 0 // sluttpunktet gjelder ikke lenger: spill resten av fila
+        player?.currentItem?.forwardPlaybackEndTime = .invalid
+        audio?.releaseLoop()
+        if cue.knownDuration > 0 { duration = max(0, cue.knownDuration - startTime) }
+        return true
     }
 
     override func onRemove() {
@@ -354,19 +388,21 @@ class TimedActive: ActiveCue {
     private var begin: Double = 0
 
     func act() {}
+    /// Hvor lenge cuen varer (stopp-cue som slipper en loop er ferdig med en gang).
+    var seconds: Double { cue.duration }
 
     override func onBegin() throws {
         begin = engine.now
-        duration = cue.fadeTime
+        duration = seconds
         act()
-        if cue.fadeTime <= 0 { complete() }
+        if seconds <= 0 { complete() }
     }
 
     override func tick() {
         super.tick()
         guard started, !done else { return }
         elapsed = engine.now - begin
-        if elapsed >= cue.fadeTime { complete() }
+        if elapsed >= seconds { complete() }
     }
 
     override func stop(fade: Double) { super.stop(fade: fade); complete() }
@@ -380,12 +416,118 @@ final class FadeActive: TimedActive {
     }
 }
 
+/// Stopp-cue: stopper målet (eller alt) med fade – eller slipper loopen («devamp»).
 final class StopActive: TimedActive {
     override func act() {
         let targets = cue.target.isEmpty
             ? engine.active.filter { $0 !== self && !($0 is StopActive) }
             : engine.findActive(cue.target)
-        targets.forEach { $0.stop(fade: cue.fadeTime) }
+        guard cue.release else { targets.forEach { $0.stop(fade: cue.fadeTime) }; return }
+        if !targets.map({ $0.release() }).contains(true) {
+            cue.error = cue.target.isEmpty ? "Ingen cue looper" : "Cue \(cue.target) looper ikke"
+        }
+    }
+}
+
+// MARK: - Spilleliste
+
+/// Spor etter spor (eller tilfeldig), med krysstoning, gjennom lydpatchen.
+final class PlaylistActive: ActiveCue {
+    private var playing: [Playback] = []
+    private var order: [String] = []
+    private var index = -1
+    private var current: Playback?
+    private var releasing = false
+    private var begin: Double = 0
+    private var subs: Set<AnyCancellable> = []
+
+    /// Navnet på sporet som spiller nå.
+    var currentTrack: String {
+        index >= 0 && index < order.count ? URL(fileURLWithPath: order[index]).deletingPathExtension().lastPathComponent : ""
+    }
+
+    private func newOrder() -> [String] {
+        let files = cue.files.filter { FileManager.default.fileExists(atPath: $0) }
+        return cue.shuffle ? files.shuffled() : files
+    }
+
+    override func onBegin() throws {
+        order = newOrder()
+        guard !order.isEmpty else { throw CueError.fileMissing("(spillelista har ingen filer som finnes)") }
+        begin = engine.now
+        subs = followLiveChanges { [weak self] in self?.current }
+        try startNext(fadeIn: 0)
+    }
+
+    /// Start neste spor (med fade inn). False når lista er ferdig.
+    @discardableResult
+    private func startNext(fadeIn: Double) throws -> Bool {
+        index += 1
+        if index >= order.count {
+            guard cue.loop, !releasing else { current = nil; return false }
+            order = newOrder()
+            index = 0
+            guard !order.isEmpty else { current = nil; return false }
+        }
+        let pb = try engine.audio.makePlayback(track: order[index], for: cue, fadeIn: fadeIn,
+                                               offset: startOffset > 0 && playing.isEmpty && index == 0 ? startOffset : 0)
+        pb.onFinished = { [weak self, weak pb] in self?.playing.removeAll { $0 === pb } }
+        playing.append(pb)
+        current = pb
+        pb.start()
+        objectWillChange.send()
+        return true
+    }
+
+    override func tick() {
+        super.tick()
+        guard started, !done else { return }
+        elapsed = engine.now - begin
+        if playing.allSatisfy({ $0.voice.isFinished }) && (current == nil || isStopping) { complete(); return }
+        guard !isStopping, let cur = current else { return }
+
+        let left = (cur.passLength ?? 0) - cur.passPosition
+        do {
+            if !releasing, cue.crossfade > 0, (cur.passLength ?? 0) > 0, left <= cue.crossfade, !cur.voice.isFinished {
+                cur.fadeTo(Voice.silenceDb, seconds: max(0.05, left), stopWhenDone: true)
+                try startNext(fadeIn: cue.crossfade)
+            } else if cur.voice.isFinished {
+                try startNext(fadeIn: 0)
+            }
+        } catch {
+            cue.error = error.localizedDescription
+            current = nil
+        }
+    }
+
+    override func stop(fade: Double) {
+        super.stop(fade: fade)
+        guard started, !done else { return }
+        isStopping = true
+        playing.forEach { $0.stop(fade: fade) }
+        if fade <= 0 { complete() }
+    }
+
+    override func applyFade(_ f: Cue) {
+        guard f.fadeAudio else { if f.stopWhenDone { stop(fade: 0) }; return }
+        if f.stopWhenDone { wasStopped = true; isStopping = true }
+        playing.forEach { $0.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: f.stopWhenDone, curve: f.curve) }
+    }
+
+    override func pause() { playing.forEach { $0.pause() } }
+    override func resume() { playing.forEach { $0.resume() } }
+
+    /// For en spilleliste betyr «slipp»: spill ferdig sporet som går, og stopp.
+    override func release() -> Bool {
+        guard !releasing, !isStopping else { return false }
+        releasing = true
+        return true
+    }
+
+    override func onComplete() {
+        subs.removeAll()
+        playing.forEach { $0.stop(fade: 0) }
+        playing.removeAll()
     }
 }
 
@@ -402,6 +544,8 @@ final class InstantActive: ActiveCue {
             }
         case .midi:
             try engine.midi.send(MidiOut.bytes(for: cue), device: cue.device)
+        case .goto:
+            engine.requestGoto(cue.target, fire: cue.fire)
         default: break
         }
     }

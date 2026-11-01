@@ -37,6 +37,9 @@ public sealed class EnumTextConverter : IValueConverter
         [CueColor.Blue] = "Blå",
         [CueColor.Purple] = "Lilla",
         [CueColor.Gray] = "Grå",
+        [FadeCurve.Db] = "Jevn (lineær i dB)",
+        [FadeCurve.SCurve] = "S-kurve (myk start og slutt)",
+        [FadeCurve.Linear] = "Lineær amplitude (som en fader)",
     };
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -44,6 +47,20 @@ public sealed class EnumTextConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => DependencyProperty.UnsetValue;
+}
+
+public sealed class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is bool b ? !b : value;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value is bool b ? !b : value;
+}
+
+/// <summary>Full sti → filnavn (spillelister).</summary>
+public sealed class FileNameConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is string s ? System.IO.Path.GetFileName(s) : "";
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => DependencyProperty.UnsetValue;
 }
 
 /// <summary>Kort symbol for continue-modus i cuelista.</summary>
@@ -90,6 +107,7 @@ public static class EnumValues
     public static Array Themes { get; } = Enum.GetValues(typeof(AppTheme));
     public static Array FeedbackFormats { get; } = Enum.GetValues(typeof(OscFeedbackFormat));
     public static Array CueColors { get; } = Enum.GetValues(typeof(CueColor));
+    public static Array FadeCurves { get; } = Enum.GetValues(typeof(FadeCurve));
 }
 
 public sealed class MidiTriggerTextConverter : IValueConverter

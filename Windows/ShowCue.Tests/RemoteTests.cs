@@ -116,6 +116,8 @@ public class RemoteControlTests
         public int FireMidiTrigger(string t) { Log.Add("midi " + t); return 1; }
         public void RemoteLog(string t) => Remote.Add(t);
         public void RefreshFeedback() => Log.Add("refresh");
+        public void SetPaused(bool? p) => Log.Add("pause " + (p?.ToString() ?? "toggle"));
+        public bool ReleaseCue(string n) { Log.Add("release " + n); return true; }
     }
 
     private readonly FakeShow _show = new();
@@ -143,8 +145,10 @@ public class RemoteControlTests
         Osc1("/cue/12/start"); Osc1("/cue/1.5/stop"); Osc1("/cue/7/go"); Osc1("/cue/start", "9"); Osc1("/cue/start", 4);
         Osc1("/playhead/3"); Osc1("/select/next"); Osc1("/previous"); Osc1("/hotkey/f1"); Osc1("/stop"); Osc1("/panic"); Osc1("/hardstop");
         Osc1("/showcue/go"); Osc1("/go", "22"); Osc1("/go/23"); Osc1("/refresh");
+        Osc1("/pause"); Osc1("/resume"); Osc1("/pause/toggle"); Osc1("/cue/4/devamp");
         Assert.Equal(new[] { "start 12", "stop 1.5", "gocue 7", "start 9", "start 4", "select 3", "move 1", "move -1", "hotkey F1",
-                             "stopall", "panic", "hardstop", "go", "gocue 22", "gocue 23", "refresh" }, _show.Log);
+                             "stopall", "panic", "hardstop", "go", "gocue 22", "gocue 23", "refresh",
+                             "pause True", "pause False", "pause toggle", "release 4" }, _show.Log);
     }
 
     [Fact]
