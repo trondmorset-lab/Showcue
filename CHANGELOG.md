@@ -4,6 +4,15 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.6.1 – 2026-11-01
+
+### Endret
+- ShowCue er nå fri programvare under **GNU GPL versjon 3** (se `LICENSE`). Installasjonsprogrammet viser lisensen.
+- Windows-versjonen bruker **.NET 10** (støttet til november 2028). .NET 8 får ikke lenger sikkerhetsoppdateringer etter 10. november 2026.
+- Windows-versjonen testes automatisk før den publiseres, slik Mac-versjonen allerede ble.
+- Utgivelser publiseres først når både Windows og Mac er bygget og testet, og hver fil får sjekksum og opprinnelsesattest.
+- «Siste bygg» peker nå på riktig versjon av kildekoden.
+
 ## 0.6.0 – 2026-11-01
 
 ### Nytt

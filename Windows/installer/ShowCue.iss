@@ -34,6 +34,7 @@ ChangesAssociations=yes
 CloseApplications=yes
 UninstallDisplayIcon={app}\ShowCue.exe
 UninstallDisplayName=ShowCue {#AppVersion}
+LicenseFile=..\..\LICENSE
 
 [Languages]
 #if FileExists(CompilerPath + "Languages\Norwegian.isl")
@@ -58,6 +59,7 @@ Name: "fileassoc"; Description: "{cm:AssocTask}"; GroupDescription: "{cm:OtherTa
 [Files]
 Source: "..\publish\ShowCue.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; DestName: "Les meg.md"; Flags: ignoreversion
+Source: "..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\..\CHANGELOG.md"; DestDir: "{app}"; DestName: "Endringslogg.md"; Flags: ignoreversion
 
 [Icons]
