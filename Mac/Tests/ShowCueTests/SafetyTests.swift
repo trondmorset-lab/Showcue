@@ -84,12 +84,16 @@ final class SafetyTests: XCTestCase {
     func testPreviewGoesToListenBusNotTheCueOutputs() throws {
         let rate = 48000.0
         let url = root.appendingPathComponent("stereo.wav")
-        let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: 2, interleaved: false)!
-        let file = try AVAudioFile(forWriting: url, settings: fmt.settings, commonFormat: .pcmFormatFloat32, interleaved: false)
-        let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 48000)!
-        buf.frameLength = 48000
-        for i in 0..<48000 { buf.floatChannelData![0][i] = 0.1; buf.floatChannelData![1][i] = 0.2 }
-        try file.write(from: buf)
+        // Egen funksjon: fila må lukkes (AVAudioFile frigjøres) før den kan leses.
+        func writeStereo() throws {
+            let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: 2, interleaved: false)!
+            let file = try AVAudioFile(forWriting: url, settings: fmt.settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+            let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 48000)!
+            buf.frameLength = 48000
+            for i in 0..<48000 { buf.floatChannelData![0][i] = 0.1; buf.floatChannelData![1][i] = 0.2 }
+            try file.write(from: buf)
+        }
+        try writeStereo()
 
         let m = PatchMixer(sampleRate: rate, deviceChannels: 8, patch: PatchBus.defaultPatch(8))
         let cue = Cue(type: .audio)
