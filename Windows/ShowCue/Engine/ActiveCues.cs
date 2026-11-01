@@ -54,7 +54,7 @@ public abstract class ActiveCue : ObservableObject
     /// <summary>Kalles ca. 60 ganger i sekundet fra UI-tråden.</summary>
     internal virtual void Tick()
     {
-        if (!Started) { OnPropertyChanged(nameof(ElapsedText)); return; }
+        if (!Started) OnPropertyChanged(nameof(ElapsedText)); // nedtelling under pre-wait
     }
 
     protected abstract void OnBegin();
@@ -78,6 +78,14 @@ public abstract class ActiveCue : ObservableObject
     }
 
     protected virtual void OnCompleted() { }
+
+    /// <summary>Endringer i routing og nivå høres med en gang (nyttig under lydsjekk).</summary>
+    protected void FollowLiveChanges(IRoutedAudio cue, CuePlayback? pb, string? property)
+    {
+        if (pb == null || Done) return;
+        if (property == nameof(IRoutedAudio.Routes)) pb.SetRouting(cue.EffectiveRoutes(pb.FileChannels));
+        else if (property == nameof(IRoutedAudio.VolumeDb) && !IsStopping) pb.AdjustLevel(cue.VolumeDb);
+    }
 }
 
 // ======================================================================
@@ -99,16 +107,11 @@ public sealed class AudioActive : ActiveCue
         if (AudioCue.FileDuration <= 0 && _pb.PassLength > 0 && AudioCue.EndTime <= 0)
             AudioCue.FileDuration = AudioCue.StartTime + _pb.PassLength;
         if (AudioCue.FileChannels != _pb.FileChannels) AudioCue.FileChannels = _pb.FileChannels;
-        // Endringer i routing og nivå høres med en gang (nyttig under lydsjekk).
         AudioCue.PropertyChanged += OnCueChanged;
     }
 
     private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (_pb == null || Done) return;
-        if (e.PropertyName == nameof(AudioCue.Routes)) _pb.SetRouting(AudioCue.EffectiveRoutes(_pb.FileChannels));
-        else if (e.PropertyName == nameof(AudioCue.VolumeDb) && !IsStopping) _pb.AdjustLevel(AudioCue.VolumeDb);
-    }
+        => FollowLiveChanges(AudioCue, _pb, e.PropertyName);
 
     internal override void Tick()
     {
@@ -382,11 +385,7 @@ public sealed class VideoActive : VisualActive
     }
 
     private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (_audio == null || Done) return;
-        if (e.PropertyName == nameof(VideoCue.Routes)) _audio.SetRouting(VidCue.EffectiveRoutes(_audio.FileChannels));
-        else if (e.PropertyName == nameof(VideoCue.VolumeDb) && !IsStopping) _audio.AdjustLevel(VidCue.VolumeDb);
-    }
+        => FollowLiveChanges(VidCue, _audio, e.PropertyName);
 
     /// <summary>Videoen nådde sluttpunktet (eller slutten av fila).</summary>
     private void ReachedEnd()
@@ -464,21 +463,21 @@ public sealed class VideoActive : VisualActive
 }
 
 // ======================================================================
-/// <summary>Fade-cue: starter fades på målene og varer i fade-tiden.</summary>
-public sealed class FadeActive : ActiveCue
+/// <summary>Fade- og stopp-cue: gjør jobben ved start og «varer» så lenge faden tar.</summary>
+public abstract class TimedActive : ActiveCue
 {
     private double _begin;
-    private FadeCue F => (FadeCue)Cue;
-    public FadeActive(FadeCue cue, CueEngine engine) : base(cue, engine) { }
+    protected TimedActive(Cue cue, CueEngine engine) : base(cue, engine) { }
+
+    protected abstract double Seconds { get; }
+    protected abstract void Act();
 
     protected override void OnBegin()
     {
         _begin = Engine.Now;
-        Duration = F.FadeTime;
-        var targets = Engine.FindActive(F.Target).ToList();
-        if (targets.Count == 0) Cue.Error = string.IsNullOrEmpty(F.Target) ? "Mangler mål-cue" : $"Cue {F.Target} kjører ikke";
-        foreach (var t in targets) t.ApplyFade(F);
-        if (F.FadeTime <= 0) Complete();
+        Duration = Seconds;
+        Act();
+        if (Seconds <= 0) Complete();
     }
 
     internal override void Tick()
@@ -486,39 +485,41 @@ public sealed class FadeActive : ActiveCue
         base.Tick();
         if (!Started || Done) return;
         Elapsed = Engine.Now - _begin;
-        if (Elapsed >= F.FadeTime) Complete();
+        if (Elapsed >= Seconds) Complete();
     }
 
     public override void Stop(double fadeSeconds) { base.Stop(fadeSeconds); Complete(); }
 }
 
-// ======================================================================
-public sealed class StopActive : ActiveCue
+/// <summary>Fade-cue: starter fades på målene.</summary>
+public sealed class FadeActive : TimedActive
 {
-    private double _begin;
+    private FadeCue F => (FadeCue)Cue;
+    public FadeActive(FadeCue cue, CueEngine engine) : base(cue, engine) { }
+    protected override double Seconds => F.FadeTime;
+
+    protected override void Act()
+    {
+        var targets = Engine.FindActive(F.Target).ToList();
+        if (targets.Count == 0) Cue.Error = string.IsNullOrEmpty(F.Target) ? "Mangler mål-cue" : $"Cue {F.Target} kjører ikke";
+        foreach (var t in targets) t.ApplyFade(F);
+    }
+}
+
+/// <summary>Stopp-cue: stopper målet (eller alt) med fade.</summary>
+public sealed class StopActive : TimedActive
+{
     private StopCue S => (StopCue)Cue;
     public StopActive(StopCue cue, CueEngine engine) : base(cue, engine) { }
+    protected override double Seconds => S.FadeTime;
 
-    protected override void OnBegin()
+    protected override void Act()
     {
-        _begin = Engine.Now;
-        Duration = S.FadeTime;
         var targets = string.IsNullOrEmpty(S.Target)
             ? Engine.Active.Where(a => a != this && a is not StopActive).ToList()
             : Engine.FindActive(S.Target).ToList();
         foreach (var t in targets) t.Stop(S.FadeTime);
-        if (S.FadeTime <= 0) Complete();
     }
-
-    internal override void Tick()
-    {
-        base.Tick();
-        if (!Started || Done) return;
-        Elapsed = Engine.Now - _begin;
-        if (Elapsed >= S.FadeTime) Complete();
-    }
-
-    public override void Stop(double fadeSeconds) { base.Stop(fadeSeconds); Complete(); }
 }
 
 // ======================================================================

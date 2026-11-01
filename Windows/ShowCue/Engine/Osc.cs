@@ -181,14 +181,11 @@ public sealed class OscServer : IDisposable
     private UdpClient? _udp;
     private CancellationTokenSource? _cts;
 
-    public int Port { get; private set; }
-    public bool IsRunning => _udp != null;
     public event Action<OscMessage, System.Net.IPEndPoint>? MessageReceived;
 
     public void Start(int port)
     {
         Stop();
-        Port = port;
         _udp = new UdpClient(new System.Net.IPEndPoint(System.Net.IPAddress.Any, port));
         _cts = new CancellationTokenSource();
         _ = Loop(_udp, _cts.Token);

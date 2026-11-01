@@ -15,11 +15,9 @@ public sealed class AudioEngine : IDisposable
     private IWavePlayer? _output;
     private PatchMixer? _mixer;
     private readonly Dictionary<int, TestToneSource> _testTones = new();
-    private IReadOnlyList<PatchBus> _patch = PatchBus.DefaultPatch(2);
 
     public string Status { get; private set; } = "Lyd ikke startet";
     public bool IsRunning => _output != null && _mixer != null;
-    public int SampleRate => _mixer?.WaveFormat.SampleRate ?? 0;
     public int DeviceChannels => _mixer?.DeviceChannels ?? 0;
     /// <summary>Navn på kanalene på lydkortet (ASIO gir navn, f.eks. Dante-kanaler).</summary>
     public IReadOnlyList<string> ChannelNames { get; private set; } = Array.Empty<string>();
@@ -32,7 +30,6 @@ public sealed class AudioEngine : IDisposable
     public void Start(AppSettings s)
     {
         StopOutput();
-        _patch = s.Buses;
         try
         {
             CreateOutput(s);
@@ -136,11 +133,7 @@ public sealed class AudioEngine : IDisposable
     }
 
     /// <summary>Oppdater patchen mens lyden går.</summary>
-    public void ApplyPatch(IReadOnlyList<PatchBus> patch)
-    {
-        _patch = patch;
-        _mixer?.SetPatch(patch);
-    }
+    public void ApplyPatch(IReadOnlyList<PatchBus> patch) => _mixer?.SetPatch(patch);
 
     public bool IsTestToneOn(int busIndex)
     {
