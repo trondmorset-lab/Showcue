@@ -11,7 +11,8 @@ Det finnes i to utgaver som deler showformat:
 | `Mac/` | macOS 13+ | Swift / SwiftUI / CoreAudio / AVFoundation | Åpne `Package.swift` i Xcode, eller `./build-app.sh` |
 
 Begge har:
-- Cuer for lyd, video, bilde, PDF, fade, stopp, OSC og MIDI
+- Cuer for lyd, video, bilde, PDF, fade, stopp, OSC, MIDI, spilleliste og «gå til»
+- **Pause/fortsett alt**, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
 - Hurtigtaster og MIDI-triggere per cue

@@ -4,7 +4,31 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto
+}
+
+/// Formen på en fade: lineær i dB (jevn for øret), S-kurve (myk start og slutt) eller lineær amplitude.
+enum FadeCurve: String, Codable, CaseIterable {
+    case db = "Db", sCurve = "SCurve", linear = "Linear"
+
+    var label: String {
+        switch self {
+        case .db: return "Jevn (lineær i dB)"
+        case .sCurve: return "S-kurve (myk start og slutt)"
+        case .linear: return "Lineær amplitude (som en fader)"
+        }
+    }
+
+    /// Nivå (dB) `p` (0–1) inn i en fade fra `from` til `to`.
+    func db(from: Double, to: Double, at p: Double) -> Double {
+        switch self {
+        case .sCurve: return from + (to - from) * p * p * (3 - 2 * p)
+        case .linear:
+            let g = Double(dbToGain(from)) + (Double(dbToGain(to)) - Double(dbToGain(from))) * p
+            return g <= 0.00001 ? Voice.silenceDb : max(Voice.silenceDb, 20 * log10(g))
+        case .db: return from + (to - from) * p
+        }
+    }
 }
 
 enum ContinueMode: String, Codable, CaseIterable {
@@ -149,6 +173,19 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var fadeVisual = true
     @Published var targetOpacity: Double = 0
     @Published var stopWhenDone = true
+    @Published var curve: FadeCurve = .db
+    /// Stopp-cue: slipp loopen i stedet for å stoppe («devamp»).
+    @Published var release = false
+
+    // Gå til
+    /// Kjør mål-cuen også (GO), ikke bare flytt markøren.
+    @Published var fire = false
+
+    // Spilleliste
+    @Published var files: [String] = []
+    @Published var shuffle = false
+    /// Krysstoning mellom sporene (sekunder).
+    @Published var crossfade: Double = 2
 
     // OSC
     @Published var host = "127.0.0.1"
@@ -182,6 +219,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             fadeIn = 0.5; fadeOut = 0.5
         case .fade:
             fadeTime = 3
+        case .playlist:
+            loop = true; fadeOut = 3; fileChannels = 2
         default: break
         }
     }
@@ -202,6 +241,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .stop: return "Stopp"
         case .osc: return "OSC"
         case .midi: return "MIDI"
+        case .playlist: return "Spilleliste"
+        case .goto: return "Gå til"
         }
     }
 
@@ -215,6 +256,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .stop: return "■"
         case .osc: return "⇢"
         case .midi: return "♫"
+        case .playlist: return "☰"
+        case .goto: return "↪"
         }
     }
 
@@ -238,9 +281,13 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .audio, .video, .image: return fileStem.isEmpty ? typeName : fileStem
         case .pdf: return (fileStem.isEmpty ? typeName : fileStem) + " s.\(page)"
         case .fade: return target.isEmpty ? "Fade" : "Fade cue \(target)"
-        case .stop: return target.isEmpty ? "Stopp alt" : "Stopp cue \(target)"
+        case .stop:
+            if release { return ("Slipp loop " + target).trimmingCharacters(in: .whitespaces) }
+            return target.isEmpty ? "Stopp alt" : "Stopp cue \(target)"
         case .osc: return "OSC " + address
         case .midi: return "MIDI"
+        case .playlist: return "Spilleliste"
+        case .goto: return target.isEmpty ? "Gå til" : "Gå til \(target)"
         }
     }
 
@@ -269,7 +316,13 @@ final class Cue: ObservableObject, Identifiable, Codable {
             if stopWhenDone { s += "  + stopp" }
             return s
         case .stop:
-            return (target.isEmpty ? "Alle cues" : "→ " + target) + (fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+            return (target.isEmpty ? "Alle cues" : "→ " + target)
+                + (release ? "  slipp loop" : fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+        case .playlist:
+            return "\(files.count) spor" + (shuffle ? "  tilfeldig" : "") + (loop ? "  ⟲" : "")
+                + (crossfade > 0 ? "  krysstoning \(Cue.fmt(crossfade))s" : "")
+        case .goto:
+            return (target.isEmpty ? "(mål mangler)" : "→ " + target) + (fire ? "  + GO" : "")
         case .osc:
             return "\(host):\(port)  \(address) \(arguments)".trimmingCharacters(in: .whitespaces)
         case .midi:
@@ -304,7 +357,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             let end = videoEnd
             return loop || end <= 0 ? 0 : max(0, end - startTime)
         case .image, .pdf: return holdTime > 0 ? fadeIn + holdTime + fadeOut : 0
-        case .fade, .stop: return fadeTime
+        case .fade: return fadeTime
+        case .stop: return release ? 0 : fadeTime
         default: return 0
         }
     }
@@ -346,6 +400,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
+        case Curve, Release, Fire, Files, Shuffle, Crossfade
     }
 
     convenience init(from decoder: Decoder) throws {
@@ -365,7 +420,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             // Eldre Windows-show lagret videovolum i prosent.
             volumeDb = pct <= 0.1 ? -60 : 20 * log10(min(pct, 100) / 100)
         }
-        startTime = v(.StartTime, 0.0); endTime = v(.EndTime, 0.0); loop = v(.Loop, false)
+        startTime = v(.StartTime, 0.0); endTime = v(.EndTime, 0.0); loop = v(.Loop, loop)
         fadeIn = v(.FadeIn, fadeIn); fadeOut = v(.FadeOut, fadeOut)
         fileDuration = v(.FileDuration, 0.0); fileChannels = v(.FileChannels, fileChannels)
         routes = (try? c.decodeIfPresent([AudioRoute].self, forKey: .Routes)) ?? nil
@@ -378,6 +433,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         device = v(.Device, ""); messageType = v(.MessageType, MidiMessageType.noteOn); channel = v(.Channel, 1)
         data1 = v(.Data1, 60); data2 = v(.Data2, 127); mscDeviceId = v(.MscDeviceId, 127)
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")
+        curve = v(.Curve, FadeCurve.db); release = v(.Release, false); fire = v(.Fire, false)
+        files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -430,9 +487,23 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(fadeVisual, forKey: .FadeVisual)
             try c.encode(targetOpacity, forKey: .TargetOpacity)
             try c.encode(stopWhenDone, forKey: .StopWhenDone)
+            try c.encode(curve, forKey: .Curve)
         case .stop:
             try c.encode(target, forKey: .Target)
             try c.encode(fadeTime, forKey: .FadeTime)
+            try c.encode(release, forKey: .Release)
+        case .goto:
+            try c.encode(target, forKey: .Target)
+            try c.encode(fire, forKey: .Fire)
+        case .playlist:
+            try c.encode(files, forKey: .Files)
+            try c.encode(shuffle, forKey: .Shuffle)
+            try c.encode(loop, forKey: .Loop)
+            try c.encode(crossfade, forKey: .Crossfade)
+            try c.encode(volumeDb, forKey: .VolumeDb)
+            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(fileChannels, forKey: .FileChannels)
+            try c.encode(routes, forKey: .Routes)
         case .osc:
             try c.encode(host, forKey: .Host)
             try c.encode(port, forKey: .Port)

@@ -4,6 +4,19 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.8.0 – 2026-11-01
+
+### Nytt
+- **Pause og fortsett alt** (Pause-knappen ved STOPP ALT, Ctrl+P / ⌘P, OSC `/pause`, `/resume`, `/pause/toggle`, MSC Resume):
+  lyd, video, fader og pre-wait fryses og fortsetter der de var. GO fortsetter også.
+- **Spilleliste-cue** (Ctrl+9 / ⌘9): flere lydfiler etter hverandre med krysstoning, tilfeldig rekkefølge og gjentakelse.
+  Passer for innslipps- og pausemusikk. Går gjennom lydpatchen som vanlige lydcuer.
+- **Gå til-cue** (Ctrl+0 / ⌘0): flytter GO-markøren til en annen cue, og kan kjøre den med en gang.
+- **Slipp loop (devamp):** en stopp-cue kan slippe loopen i en lyd-, video- eller spilleliste-cue i stedet for å stoppe den.
+  Cuen spiller ferdig runden og fortsetter til slutten av fila. Også fra inspektøren (⤼) og OSC `/cue/{nr}/devamp`.
+- **Kjør herfra:** start en lyd- eller videocue fra markøren i bølgeformen, på de vanlige utgangene.
+- **Fadekurver:** fade-cuer kan velge jevn (lineær i dB), S-kurve eller lineær amplitude.
+
 ## 0.7.0 – 2026-11-01
 
 ### Nytt

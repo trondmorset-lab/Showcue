@@ -19,19 +19,24 @@ public sealed class CuePlayback : IBusSource, IDisposable
     private readonly WaveStream _reader;
     private readonly ISampleProvider _source;
     private volatile bool _rewindRequested;
+    private volatile bool _releaseRequested;
+    private volatile bool _paused;
     private readonly int _srcCh;
     private readonly int _rate;
     private readonly double _startTime;
-    private readonly long _framesPerPass;     // long.MaxValue = til fila er slutt
-    private readonly bool _loop;
-    private readonly long _autoFadeOutFrames;
+    private long _framesPerPass;              // long.MaxValue = til fila er slutt
+    private readonly long _framesToFileEnd;   // brukes når en loop slippes (spill videre til filslutt)
+    private bool _loop;
+    private readonly long _fadeOutFrames;
     private float[] _tmp = Array.Empty<float>();
     private volatile Send[][] _routing;
 
     private readonly object _lock = new();
     private double _currentDb;
     private double _targetDb;
-    private double _dbStepPerFrame;
+    private double _rampStartDb;
+    private long _rampTotal;
+    private FadeCurve _curve;
     private long _rampFramesLeft;
     private bool _stopAfterRamp;
     private bool _autoFadeStarted;
@@ -57,9 +62,10 @@ public sealed class CuePlayback : IBusSource, IDisposable
     public sealed record Options(double VolumeDb, double StartTime, double EndTime, bool Loop, double FadeIn, double FadeOut);
 
     /// <summary>Spill en lydfil (lyd-cue).</summary>
-    public CuePlayback(AudioCue cue, int sampleRate)
+    /// <param name="offset">Start så mange sekunder inn i cuen (for prøver: «spill fra her»).</param>
+    public CuePlayback(AudioCue cue, int sampleRate, double offset = 0)
         : this(cue, new AudioFileReader(cue.FilePath), cue,
-               new Options(cue.VolumeDb, cue.StartTime, cue.EndTime, cue.Loop, cue.FadeIn, cue.FadeOut), sampleRate) { }
+               new Options(cue.VolumeDb, cue.StartTime + Math.Max(0, offset), cue.EndTime, cue.Loop, offset > 0 ? 0.02 : cue.FadeIn, cue.FadeOut), sampleRate) { }
 
     /// <summary>Spill en vilkårlig lydstrøm, f.eks. lydsporet i en video (dekodet med Media Foundation).</summary>
     public CuePlayback(Cue owner, WaveStream reader, IRoutedAudio routing, Options o, int sampleRate)
@@ -76,8 +82,9 @@ public sealed class CuePlayback : IBusSource, IDisposable
 
         var end = o.EndTime > 0 ? Math.Min(o.EndTime, total > 0 ? total : o.EndTime) : total;
         _framesPerPass = end > _startTime ? (long)((end - _startTime) * _rate) : long.MaxValue;
+        _framesToFileEnd = total > _startTime ? (long)((total - _startTime) * _rate) : _framesPerPass;
         _loop = o.Loop && _framesPerPass != long.MaxValue;
-        _autoFadeOutFrames = !_loop && o.FadeOut > 0 ? (long)(o.FadeOut * _rate) : 0;
+        _fadeOutFrames = o.FadeOut > 0 ? (long)(o.FadeOut * _rate) : 0;
 
         _source = samples.WaveFormat.SampleRate == sampleRate
             ? samples
@@ -111,10 +118,10 @@ public sealed class CuePlayback : IBusSource, IDisposable
     /// <summary>Bytt routing mens det spiller (f.eks. under lydsjekk).</summary>
     public void SetRouting(IReadOnlyList<AudioRoute> routes) => _routing = BuildRouting(routes, _srcCh);
 
-    /// <summary>Fade til absolutt nivå (dB) over gitt tid.</summary>
-    public void FadeTo(double targetDb, double seconds, bool stopWhenDone)
+    /// <summary>Fade til absolutt nivå (dB) over gitt tid, med valgt kurve.</summary>
+    public void FadeTo(double targetDb, double seconds, bool stopWhenDone, FadeCurve curve = FadeCurve.Db)
     {
-        lock (_lock) BeginRamp(targetDb <= -60 ? SilenceDb : targetDb, seconds, stopWhenDone);
+        lock (_lock) BeginRamp(targetDb <= -60 ? SilenceDb : targetDb, seconds, stopWhenDone, curve);
     }
 
     /// <summary>Juster nivå (kort rampe) – bare hvis ingen fade pågår.</summary>
@@ -133,7 +140,7 @@ public sealed class CuePlayback : IBusSource, IDisposable
         FadeTo(SilenceDb, fadeSeconds, true);
     }
 
-    private void BeginRamp(double targetDb, double seconds, bool stopWhenDone)
+    private void BeginRamp(double targetDb, double seconds, bool stopWhenDone, FadeCurve curve = FadeCurve.Db)
     {
         _targetDb = targetDb;
         _stopAfterRamp = stopWhenDone;
@@ -145,17 +152,49 @@ public sealed class CuePlayback : IBusSource, IDisposable
             if (stopWhenDone) _finished = true;
             return;
         }
-        _rampFramesLeft = frames;
-        _dbStepPerFrame = (targetDb - _currentDb) / frames;
+        _rampStartDb = _currentDb;
+        _rampTotal = _rampFramesLeft = frames;
+        _curve = curve;
     }
+
+    /// <summary>Nivå (dB) <paramref name="p"/> (0–1) inn i en fade fra <paramref name="from"/> til <paramref name="to"/>.</summary>
+    public static double CurveDb(FadeCurve curve, double from, double to, double p) => curve switch
+    {
+        // S-kurve: myk start og slutt.
+        FadeCurve.SCurve => from + (to - from) * p * p * (3 - 2 * p),
+        // Lineær i amplitude (som en vanlig fader på et analogt bord: faller raskt mot slutten).
+        FadeCurve.Linear => GainToDb(PatchMixer.DbToGain(from) + (PatchMixer.DbToGain(to) - PatchMixer.DbToGain(from)) * p),
+        _ => from + (to - from) * p,
+    };
+
+    private static double GainToDb(double g) => g <= 0.00001 ? SilenceDb : Math.Max(SilenceDb, 20 * Math.Log10(g));
 
     /// <summary>Hopp tilbake til start (trådsikkert; utføres på lydtråden). Brukes når en video looper.</summary>
     public void RequestRewind() => _rewindRequested = true;
 
+    /// <summary>Slipp loopen («devamp»): runden som spiller fullføres, så spilles resten av fila til slutt.</summary>
+    public void ReleaseLoop() => _releaseRequested = true;
+    public bool IsLooping => _loop && !_releaseRequested;
+
+    /// <summary>Pause: lyden holder på der den er (også fader) til <see cref="Resume"/>.</summary>
+    public void Pause() => _paused = true;
+    public void Resume() => _paused = false;
+    public bool IsPaused => _paused;
+
     public bool Render(float[] bus, int frames, int busCount)
     {
         if (_finished) { RaiseFinished(); return false; }
+        if (_paused) return true;
         if (_rewindRequested) { _rewindRequested = false; Rewind(); }
+        if (_releaseRequested)
+        {
+            _releaseRequested = false;
+            if (_loop)
+            {
+                _loop = false;
+                if (_framesToFileEnd > _framesPerPass) _framesPerPass = _framesToFileEnd;
+            }
+        }
 
         if (_tmp.Length < frames * _srcCh) _tmp = new float[frames * _srcCh];
         var routing = _routing;
@@ -196,8 +235,8 @@ public sealed class CuePlayback : IBusSource, IDisposable
             for (int f = 0; f < frames; f++)
             {
                 // Automatisk fade ut mot slutten av fila.
-                if (_autoFadeOutFrames > 0 && !_autoFadeStarted &&
-                    _framesPerPass - (_passFrames + f) <= _autoFadeOutFrames)
+                if (_fadeOutFrames > 0 && !_loop && !_autoFadeStarted &&
+                    _framesPerPass - (_passFrames + f) <= _fadeOutFrames)
                 {
                     _autoFadeStarted = true;
                     BeginRamp(SilenceDb, (_framesPerPass - (_passFrames + f)) / (double)_rate, false);
@@ -205,8 +244,8 @@ public sealed class CuePlayback : IBusSource, IDisposable
 
                 if (_rampFramesLeft > 0)
                 {
-                    _currentDb += _dbStepPerFrame;
-                    if (--_rampFramesLeft == 0)
+                    _currentDb = CurveDb(_curve, _rampStartDb, _targetDb, 1 - (double)(--_rampFramesLeft) / _rampTotal);
+                    if (_rampFramesLeft == 0)
                     {
                         _currentDb = _targetDb;
                         if (_stopAfterRamp)

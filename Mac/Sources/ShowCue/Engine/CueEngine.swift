@@ -20,8 +20,16 @@ final class CueEngine: ObservableObject {
     @Published private(set) var active: [ActiveCue] = []
     var onTick: (() -> Void)?
     var onLog: ((String) -> Void)?
+    /// En «gå til»-cue vil flytte GO-markøren (cuenummer, og om mål-cuen skal kjøres).
+    var onGoto: ((String, Bool) -> Void)?
 
-    var now: Double { CACurrentMediaTime() - t0 }
+    /// Alt står stille: lyd, video og tiden for pre-wait og fader.
+    @Published private(set) var isPaused = false
+    private var pausedTotal = 0.0
+    private var pausedAt = 0.0
+
+    /// Showklokka. Står stille under pause, så pre-wait, fader og bildetider venter.
+    var now: Double { (isPaused ? pausedAt : CACurrentMediaTime()) - t0 - pausedTotal }
 
     init(audio: AudioEngine, output: OutputCompositor, midi: MidiSystem, cueList: @escaping () -> [Cue]) {
         self.audio = audio
@@ -66,9 +74,12 @@ final class CueEngine: ObservableObject {
 
     // MARK: Avfyring
 
-    func fire(_ cue: Cue) {
+    /// - Parameter offset: start så mange sekunder inn i cuen (prøver: «spill fra her»).
+    func fire(_ cue: Cue, offset: Double = 0) {
+        if isPaused { resumeAll() } // GO etter pause fortsetter alt
         let a = make(cue)
-        a.startAt = now + cue.preWait
+        a.startOffset = max(0, offset)
+        a.startAt = now + (offset > 0 ? 0 : cue.preWait)
         a.onCompleted = { [weak self] in self?.completed($0) }
         cue.error = nil
         cue.activeCount += 1
@@ -83,7 +94,8 @@ final class CueEngine: ObservableObject {
         case .image, .pdf: return StillActive(cue: cue, engine: self)
         case .fade: return FadeActive(cue: cue, engine: self)
         case .stop: return StopActive(cue: cue, engine: self)
-        case .osc, .midi: return InstantActive(cue: cue, engine: self)
+        case .playlist: return PlaylistActive(cue: cue, engine: self)
+        case .osc, .midi, .goto: return InstantActive(cue: cue, engine: self)
         }
     }
 
@@ -143,7 +155,34 @@ final class CueEngine: ObservableObject {
         active.filter { $0.cue === cue }.forEach { $0.stop(fade: fade) }
     }
 
+    // MARK: Pause og slipp loop
+
+    func pauseAll() {
+        guard !isPaused else { return }
+        pausedAt = CACurrentMediaTime()
+        isPaused = true
+        active.filter { $0.started && !$0.done }.forEach { $0.pause() }
+    }
+
+    func resumeAll() {
+        guard isPaused else { return }
+        pausedTotal += CACurrentMediaTime() - pausedAt
+        isPaused = false
+        active.filter { $0.started && !$0.done }.forEach { $0.resume() }
+    }
+
+    func togglePause() { if isPaused { resumeAll() } else { pauseAll() } }
+
+    /// Slipp loopen i cuen («devamp»). False hvis den ikke looper.
+    @discardableResult
+    func release(_ cue: Cue) -> Bool {
+        active.filter { $0.cue === cue && $0.started && !$0.done }.map { $0.release() }.contains(true)
+    }
+
+    func requestGoto(_ target: String, fire: Bool) { onGoto?(target, fire) }
+
     func stopAll(fade: Double) {
+        if isPaused { resumeAll() } // stoppfader skal kunne høres
         preview.stop()
         active.forEach { $0.stop(fade: fade) }
     }

@@ -72,6 +72,15 @@ final class AppModel: ObservableObject, ShowControl {
         router.show = self
         engine.onLog = { [weak self] in self?.statusText = $0 }
         engine.onTick = { [weak self] in self?.tick() }
+        // «Gå til»-cue: vent til GO er ferdig med å flytte markøren, så flytt den til målet.
+        engine.onGoto = { [weak self] target, fire in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard let c = self.find(target) else { self.statusText = "Gå til: fant ikke cue \(target)."; return }
+                self.select(c)
+                if fire { self.lastGo = .distantPast; self.go() }
+            }
+        }
         engine.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subs)
         audio.$status.sink { [weak self] s in self?.statusText = s }.store(in: &subs)
         oscServer.onMessage = { [weak self] m, from in self?.router.handleOsc(m, from: from) }
@@ -148,11 +157,32 @@ final class AppModel: ObservableObject, ShowControl {
     func stopAll() { engine.stopAll(fade: settings.panicFadeTime) }
     func hardStop() { engine.stopAll(fade: 0) }
 
-    static func fadeOut(of c: Cue) -> Double { (c.type == .audio || c.isVisual) ? c.fadeOut : 0 }
+    static func fadeOut(of c: Cue) -> Double { (c.type == .audio || c.type == .playlist || c.isVisual) ? c.fadeOut : 0 }
+
+    func togglePause() {
+        engine.togglePause()
+        statusText = engine.isPaused ? "Pause – alt står stille. ⌘P, Pause-knappen eller GO fortsetter." : "Fortsetter."
+    }
+
+    func setPaused(_ paused: Bool?) {
+        switch paused {
+        case nil: togglePause()
+        case true?: if !engine.isPaused { togglePause() }
+        case false?: if engine.isPaused { togglePause() }
+        }
+    }
+
+    @discardableResult
+    func releaseCue(_ number: String) -> Bool { find(number).map { engine.release($0) } ?? false }
+
+    func releaseSelected() {
+        guard let c = playhead else { return }
+        if !engine.release(c) { statusText = "Cuen looper ikke (eller spiller ikke)." }
+    }
 
     /// Hurtigtast/MIDI-trigger: lyd og bilde/video startes og stoppes (av/på), resten bare startes.
     func toggleHot(_ c: Cue) {
-        if c.isRunning && (c.type == .audio || c.isVisual) { engine.stop(c, fade: AppModel.fadeOut(of: c)) }
+        if c.isRunning && (c.type == .audio || c.type == .playlist || c.isVisual) { engine.stop(c, fade: AppModel.fadeOut(of: c)) }
         else { engine.fire(c) }
     }
 
@@ -477,9 +507,25 @@ final class AppModel: ObservableObject, ShowControl {
             insert([c])
         case .midi:
             let c = Cue(type: .midi); c.device = MidiSystem.destinations().first ?? ""; insert([c])
+        case .playlist:
+            let urls = pickFiles(AppModel.audioExt, multiple: true)
+            guard !urls.isEmpty else { return }
+            let c = Cue(type: .playlist)
+            c.files = urls.map(\.path)
+            c.fileChannels = max(1, urls.map { AudioEngine.probeAudio($0.path).channels }.max() ?? 2)
+            insert([c])
         default:
             insert([Cue(type: type)])
         }
+    }
+
+    /// Legg til spor i en spilleliste.
+    func addTracks(to c: Cue) {
+        guard isEditable else { return }
+        let urls = pickFiles(AppModel.audioExt, multiple: true)
+        guard !urls.isEmpty else { return }
+        c.files += urls.map(\.path)
+        c.fileChannels = max(c.fileChannels, urls.map { AudioEngine.probeAudio($0.path).channels }.max() ?? 2)
     }
 
     func browseFile(for c: Cue) {

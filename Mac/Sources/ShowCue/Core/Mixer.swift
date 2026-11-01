@@ -236,7 +236,10 @@ final class Voice: BusSource {
 
     private var currentDb: Double
     private var targetDb: Double
-    private var stepPerFrame = 0.0
+    private var rampStartDb = 0.0
+    private var rampTotal = 0
+    private var curve: FadeCurve = .db
+    private var paused = false
     private var rampLeft = 0
     private var stopAfterRamp = false
     private var autoFadeStarted = false
@@ -282,9 +285,14 @@ final class Voice: BusSource {
         lock.locked { routing = r }
     }
 
-    func fadeTo(_ db: Double, seconds: Double, stopWhenDone: Bool) {
-        lock.locked { beginRamp(db <= -60 ? Voice.silenceDb : db, seconds, stop: stopWhenDone) }
+    func fadeTo(_ db: Double, seconds: Double, stopWhenDone: Bool, curve: FadeCurve = .db) {
+        lock.locked { beginRamp(db <= -60 ? Voice.silenceDb : db, seconds, stop: stopWhenDone, curve: curve) }
     }
+
+    /// Pause: lyden holder på der den er (også fader) til `resume()`.
+    func pause() { lock.locked { paused = true } }
+    func resume() { lock.locked { paused = false } }
+    var isPaused: Bool { lock.locked { paused } }
 
     /// Juster nivå med en kort rampe – bare hvis ingen fade pågår.
     func adjustLevel(_ db: Double) {
@@ -298,7 +306,7 @@ final class Voice: BusSource {
         if fade <= 0 { lock.locked { finished = true } } else { fadeTo(Voice.silenceDb, seconds: fade, stopWhenDone: true) }
     }
 
-    private func beginRamp(_ db: Double, _ seconds: Double, stop: Bool) {
+    private func beginRamp(_ db: Double, _ seconds: Double, stop: Bool, curve: FadeCurve = .db) {
         targetDb = db
         stopAfterRamp = stop
         let frames = Int(seconds * sampleRate)
@@ -307,14 +315,17 @@ final class Voice: BusSource {
             if stop { finished = true }
             return
         }
+        rampStartDb = currentDb
+        rampTotal = frames
         rampLeft = frames
-        stepPerFrame = (db - currentDb) / Double(frames)
+        self.curve = curve
     }
 
     func render(bus: UnsafeMutablePointer<Float>, frames: Int, busCount: Int) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         if finished { reportFinished(); return false }
+        if paused { return true }
 
         let ch = source.channels
         let got = source.read(tmp, frames: frames)
@@ -327,8 +338,8 @@ final class Voice: BusSource {
                 beginRamp(Voice.silenceDb, Double(len - (passPos + f)) / sampleRate, stop: false)
             }
             if rampLeft > 0 {
-                currentDb += stepPerFrame
                 rampLeft -= 1
+                currentDb = curve.db(from: rampStartDb, to: targetDb, at: 1 - Double(rampLeft) / Double(rampTotal))
                 if rampLeft == 0 {
                     currentDb = targetDb
                     if stopAfterRamp { finished = true; totalFrames += f; reportFinished(); return false }
@@ -387,6 +398,19 @@ final class SampleRing {
 
     /// Neste rammer som skrives starter en ny runde (loop).
     func markPassStart() { lock.locked { boundaries.append(writtenTotal) } }
+
+    /// Fjern det som er skrevet etter neste rundestart (når en loop slippes). True hvis noe ble kuttet.
+    func truncateAtPendingPassStart() -> Bool {
+        lock.locked {
+            guard let b = boundaries.first else { return false }
+            let keep = max(0, b - readTotal)
+            count = min(count, keep)
+            writeIdx = (readIdx + count) % capacity
+            writtenTotal = readTotal + count
+            boundaries.removeAll()
+            return true
+        }
+    }
 
     /// Tøm (ved rewind). Neste skrevne ramme er starten på en ny runde.
     func reset() {

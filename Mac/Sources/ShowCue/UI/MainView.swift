@@ -52,6 +52,17 @@ struct TopBar: View {
             MeterView(live: model.live)
                 .frame(width: 26, height: 84)
                 .help("Utgangsnivå, utgang 1 og 2 (−60 til 0 dBFS)")
+            Button(action: model.togglePause) {
+                VStack(spacing: 2) {
+                    Text(model.engine.isPaused ? "▶" : "⏸").font(.system(size: 22))
+                    Text(model.engine.isPaused ? "Fortsett" : "Pause").font(.system(size: 12))
+                }
+                .frame(width: 92, height: 92)
+                .background(RoundedRectangle(cornerRadius: 6).fill(model.engine.isPaused ? theme.wait.opacity(0.35) : theme.panel3))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.line))
+            }
+            .buttonStyle(.plain)
+            .help("Pause / fortsett alt (⌘P). GO fortsetter også.")
             Button(action: model.panic) {
                 VStack(spacing: 2) {
                     Text("STOPP ALT").font(.system(size: 17, weight: .semibold))
@@ -164,6 +175,8 @@ struct ToolbarRow: View {
                 Button("■ Stopp") { model.add(.stop) }.help("⌘6")
                 Button("⇢ OSC") { model.add(.osc) }.help("⌘7")
                 Button("♫ MIDI") { model.add(.midi) }.help("⌘8")
+                Button("☰ Liste") { model.add(.playlist) }.help("Spilleliste (⌘9)")
+                Button("↪ Gå til") { model.add(.goto) }.help("Flytt GO-markøren (⌘0)")
             }
             .disabled(model.showMode)
             divider

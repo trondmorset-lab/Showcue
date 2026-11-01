@@ -18,6 +18,8 @@
         <local:MidiTriggerTextConverter x:Key="MidiText" />
         <local:NonEmptyToVisibilityConverter x:Key="NonEmptyVis" />
         <local:CueColorBrushConverter x:Key="CueBrush" />
+        <local:InverseBoolConverter x:Key="Not" />
+        <local:FileNameConverter x:Key="FileName" />
 
         <Style x:Key="Hint" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
@@ -191,15 +193,64 @@
                 <CheckBox IsChecked="{Binding FadeVisual}" Content="Fade bilde/video til synlighet (%):" />
                 <TextBox Text="{Binding TargetOpacity}" Margin="22,4,0,0" IsEnabled="{Binding FadeVisual}" />
                 <CheckBox IsChecked="{Binding StopWhenDone}" Content="Stopp mål-cuen når faden er ferdig" />
+                <TextBlock Style="{StaticResource Label}" Text="Kurve" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.FadeCurves}" SelectedItem="{Binding Curve}" ItemTemplate="{StaticResource EnumItem}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:StopCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Mål-cue (nummer, tomt = stopp alt)" />
+                <TextBlock Style="{StaticResource Label}" Text="Mål-cue (nummer, tomt = alle)" />
                 <TextBox Text="{Binding Target}" />
-                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" />
-                <TextBox Text="{Binding FadeTime}" />
+                <CheckBox IsChecked="{Binding Release}" Content="Slipp loop i stedet for å stoppe (devamp)" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Loopen spiller ferdig runden og fortsetter så til slutten av fila (forbi sluttpunktet). En spilleliste spiller ferdig sporet og stopper. Auto-follow virker når cuen er ferdig." />
+                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" IsEnabled="{Binding Release, Converter={StaticResource Not}}" />
+                <TextBox Text="{Binding FadeTime}" IsEnabled="{Binding Release, Converter={StaticResource Not}}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:GotoCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Gå til cue (nummer)" />
+                <TextBox Text="{Binding Target}" />
+                <CheckBox IsChecked="{Binding Fire}" Content="Kjør cuen også (GO), ikke bare flytt markøren" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Hint}" Text="Flytter GO-markøren, f.eks. for å hoppe tilbake og gjenta en scene, eller hoppe over en del." />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:PlaylistCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Spor (spilles ovenfra og ned)" />
+                <ListBox x:Name="PlaylistBox" ItemsSource="{Binding Files}" Height="160">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding Converter={StaticResource FileName}}" ToolTip="{Binding}" /></DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <WrapPanel Margin="0,6,0,0">
+                    <Button Content="+ Legg til filer …" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
+                    <Button Content="Fjern" Margin="0,0,6,0" Click="PlaylistRemove_Click" Tag="{Binding ElementName=PlaylistBox}" />
+                    <Button Content="↑" Margin="0,0,6,0" Click="PlaylistUp_Click" Tag="{Binding ElementName=PlaylistBox}" />
+                    <Button Content="↓" Click="PlaylistDown_Click" Tag="{Binding ElementName=PlaylistBox}" />
+                </WrapPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dB)" />
+                        <TextBox Text="{Binding VolumeDb}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Krysstoning (s)" />
+                        <TextBox Text="{Binding Crossfade}" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Label}" Text="Fade ut ved stopp (s)" />
+                <TextBox Text="{Binding FadeOut}" />
+                <CheckBox IsChecked="{Binding Shuffle}" Content="Tilfeldig rekkefølge" Margin="0,10,0,0" />
+                <CheckBox IsChecked="{Binding Loop}" Content="Start på nytt når lista er ferdig" />
+                <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per kanal → utgang)" Margin="0,14,0,3" />
+                <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
+                <TextBlock Style="{StaticResource Hint}" Text="Routingen gjelder alle sporene. En stopp-cue med «slipp loop» lar sporet som går spille ferdig og stopper så." />
             </StackPanel>
         </DataTemplate>
 
@@ -347,6 +398,12 @@
                             <Border.RenderTransform><ScaleTransform x:Name="MeterRScale" ScaleY="0" /></Border.RenderTransform>
                         </Border>
                     </Grid>
+                    <Button Width="92" Height="92" Margin="0,0,10,0" Click="Pause_Click" ToolTip="Pause / fortsett alt (Ctrl+P). GO fortsetter også.">
+                        <StackPanel>
+                            <TextBlock Text="{Binding PauseGlyph}" FontSize="22" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding PauseText}" FontSize="12" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource DangerButton}" Width="130" Height="92" Click="Panic_Click"
                             ToolTip="Esc: stopp alt med kort fade. Trykk to ganger for umiddelbar stopp.">
                         <StackPanel>
@@ -379,6 +436,8 @@
                     <Button Style="{StaticResource ToolButton}" Content="■ Stopp" Tag="stop" Click="AddCue_Click" ToolTip="Ctrl+6" />
                     <Button Style="{StaticResource ToolButton}" Content="⇢ OSC" Tag="osc" Click="AddCue_Click" ToolTip="Ctrl+7" />
                     <Button Style="{StaticResource ToolButton}" Content="♫ MIDI" Tag="midi" Click="AddCue_Click" ToolTip="Ctrl+8" />
+                    <Button Style="{StaticResource ToolButton}" Content="☰ Liste" Tag="playlist" Click="AddCue_Click" ToolTip="Spilleliste (Ctrl+9)" />
+                    <Button Style="{StaticResource ToolButton}" Content="↪ Gå til" Tag="goto" Click="AddCue_Click" ToolTip="Flytt GO-markøren (Ctrl+0)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <Button Style="{StaticResource ToolButton}" Content="Dupliser" Click="Duplicate_Click" ToolTip="Ctrl+D" />
                     <Button Style="{StaticResource ToolButton}" Content="Slett" Click="Delete_Click" ToolTip="Delete" />
@@ -542,6 +601,7 @@
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                     <Button Content="▶ Test" Click="TestCue_Click" Margin="0,0,4,0" ToolTip="Kjør denne cuen uten å flytte GO-markøren" />
+                                    <Button Content="⤼" Click="ReleaseSelected_Click" Margin="0,0,4,0" ToolTip="Slipp loopen (devamp): spill ferdig og fortsett til slutten" />
                                     <Button Content="■" Click="StopSelected_Click" ToolTip="Stopp denne cuen" />
                                 </StackPanel>
                                 <TextBlock VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold">

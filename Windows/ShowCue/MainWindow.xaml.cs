@@ -130,6 +130,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         }
     }
     public bool IsEditable => !_showMode;
+    public string PauseGlyph => Engine.IsPaused ? "▶" : "⏸";
+    public string PauseText => Engine.IsPaused ? "Fortsett" : "Pause";
     public string ShowModeLabel => _showMode ? "🔓 Lås opp" : "🔒 Showmodus";
     public bool CanUndo => IsEditable && _history.CanUndo;
     public bool CanRedo => IsEditable && _history.CanRedo;
@@ -158,6 +160,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Engine.Log += s => StatusText = s;
         Engine.Ticked += OnTick;
         Engine.OutputCreated += OnOutputCreated;
+        Engine.PauseChanged += () =>
+        {
+            Raise(nameof(PauseGlyph)); Raise(nameof(PauseText));
+            StatusText = Engine.IsPaused ? "Pause – alt står stille. Ctrl+P, Pause-knappen eller GO fortsetter." : "Fortsetter.";
+        };
+        // «Gå til»-cue: vent til GO er ferdig med å flytte markøren, så flytt den til målet.
+        Engine.GotoRequested += (target, fire) => Dispatcher.BeginInvoke(() =>
+        {
+            var c = FindCue(target);
+            if (c == null) { StatusText = $"Gå til: fant ikke cue {target}."; return; }
+            SelectedCue = c;
+            if (fire) { _lastGo = DateTime.MinValue; Go(); }
+        });
         Engine.Active.CollectionChanged += (_, _) => { Raise(nameof(NothingActive)); Raise(nameof(ActiveCountText)); };
 
         PreviewKeyDown += (_, e) => HandleKey(e);
@@ -369,12 +384,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         AudioCue a => a.FadeOut,
         VisualCue v => v.FadeOut,
+        PlaylistCue p => p.FadeOut,
         _ => 0
     };
 
     private void ToggleHotCue(Cue cue)
     {
-        if (cue.IsRunning && cue is AudioCue or VisualCue) Engine.Stop(cue, FadeOutOf(cue));
+        if (cue.IsRunning && cue is AudioCue or VisualCue or PlaylistCue) Engine.Stop(cue, FadeOutOf(cue));
         else Engine.Fire(cue);
     }
 
@@ -408,6 +424,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.O: Open_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
+                case Key.P: Engine.TogglePause(); e.Handled = true; return;
             }
             if (!typing)
             {
@@ -418,8 +435,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                     case Key.D: Duplicate_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                     case Key.Up: MoveSelected(-1); e.Handled = true; return;
                     case Key.Down: MoveSelected(1); e.Handled = true; return;
-                    case >= Key.D1 and <= Key.D8:
-                        AddCue(new[] { "audio", "video", "image", "pdf", "fade", "stop", "osc", "midi" }[key - Key.D1]);
+                    case >= Key.D0 and <= Key.D9:
+                        AddCue(new[] { "goto", "audio", "video", "image", "pdf", "fade", "stop", "osc", "midi", "playlist" }[key - Key.D0]);
                         e.Handled = true; return;
                 }
             }
@@ -530,6 +547,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     void IShowControl.RemoteLog(string text) => StatusText = text;
 
+    void IShowControl.SetPaused(bool? paused)
+    {
+        if (paused == null) Engine.TogglePause();
+        else if (paused.Value) Engine.PauseAll();
+        else Engine.ResumeAll();
+    }
+
+    bool IShowControl.ReleaseCue(string number) => FindCue(number) is { } c && Engine.Release(c);
+
     private static string? KeyName(Key k)
     {
         if (k is >= Key.A and <= Key.Z) return k.ToString();
@@ -614,6 +640,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         List<Cue> list = type switch
         {
             "audio" or "video" or "image" or "pdf" => PickFiles(FilterFor(type), true).Select(CreateCueForFile).OfType<Cue>().ToList(),
+            "playlist" => PickFiles(FilterFor("audio"), true).ToList() is { Count: > 0 } files
+                ? new() { new PlaylistCue { Files = files, FileChannels = MaxChannels(files) } } : new(),
+            "goto" => new() { new GotoCue() },
             "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
@@ -761,6 +790,51 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     //  Knapper
     // ==================================================================
     private void Go_Click(object sender, RoutedEventArgs e) => Go();
+    private void Pause_Click(object sender, RoutedEventArgs e) => Engine.TogglePause();
+
+    private void ReleaseSelected_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCue != null && !Engine.Release(SelectedCue)) StatusText = "Cuen looper ikke (eller spiller ikke).";
+    }
+
+    // ---------- Spilleliste ----------
+    private static int MaxChannels(IEnumerable<string> files) => Math.Max(1, files.Select(f => AudioEngine.Probe(f).Channels).DefaultIfEmpty(2).Max());
+
+    private static (PlaylistCue? cue, ListBox? box) PlaylistOf(object sender) =>
+        (((FrameworkElement)sender).DataContext as PlaylistCue, ((FrameworkElement)sender).Tag as ListBox);
+
+    private void PlaylistAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is not PlaylistCue p) return;
+        var files = PickFiles(FilterFor("audio"), true).ToList();
+        if (files.Count == 0) return;
+        p.Files = p.Files.Concat(files).ToList();
+        p.FileChannels = Math.Max(p.FileChannels, MaxChannels(files));
+    }
+
+    private void PlaylistRemove_Click(object sender, RoutedEventArgs e)
+    {
+        var (p, box) = PlaylistOf(sender);
+        if (p == null || box == null || box.SelectedIndex < 0) return;
+        int i = box.SelectedIndex;
+        p.Files = p.Files.Where((_, j) => j != i).ToList();
+        box.SelectedIndex = Math.Min(i, p.Files.Count - 1);
+    }
+
+    private void PlaylistUp_Click(object sender, RoutedEventArgs e) => MovePlaylistItem(sender, -1);
+    private void PlaylistDown_Click(object sender, RoutedEventArgs e) => MovePlaylistItem(sender, 1);
+
+    private void MovePlaylistItem(object sender, int delta)
+    {
+        var (p, box) = PlaylistOf(sender);
+        if (p == null || box == null) return;
+        int i = box.SelectedIndex, j = i + delta;
+        if (i < 0 || j < 0 || j >= p.Files.Count) return;
+        var list = p.Files.ToList();
+        (list[i], list[j]) = (list[j], list[i]);
+        p.Files = list;
+        box.SelectedIndex = j;
+    }
     private void Panic_Click(object sender, RoutedEventArgs e) => Panic();
     private void TestCue_Click(object sender, RoutedEventArgs e) { CommitFocusedTextBox(); if (SelectedCue != null) Engine.Fire(SelectedCue); }
     private void StopSelected_Click(object sender, RoutedEventArgs e) { if (SelectedCue != null) Engine.Stop(SelectedCue, FadeOutOf(SelectedCue)); }

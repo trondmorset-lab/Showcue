@@ -33,6 +33,12 @@ public sealed class CueEngine : IDisposable
     public event Action<OutputWindow>? OutputCreated;
     public event Action? Ticked;
     public event Action<string>? Log;
+    /// <summary>En «gå til»-cue vil flytte GO-markøren (cuenummer, og om mål-cuen skal kjøres).</summary>
+    public event Action<string, bool>? GotoRequested;
+    public event Action? PauseChanged;
+
+    /// <summary>Alt står stille: lyd, video og tiden for pre-wait og fader.</summary>
+    public bool IsPaused { get; private set; }
 
     public CueEngine(AppSettings settings, Func<IList<Cue>> cueList)
     {
@@ -85,10 +91,13 @@ public sealed class CueEngine : IDisposable
     }
 
     // ------------------------------------------------------------------
-    public void Fire(Cue cue)
+    /// <param name="offset">Start så mange sekunder inn i cuen (prøver: «spill fra her»).</param>
+    public void Fire(Cue cue, double offset = 0)
     {
+        if (IsPaused) ResumeAll(); // GO etter pause fortsetter alt
         var a = Create(cue);
-        a.StartAt = Now + cue.PreWait;
+        a.StartOffset = Math.Max(0, offset);
+        a.StartAt = Now + (offset > 0 ? 0 : cue.PreWait);
         a.Completed += OnCompleted;
         cue.Error = null;
         cue.ActiveCount++;
@@ -100,6 +109,7 @@ public sealed class CueEngine : IDisposable
     private ActiveCue Create(Cue cue) => cue switch
     {
         AudioCue c => new AudioActive(c, this),
+        PlaylistCue c => new PlaylistActive(c, this),
         VideoCue c => new VideoActive(c, this),
         StillCue c => new StillActive(c, this),
         FadeCue c => new FadeActive(c, this),
@@ -178,8 +188,35 @@ public sealed class CueEngine : IDisposable
         foreach (var a in Active.Where(a => a.Cue == cue).ToList()) a.Stop(fade);
     }
 
+    internal void RequestGoto(string target, bool fire) => GotoRequested?.Invoke(target, fire);
+
+    /// <summary>Pause alt som spiller. Klokka stopper også, så pre-wait, fader og bildetider står stille.</summary>
+    public void PauseAll()
+    {
+        if (IsPaused) return;
+        IsPaused = true;
+        _clock.Stop();
+        foreach (var a in Active.Where(a => a.Started && !a.Done)) a.Pause();
+        PauseChanged?.Invoke();
+    }
+
+    public void ResumeAll()
+    {
+        if (!IsPaused) return;
+        IsPaused = false;
+        _clock.Start();
+        foreach (var a in Active.Where(a => a.Started && !a.Done)) a.Resume();
+        PauseChanged?.Invoke();
+    }
+
+    public void TogglePause() { if (IsPaused) ResumeAll(); else PauseAll(); }
+
+    /// <summary>Slipp loopen i cuen (devamp). False hvis den ikke looper.</summary>
+    public bool Release(Cue cue) => Active.Where(a => a.Cue == cue && a.Started && !a.Done).ToList().Select(a => a.Release()).ToList().Any(r => r);
+
     public void StopAll(double fade)
     {
+        if (IsPaused) ResumeAll(); // stoppfader skal kunne høres
         Preview.Stop();
         foreach (var a in Active.ToList()) a.Stop(fade);
     }
