@@ -54,6 +54,13 @@
                             <ComboBox x:Name="RateBox" />
                             <TextBlock Style="{StaticResource Hint}" Text="Hvis kortet ikke støtter valgt frekvens, brukes den første som virker (48, 44,1, 96 eller 88,2 kHz)." />
                         </StackPanel>
+
+                        <TextBlock Style="{StaticResource Label}" Text="Forhåndslytting (bølgeformen) – egen lydenhet" Margin="0,18,0,3" />
+                        <ComboBox x:Name="PreviewDeviceBox" DisplayMemberPath="Value" SelectedValuePath="Key" />
+                        <TextBlock Style="{StaticResource Label}" Text="…eller utgang i lydpatchen (første av to, 0 = cuens egne utganger)" />
+                        <TextBox x:Name="PreviewBusBox" />
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="Velg hodetelefonene (f.eks. PC-ens egen utgang), eller en utgang i lydpatchen som går til en lyttehøyttaler. Da kan du lytte på cuer under forestillingen uten at det høres i salen. Med 0 og ingen enhet går lyttingen ut på cuens vanlige utganger." />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

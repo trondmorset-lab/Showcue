@@ -413,6 +413,15 @@ public sealed class AudioRoute
         if (fileChannels <= 1) return new() { new(1, 1), new(1, 2) };
         return Enumerable.Range(1, fileChannels).Select(c => new AudioRoute(c, c)).ToList();
     }
+
+    /// <summary>Alt til ett stereopar (f.eks. hodetelefoner): mono → begge, ellers annenhver kanal venstre/høyre.
+    /// Flerkanals filer dempes 3 dB så summen ikke blir for sterk.</summary>
+    public static List<AudioRoute> Downmix(int fileChannels, int leftBus)
+    {
+        if (fileChannels <= 1) return new() { new(1, leftBus), new(1, leftBus + 1) };
+        double gain = fileChannels > 2 ? -3 : 0;
+        return Enumerable.Range(1, fileChannels).Select(c => new AudioRoute(c, leftBus + (c - 1) % 2, gain)).ToList();
+    }
 }
 
 /// <summary>MIDI-triggere lagres som tekst: "N:60", "CC:20", "PC:5".</summary>

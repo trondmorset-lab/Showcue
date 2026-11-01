@@ -7,8 +7,12 @@ final class CueEngine: ObservableObject {
     let audio: AudioEngine
     let output: OutputCompositor
     let midi: MidiSystem
-    /// Forhåndslytting i bølgeformredigeringen (gjennom lydpatchen, men ikke en del av showet).
-    let preview: AudioPreview
+    /// Forhåndslytting i bølgeformredigeringen (ikke en del av showet).
+    private(set) lazy var preview = AudioPreview(target: { [weak self] in self?.previewTarget() })
+    /// Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.
+    let previewAudio = AudioEngine()
+    private var previewDeviceUID = ""
+    private var previewBus = 0
     private let cueList: () -> [Cue]
     private let t0 = CACurrentMediaTime()
     private var timer: Timer?
@@ -24,13 +28,41 @@ final class CueEngine: ObservableObject {
         self.output = output
         self.midi = midi
         self.cueList = cueList
-        self.preview = AudioPreview(mixer: { [weak audio] in audio?.mixer })
         let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.tick() }
         RunLoop.main.add(t, forMode: .common) // går også mens menyer er åpne
         timer = t
     }
 
     deinit { timer?.invalidate() }
+
+    // MARK: Forhåndslytting
+
+    /// Hvor forhåndslyttingen skal spilles (se Innstillinger → Lyd).
+    private func previewTarget() -> AudioPreview.Target? {
+        if !previewDeviceUID.isEmpty {
+            return previewAudio.mixer.map { AudioPreview.Target(mixer: $0, leftBus: 1) } // aldri til salen hvis hodetelefonene mangler
+        }
+        guard let m = audio.mixer else { return nil }
+        let bus = previewBus > 0 && previewBus <= m.busCount ? previewBus : 0
+        return AudioPreview.Target(mixer: m, leftBus: bus)
+    }
+
+    func configurePreview(_ s: AppSettings) {
+        previewBus = s.previewBus
+        guard s.previewDeviceUID != previewDeviceUID else { return }
+        preview.stop()
+        previewDeviceUID = s.previewDeviceUID
+        if previewDeviceUID.isEmpty {
+            previewAudio.stop()
+        } else {
+            var p = AppSettings()
+            p.audioDeviceUID = previewDeviceUID
+            p.maxChannels = 2
+            p.bufferFrames = s.bufferFrames
+            p.buses = PatchBus.defaultPatch(2)
+            previewAudio.start(p, fallbackToDefault: false)
+        }
+    }
 
     // MARK: Avfyring
 

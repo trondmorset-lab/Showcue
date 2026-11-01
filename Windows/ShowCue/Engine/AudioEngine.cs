@@ -27,12 +27,19 @@ public sealed class AudioEngine : IDisposable
     /// <summary>Lydutgangen er startet på nytt (antall kanaler kan ha endret seg).</summary>
     public event Action? Restarted;
 
-    public void Start(AppSettings s)
+    /// <param name="fallbackToDefault">Prøv Windows standardenhet hvis valgt enhet ikke kan åpnes
+    /// (ikke for forhåndslytting – den skal aldri havne i salen ved en feil).</param>
+    public void Start(AppSettings s, bool fallbackToDefault = true)
     {
         StopOutput();
         try
         {
             CreateOutput(s);
+        }
+        catch (Exception ex) when (!fallbackToDefault)
+        {
+            StopOutput();
+            SetStatus("Kunne ikke åpne lydenheten: " + ex.Message);
         }
         catch (Exception ex)
         {

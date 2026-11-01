@@ -35,6 +35,13 @@ public partial class SettingsWindow : Window
         AsioBox.SelectedItem = asio.Contains(settings.AsioDriverName) ? settings.AsioDriverName : asio.FirstOrDefault();
         AsioChannelsBox.Text = settings.AsioMaxChannels.ToString();
 
+        var previewDevices = new List<KeyValuePair<string, string>> { new("", "Ingen egen enhet") };
+        previewDevices.AddRange(AudioEngine.GetWasapiDevices().Where(d => d.Key != ""));
+        PreviewDeviceBox.ItemsSource = previewDevices;
+        PreviewDeviceBox.SelectedValue = settings.PreviewDeviceId;
+        if (PreviewDeviceBox.SelectedIndex < 0) PreviewDeviceBox.SelectedIndex = 0;
+        PreviewBusBox.Text = settings.PreviewBus.ToString();
+
         RateBox.ItemsSource = new[] { 44100, 48000, 88200, 96000 };
         RateBox.SelectedItem = settings.SampleRate;
         if (RateBox.SelectedIndex < 0) RateBox.SelectedItem = 48000;
@@ -168,6 +175,8 @@ public partial class SettingsWindow : Window
         Result.SampleRate = RateBox.SelectedItem is int r ? r : 48000;
         Result.VideoScreen = ScreenBox.SelectedValue is int s ? s : -1;
         if (int.TryParse(LatencyBox.Text, out var lat)) Result.LatencyMs = Math.Clamp(lat, 10, 500);
+        Result.PreviewDeviceId = PreviewDeviceBox.SelectedValue as string ?? "";
+        if (int.TryParse(PreviewBusBox.Text, out var pbus)) Result.PreviewBus = Math.Clamp(pbus, 0, 128);
 
         Result.OscInEnabled = OscEnabledBox.IsChecked == true;
         if (int.TryParse(OscPortBox.Text, out var port) && port is > 0 and < 65536) Result.OscInPort = port;

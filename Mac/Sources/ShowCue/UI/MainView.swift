@@ -150,6 +150,8 @@ struct ToolbarRow: View {
                 Button("Åpne") { model.openDialog() }
                 Button("Lagre") { model.save(as: false) }
                 Button("Lagre som") { model.save(as: true) }
+                Button("↶") { model.undo() }.disabled(!model.canUndo).help("Angre (⌘Z)")
+                Button("↷") { model.redo() }.disabled(!model.canRedo).help("Gjør om (⇧⌘Z)")
             }
             divider
             Text("Legg til:").font(.system(size: 12)).foregroundColor(theme.muted).padding(.horizontal, 4).fixedSize()
@@ -163,6 +165,7 @@ struct ToolbarRow: View {
                 Button("⇢ OSC") { model.add(.osc) }.help("⌘7")
                 Button("♫ MIDI") { model.add(.midi) }.help("⌘8")
             }
+            .disabled(model.showMode)
             divider
             Group {
                 Button("Dupliser") { model.duplicateSelected() }.help("⌘D")
@@ -171,7 +174,10 @@ struct ToolbarRow: View {
                 Button("↓") { model.moveSelected(1) }.help("Flytt ned (⌘↓)")
                 Button("Nummerer") { model.renumber() }.help("Gi alle cuer fortløpende nummer")
             }
+            .disabled(model.showMode)
             Spacer(minLength: 8)
+            Button(model.showMode ? "🔓 Lås opp" : "🔒 Showmodus") { model.showMode.toggle() }
+                .help("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)")
             Button("Lydpatch") { openWindow(id: "patch") }.help("Utganger og kanaler på lydkortet (Dante, flerkanals)")
             Button("Utgang") { model.output.toggle() }.help("Vis/skjul utgangsvinduet (video, bilde, PDF)")
             SettingsButton()

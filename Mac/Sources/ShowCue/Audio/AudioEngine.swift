@@ -59,12 +59,15 @@ final class AudioEngine: ObservableObject {
     private var mixerRef: PatchMixer?
     var isRunning: Bool { output.isRunning }
 
-    func start(_ s: AppSettings) {
+    /// - Parameter fallbackToDefault: prøv systemets standard utgang hvis valgt enhet ikke kan åpnes
+    ///   (ikke for forhåndslytting – den skal aldri havne i salen ved en feil).
+    func start(_ s: AppSettings, fallbackToDefault: Bool = true) {
         stop()
         do {
             try open(s, uid: s.audioDeviceUID)
         } catch {
             let reason = error.localizedDescription
+            guard fallbackToDefault else { status = "Kunne ikke åpne lydenheten: \(reason)"; return }
             do {
                 try open(s, uid: "")
                 status = "Kunne ikke åpne valgt lydenhet (\(reason)). Bruker systemets standard utgang."

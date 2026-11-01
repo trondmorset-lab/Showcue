@@ -2,14 +2,29 @@ import Foundation
 
 /// Forhåndslytting: spiller lyden i en cue fra et valgfritt punkt, gjennom lydpatchen, uten å påvirke showet.
 final class AudioPreview: ObservableObject {
-    private let mixer: () -> PatchMixer?
+    /// Hvor lyttingen spilles: en mikser, og første av to utganger (0 = cuens egne utganger).
+    struct Target {
+        let mixer: PatchMixer
+        let leftBus: Int
+    }
+
+    private let target: () -> Target?
+    private weak var playingMixer: PatchMixer?
     @Published private(set) var cue: Cue?
     @Published private(set) var isPlaying = false
     private(set) var voice: Voice?
     private(set) var stream: StreamingSource?
     private var from = 0.0
 
-    init(mixer: @escaping () -> PatchMixer?) { self.mixer = mixer }
+    init(target: @escaping () -> Target?) { self.target = target }
+
+    /// Forhåndslytt gjennom cuens egne utganger i `mixer`.
+    convenience init(mixer: @escaping () -> PatchMixer?) {
+        self.init(target: { mixer().map { Target(mixer: $0, leftBus: 0) } })
+    }
+
+    /// True når lyttingen går ut på cuens egne utganger (dvs. til salen), ikke til en egen lytteutgang.
+    var goesToShowOutputs: Bool { (target()?.leftBus ?? 0) <= 0 }
 
     /// Spiller fortsatt (sjekker selve stemmen, ikke bare UI-flagget).
     var isActive: Bool { voice.map { !$0.isFinished } ?? false }
@@ -24,7 +39,8 @@ final class AudioPreview: ObservableObject {
     @discardableResult
     func play(_ cue: Cue, from: Double, to: Double = 0) -> Bool {
         stop()
-        guard let m = mixer(), !cue.filePath.isEmpty, FileManager.default.fileExists(atPath: cue.filePath) else { return false }
+        guard let t = target(), !cue.filePath.isEmpty, FileManager.default.fileExists(atPath: cue.filePath) else { return false }
+        let m = t.mixer
         let url = URL(fileURLWithPath: cue.filePath)
         let decoder: FrameDecoder
         if cue.type == .video {
@@ -42,7 +58,8 @@ final class AudioPreview: ObservableObject {
         if end > 0 && end <= start + 0.05 { end = 0 }
         let s = StreamingSource(decoder: decoder, sampleRate: m.sampleRate, startTime: start, endTime: end, loop: false)
         let v = Voice(source: s, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: 0.01, fadeOut: 0.02, loop: false,
-                      routes: cue.effectiveRoutes(fileChannels: decoder.channels))
+                      routes: t.leftBus > 0 ? AudioRoute.downmix(fileChannels: decoder.channels, leftBus: t.leftBus)
+                                            : cue.effectiveRoutes(fileChannels: decoder.channels))
         v.onFinished = { [weak self, weak v, weak s] in
             DispatchQueue.main.async {
                 if let s { AudioFeeder.shared.remove(s) }
@@ -57,6 +74,7 @@ final class AudioPreview: ObservableObject {
         self.from = s.startTime
         self.cue = cue
         isPlaying = true
+        playingMixer = m
         m.add(v)
         return true
     }
@@ -65,9 +83,10 @@ final class AudioPreview: ObservableObject {
         guard let v = voice else { return }
         v.stop(fade: 0.02)
         let s = stream
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+        let m = playingMixer
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             if let s { AudioFeeder.shared.remove(s) }
-            self?.mixer()?.remove(v)
+            m?.remove(v)
         }
         clear()
     }

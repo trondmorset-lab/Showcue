@@ -68,6 +68,16 @@ struct SettingsView: View {
             Hint("Lavere buffer gir raskere respons på GO. 256 er trygt for de fleste; øk ved knaking.")
             Hint("Samplingsfrekvensen følger enheten (for Dante: settes i Dante Controller). Filer med annen frekvens konverteres automatisk.")
             Button("Oppdater liste") { devices = CoreAudioDevices.outputDevices() }.buttonStyle(PanelButtonStyle()).padding(.top, 10)
+
+            SectionHeader("FORHÅNDSLYTTING (BØLGEFORMEN)").padding(.top, 18)
+            FieldLabel("Egen lydenhet, f.eks. hodetelefoner")
+            Picker("", selection: $draft.previewDeviceUID) {
+                Text("Ingen egen enhet").tag("")
+                ForEach(devices) { Text($0.label).tag($0.uid) }
+            }.labelsHidden()
+            FieldLabel("…eller utgang i lydpatchen (første av to, 0 = cuens egne utganger)")
+            IntInput(value: $draft.previewBus, range: 0...128).frame(width: 90)
+            Hint("Da kan du lytte på cuer under forestillingen uten at det høres i salen. Med 0 og ingen enhet går lyttingen ut på cuens vanlige utganger.")
         }
     }
 
