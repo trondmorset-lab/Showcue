@@ -94,6 +94,7 @@ struct CueInspector: View {
                 ForEach(ContinueMode.allCases, id: \.self) { Text($0.label).tag($0) }
             }.labelsHidden()
             Toggle("Deaktivert (hoppes over av GO)", isOn: $cue.disabled).padding(.top, 8)
+            Toggle("Knapp i cart-vinduet", isOn: $cue.cart).padding(.top, 4).help("Cuer med hurtigtast vises der uansett")
 
             FieldLabel("Farge")
             HStack(spacing: 6) {
@@ -139,6 +140,8 @@ struct CueInspector: View {
         case .midi: midiSection
         case .playlist: playlistSection
         case .goto: gotoSection
+        case .memo: memoSection
+        case .network: networkSection
         }
     }
 
@@ -181,6 +184,13 @@ struct CueInspector: View {
                 FieldLabel("Fade ut (s)"); NumberInput(value: $cue.fadeOut, range: 0...600)
             }
             Hint("Fade ut brukes ved stopp og automatisk mot slutten av fila.")
+            FieldLabel("Lydstyrke")
+            HStack {
+                Text(cue.loudness.map { "\(Cue.fmt($0)) LUFS (målt)" } ?? "Ikke målt").foregroundColor(theme.muted)
+                Spacer()
+                Button("Normaliser") { model.normalize([cue]) }.buttonStyle(PanelButtonStyle())
+                    .help("Mål lydstyrken mellom start og slutt og sett nivået så cuen treffer målet under Innstillinger (standard −23 LUFS)")
+            }
             FieldLabel("Utganger (dB per filkanal → utgang)").padding(.top, 6)
             RoutingMatrixView(cue: cue)
             Hint("Skriv nivå i dB (0 = fullt), tomt = av. Endringer høres med en gang hvis cuen spiller. Utgangene settes opp under Lydpatch.")
@@ -269,6 +279,44 @@ struct CueInspector: View {
             Toggle("Slipp loop (devamp) i stedet for å stoppe", isOn: $cue.release).padding(.top, 8)
             Hint("Mål-cuen spiller ferdig loopen og fortsetter til slutten av fila.")
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600).disabled(cue.release)
+        }
+    }
+
+    private var memoSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Beskjed til operatøren")
+            TextEditor(text: $cue.text)
+                .font(.system(size: 13))
+                .scrollContentBackground(.hidden)
+                .padding(4)
+                .frame(minHeight: 90)
+                .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
+            Hint("Vises stort øverst i vinduet når cuen kjøres (f.eks. «Vent på applaus»), til du lukker den. Gjør ellers ingenting.")
+        }
+    }
+
+    private var networkSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Sendes som")
+            Picker("", selection: $cue.networkProtocol) {
+                ForEach(NetworkProtocol.allCases, id: \.self) { Text($0.label).tag($0) }
+            }.labelsHidden()
+            if cue.networkProtocol == .http {
+                FieldLabel("Metode")
+                Picker("", selection: $cue.method) {
+                    ForEach(["GET", "POST", "PUT", "DELETE"], id: \.self) { Text($0).tag($0) }
+                }.labelsHidden()
+                FieldLabel("Adresse (URL)"); TextInput($cue.url, mono: true)
+            } else {
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 0) { FieldLabel("IP-adresse / vertsnavn"); TextInput($cue.host) }
+                    VStack(alignment: .leading, spacing: 0) { FieldLabel("Port"); IntInput(value: $cue.port, range: 1...65535) }.frame(width: 90)
+                }
+            }
+            FieldLabel("Melding / innhold"); TextInput($cue.message, mono: true)
+            Hint("\\r \\n og \\t gir linjeskift og tab, \\xHH gir en byte (f.eks. \\x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med { eller [).")
+            Hint("Eksempel PJLink-projektor av: TCP port 4352, melding %1POWR 0\\r")
         }
     }
 

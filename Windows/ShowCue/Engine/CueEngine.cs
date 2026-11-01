@@ -36,6 +36,8 @@ public sealed class CueEngine : IDisposable
     /// <summary>En «gå til»-cue vil flytte GO-markøren (cuenummer, og om mål-cuen skal kjøres).</summary>
     public event Action<string, bool>? GotoRequested;
     public event Action? PauseChanged;
+    /// <summary>En memo-cue er kjørt: vis teksten til operatøren.</summary>
+    public event Action<MemoCue>? MemoShown;
 
     /// <summary>Alt står stille: lyd, video og tiden for pre-wait og fader.</summary>
     public bool IsPaused { get; private set; }
@@ -189,6 +191,7 @@ public sealed class CueEngine : IDisposable
     }
 
     internal void RequestGoto(string target, bool fire) => GotoRequested?.Invoke(target, fire);
+    internal void ShowMemo(MemoCue memo) => MemoShown?.Invoke(memo);
 
     /// <summary>Pause alt som spiller. Klokka stopper også, så pre-wait, fader og bildetider står stille.</summary>
     public void PauseAll()

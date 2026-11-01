@@ -22,6 +22,8 @@ final class CueEngine: ObservableObject {
     var onLog: ((String) -> Void)?
     /// En «gå til»-cue vil flytte GO-markøren (cuenummer, og om mål-cuen skal kjøres).
     var onGoto: ((String, Bool) -> Void)?
+    /// En memo-cue er kjørt: vis teksten til operatøren.
+    var onMemo: ((Cue) -> Void)?
 
     /// Alt står stille: lyd, video og tiden for pre-wait og fader.
     @Published private(set) var isPaused = false
@@ -95,7 +97,7 @@ final class CueEngine: ObservableObject {
         case .fade: return FadeActive(cue: cue, engine: self)
         case .stop: return StopActive(cue: cue, engine: self)
         case .playlist: return PlaylistActive(cue: cue, engine: self)
-        case .osc, .midi, .goto: return InstantActive(cue: cue, engine: self)
+        case .osc, .midi, .goto, .memo, .network: return InstantActive(cue: cue, engine: self)
         }
     }
 

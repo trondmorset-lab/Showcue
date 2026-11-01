@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import SwiftUI
 import AVFoundation
 import Combine
 import UniformTypeIdentifiers
@@ -20,6 +21,10 @@ final class AppModel: ObservableObject, ShowControl {
 
     // Status
     @Published var statusText = ""
+    /// Teksten fra siste memo-cue (tom = ingen beskjed vises).
+    @Published var memoText = ""
+    private var cartWindow: NSWindow?
+    private var loudnessTask: Task<Void, Never>?
     @Published var learnText = ""
     @Published private(set) var remoteStatus = ""
     /// Ting som endres mange ganger i sekundet (egne objekt, så ikke hele vinduet tegnes på nytt).
@@ -79,6 +84,12 @@ final class AppModel: ObservableObject, ShowControl {
                 guard let c = self.find(target) else { self.statusText = "Gå til: fant ikke cue \(target)."; return }
                 self.select(c)
                 if fire { self.lastGo = .distantPast; self.go() }
+            }
+        }
+        engine.onMemo = { [weak self] m in
+            DispatchQueue.main.async {
+                let t = m.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                self?.memoText = t.isEmpty ? m.displayName : t
             }
         }
         engine.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subs)
@@ -359,6 +370,7 @@ final class AppModel: ObservableObject, ShowControl {
             settings.save()
             if !statusText.hasPrefix("Advarsel") { statusText = "Åpnet \(url.path)" }
             offerRecovery()
+            offerRelink()
         } catch {
             alert("Kunne ikke åpne showet: \(error.localizedDescription)")
         }
@@ -413,6 +425,7 @@ final class AppModel: ObservableObject, ShowControl {
         history.reset(cueData())
         refreshUndo()
         select(cues.first { !$0.disabled })
+        memoText = ""
         let missing = cues.filter { $0.isFileCue && !$0.filePath.isEmpty && !FileManager.default.fileExists(atPath: $0.filePath) }
         missing.forEach { $0.error = "Fila finnes ikke: \($0.filePath)" }
         if !missing.isEmpty { statusText = "Advarsel: \(missing.count) mediefil(er) mangler. De er merket med ! i lista." }
@@ -587,7 +600,7 @@ final class AppModel: ObservableObject, ShowControl {
         guard isEditable else { return }
         let a = NSAlert()
         a.messageText = "Gi alle cuer nye nummer 1, 2, 3 …?"
-        a.informativeText = "Fade- og stopp-cuer oppdateres automatisk."
+        a.informativeText = "Fade-, stopp- og gå til-cuer oppdateres automatisk."
         a.addButton(withTitle: "Nummerer")
         a.addButton(withTitle: "Avbryt")
         guard a.runModal() == .alertFirstButtonReturn else { return }
@@ -597,7 +610,7 @@ final class AppModel: ObservableObject, ShowControl {
             if !c.number.isEmpty, map[c.number.lowercased()] == nil { map[c.number.lowercased()] = n }
             c.number = n
         }
-        for c in cues where c.type == .fade || c.type == .stop {
+        for c in cues where c.type == .fade || c.type == .stop || c.type == .goto {
             if let n = map[c.target.lowercased()] { c.target = n }
         }
     }
@@ -614,6 +627,127 @@ final class AppModel: ObservableObject, ShowControl {
         k.page = c.page + 1
         insert([k], at: (index(of: c) ?? cues.count - 1) + 1)
     }
+
+    // MARK: - Mediefiler: finn og samle
+
+    /// Etter åpning: mangler det mediefiler, tilbys det å lete etter dem i en mappe.
+    func offerRelink() {
+        let missing = MediaTools.missing(cues)
+        guard !missing.isEmpty else { return }
+        let a = NSAlert()
+        a.messageText = missing.count == 1 ? "Fant ikke mediefila «\(Cue.lastPathComponent(missing[0]))»."
+            : "Fant ikke \(missing.count) mediefiler."
+        a.informativeText = "Vil du velge en mappe å lete i? Undermapper tas med."
+        a.addButton(withTitle: "Velg mappe …")
+        a.addButton(withTitle: "Ikke nå")
+        if a.runModal() == .alertFirstButtonReturn { relink() }
+        else { statusText = "Advarsel: \(missing.count) mediefil(er) mangler. Verktøy → Finn manglende mediefiler." }
+    }
+
+    func relinkMenu() {
+        guard isEditable else { return }
+        if MediaTools.missing(cues).isEmpty { statusText = "Ingen mediefiler mangler."; return }
+        relink()
+    }
+
+    private func pickFolder(_ message: String, start: URL? = nil) -> URL? {
+        let p = NSOpenPanel()
+        p.canChooseFiles = false
+        p.canChooseDirectories = true
+        p.canCreateDirectories = true
+        p.message = message
+        p.prompt = "Velg"
+        if let start { p.directoryURL = start }
+        return p.runModal() == .OK ? p.url : nil
+    }
+
+    private func relink() {
+        guard let folder = pickFolder("Velg mappa mediefilene ligger i", start: showURL?.deletingLastPathComponent()) else { return }
+        let found = MediaTools.relink(cues, in: folder)
+        for c in cues where c.type == .audio && c.fileDuration <= 0 && FileManager.default.fileExists(atPath: c.filePath) {
+            let p = AudioEngine.probeAudio(c.filePath); c.fileDuration = p.duration; c.fileChannels = p.channels
+        }
+        for c in cues where c.isFileCue && FileManager.default.fileExists(atPath: c.filePath) { c.error = nil }
+        MediaCache.shared.clear()
+        MediaCache.shared.preload(cues)
+        let left = MediaTools.missing(cues).count
+        statusText = "Fant \(found) fil(er)." + (left > 0 ? " \(left) mangler fortsatt." : " Alle mediefiler er på plass.")
+        updateDirty()
+    }
+
+    func collectShow() {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        guard let folder = pickFolder("Velg (eller lag) en mappe for showet og mediefilene") else { return }
+        var doc = ShowDocument()
+        doc.cues = cues
+        let name = showURL?.deletingPathExtension().lastPathComponent ?? "Show"
+        do {
+            let r = try MediaTools.collect(doc, to: folder, name: name)
+            let a = NSAlert()
+            a.messageText = "Showet og \(r.copied) mediefil(er) er kopiert"
+            a.informativeText = "\(folder.path)\n\nShowfil: \(r.showURL.lastPathComponent), mediefiler i undermappa «Media»."
+                + (r.missing.isEmpty ? "" : "\n\n\(r.missing.count) fil(er) manglet og ble ikke kopiert.")
+                + "\n\nVil du åpne den samlede kopien nå?"
+            a.addButton(withTitle: "Åpne kopien")
+            a.addButton(withTitle: "Ferdig")
+            if a.runModal() == .alertFirstButtonReturn { open(r.showURL) }
+        } catch {
+            alert("Kunne ikke samle showet: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Lydstyrke
+
+    func normalize(_ list: [Cue]) {
+        guard isEditable else { return }
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        let targets = list.filter { $0.type == .audio && FileManager.default.fileExists(atPath: $0.filePath) }
+        guard !targets.isEmpty else { statusText = "Ingen lyd-cuer med fil å normalisere."; return }
+        loudnessTask?.cancel()
+        let goal = settings.loudnessTarget
+        loudnessTask = Task { @MainActor [weak self] in
+            var silent = 0, n = 0
+            for c in targets {
+                n += 1
+                self?.statusText = "Måler lydstyrke \(n)/\(targets.count): \(c.displayName) …"
+                let (path, start, end) = (c.filePath, c.startTime, c.endTime)
+                let result: Result<Double?, Error> = await Task.detached(priority: .userInitiated) {
+                    Result { try LoudnessMeter.measure(file: URL(fileURLWithPath: path), start: start, end: end, isCancelled: { Task.isCancelled }) }
+                }.value
+                if Task.isCancelled { return }
+                switch result {
+                case .failure(let e): c.error = "Lydstyrke: \(e.localizedDescription)"
+                case .success(let lufs?):
+                    c.loudness = (lufs * 10).rounded() / 10
+                    c.volumeDb = LoudnessMeter.gain(for: lufs, target: goal)
+                case .success(nil):
+                    c.loudness = nil; silent += 1
+                }
+            }
+            self?.statusText = "Normalisert \(targets.count - silent) lyd-cue(r) til \(Cue.fmt(goal)) LUFS."
+                + (silent > 0 ? " \(silent) var stille eller for korte." : "")
+            self?.updateDirty()
+        }
+    }
+
+    func normalizeSelected() { normalize(selectedCues.isEmpty ? [playhead].compactMap { $0 } : selectedCues) }
+    func normalizeAll() { normalize(cues) }
+
+    // MARK: - Cart-vindu
+
+    func showCart() {
+        if let w = cartWindow { w.makeKeyAndOrderFront(nil); return }
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
+                         styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        w.title = "ShowCue – cart"
+        w.isReleasedWhenClosed = false
+        w.contentView = NSHostingView(rootView: CartView().environmentObject(self))
+        w.center()
+        w.makeKeyAndOrderFront(nil)
+        cartWindow = w
+    }
+
+    func closeMemo() { memoText = "" }
 
     // MARK: - Videolyd
 

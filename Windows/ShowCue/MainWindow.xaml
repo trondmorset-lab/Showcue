@@ -85,6 +85,14 @@
                 </Grid>
                 <TextBlock Style="{StaticResource Hint}" Text="Fade ut brukes ved stopp og automatisk mot slutten av fila." />
 
+                <TextBlock Style="{StaticResource Label}" Text="Lydstyrke" />
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Normaliser" Click="Normalize_Click" Margin="6,0,0,0"
+                            ToolTip="Mål lydstyrken mellom start og slutt og sett nivået så cuen treffer målet under Innstillinger (standard −23 LUFS)" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Loudness, StringFormat='{}{0:0.0} LUFS (målt)', TargetNullValue='Ikke målt'}"
+                               Foreground="{DynamicResource Muted}" />
+                </DockPanel>
+
                 <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per filkanal → utgang)" Margin="0,14,0,3" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
@@ -254,6 +262,44 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type m:MemoCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Beskjed til operatøren" />
+                <TextBox Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalScrollBarVisibility="Auto" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Vises stort øverst i vinduet når cuen kjøres (f.eks. «Vent på applaus»), til du lukker den. Gjør ellers ingenting." />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:NetworkCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Sendes som" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.NetworkProtocols}" SelectedItem="{Binding Protocol}" ItemTemplate="{StaticResource EnumItem}" />
+                <Grid Visibility="{Binding Protocol, Converter={StaticResource NotEqVis}, ConverterParameter=Http}">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="IP-adresse / vertsnavn" />
+                        <TextBox Text="{Binding Host}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Port" />
+                        <TextBox Text="{Binding Port}" />
+                    </StackPanel>
+                </Grid>
+                <StackPanel Visibility="{Binding Protocol, Converter={StaticResource EqVis}, ConverterParameter=Http}">
+                    <TextBlock Style="{StaticResource Label}" Text="Metode" />
+                    <ComboBox ItemsSource="{x:Static local:EnumValues.HttpMethods}" SelectedItem="{Binding Method}" />
+                    <TextBlock Style="{StaticResource Label}" Text="Adresse (URL)" />
+                    <TextBox Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Melding / innhold" />
+                <TextBox Text="{Binding Message}" FontFamily="{StaticResource MonoFont}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="\r \n og \t gir linjeskift og tab, \xHH gir en byte (f.eks. \x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med { eller [)." />
+                <TextBlock Style="{StaticResource Hint}" Text="Eksempel PJLink-projektor av: TCP port 4352, melding %1POWR 0\r" />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type m:OscCue}">
             <StackPanel>
                 <Grid>
@@ -363,6 +409,14 @@
 
                 <Button Style="{StaticResource GoButton}" Content="GO" Height="92" Click="Go_Click" ToolTip="Mellomrom" />
 
+                <Border Grid.Column="1" Margin="18,0" Panel.ZIndex="1" Background="{DynamicResource Panel3}" BorderBrush="{DynamicResource Wait}"
+                        BorderThickness="2" CornerRadius="6" Padding="14,8" Visibility="{Binding MemoText, Converter={StaticResource NonEmptyVis}}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="✕" VerticalAlignment="Top" Padding="10,4" Click="CloseMemo_Click" ToolTip="Lukk beskjeden" />
+                        <TextBlock DockPanel.Dock="Top" Text="BESKJED" Style="{StaticResource SectionHeader}" Foreground="{DynamicResource Wait}" />
+                        <TextBlock Text="{Binding MemoText}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                </Border>
                 <StackPanel Grid.Column="1" Margin="18,0" VerticalAlignment="Center">
                     <TextBlock Text="NESTE CUE" Style="{StaticResource SectionHeader}" Margin="0,0,0,2" />
                     <StackPanel Orientation="Horizontal">
@@ -438,6 +492,8 @@
                     <Button Style="{StaticResource ToolButton}" Content="♫ MIDI" Tag="midi" Click="AddCue_Click" ToolTip="Ctrl+8" />
                     <Button Style="{StaticResource ToolButton}" Content="☰ Liste" Tag="playlist" Click="AddCue_Click" ToolTip="Spilleliste (Ctrl+9)" />
                     <Button Style="{StaticResource ToolButton}" Content="↪ Gå til" Tag="goto" Click="AddCue_Click" ToolTip="Flytt GO-markøren (Ctrl+0)" />
+                    <Button Style="{StaticResource ToolButton}" Content="✎ Memo" Tag="memo" Click="AddCue_Click" ToolTip="Beskjed til operatøren (Ctrl+Shift+M)" />
+                    <Button Style="{StaticResource ToolButton}" Content="⇄ Nett" Tag="network" Click="AddCue_Click" ToolTip="Send UDP, TCP eller HTTP (Ctrl+Shift+N)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <Button Style="{StaticResource ToolButton}" Content="Dupliser" Click="Duplicate_Click" ToolTip="Ctrl+D" />
                     <Button Style="{StaticResource ToolButton}" Content="Slett" Click="Delete_Click" ToolTip="Delete" />
@@ -447,6 +503,18 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Style="{StaticResource ToolButton}" Content="▦ Cart" Click="Cart_Click" ToolTip="Store knapper for berøringsskjerm (Ctrl+K)" />
+                    <Button Style="{StaticResource ToolButton}" Content="Verktøy ▾" Click="Tools_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Finn manglende mediefiler …" Click="Relink_Click" />
+                                <MenuItem Header="Samle show og mediefiler i én mappe …" Click="Collect_Click" />
+                                <Separator />
+                                <MenuItem Header="Normaliser lydstyrke for valgte lyd-cuer" Click="NormalizeSelected_Click" />
+                                <MenuItem Header="Normaliser lydstyrke for alle lyd-cuer" Click="NormalizeAll_Click" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                     <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
                             ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
                     <Button Style="{StaticResource ToolButton}" Content="Lydpatch" Click="Patch_Click" ToolTip="Utganger og kanaler på lydkortet (Dante, ASIO, flerkanals)" />
@@ -655,6 +723,8 @@
                             <ComboBox ItemsSource="{x:Static local:EnumValues.ContinueModes}" SelectedItem="{Binding SelectedCue.ContinueMode}"
                                       ItemTemplate="{StaticResource EnumItem}" />
                             <CheckBox IsChecked="{Binding SelectedCue.Disabled}" Content="Deaktivert (hoppes over av GO)" />
+                            <CheckBox IsChecked="{Binding SelectedCue.Cart}" Content="Knapp i cart-vinduet"
+                                      ToolTip="Cuer med hurtigtast vises der uansett" />
                             <TextBlock Style="{StaticResource Label}" Text="Farge" />
                             <ItemsControl ItemsSource="{x:Static local:EnumValues.CueColors}">
                                 <ItemsControl.ItemsPanel>

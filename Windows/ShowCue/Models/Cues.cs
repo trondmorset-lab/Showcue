@@ -11,6 +11,8 @@ public enum MidiMessageType { NoteOn, NoteOff, ProgramChange, ControlChange, Msc
 public enum CueColor { None, Red, Orange, Yellow, Green, Blue, Purple, Gray }
 /// <summary>Formen på en fade: lineær i dB (jevn for øret), S-kurve (myk start og slutt) eller lineær amplitude.</summary>
 public enum FadeCurve { Db, SCurve, Linear }
+/// <summary>Hvordan en nettverks-cue sender.</summary>
+public enum NetworkProtocol { Udp, Tcp, Http }
 
 /// <summary>Cuer med start- og sluttpunkt i en mediefil (lyd og video) – brukes av bølgeform-redigereren.</summary>
 public interface ITrimmable : System.ComponentModel.INotifyPropertyChanged
@@ -66,6 +68,10 @@ public abstract class Cue : ObservableObject
     private string _midiTrigger = "";
     /// <summary>MIDI-melding som starter cuen, f.eks. "N:60" (note), "CC:20" eller "PC:5". Tom = ingen.</summary>
     public string MidiTrigger { get => _midiTrigger; set { if (SetCue(ref _midiTrigger, value ?? "")) OnPropertyChanged(nameof(TriggerText)); } }
+
+    private bool _cart;
+    /// <summary>Vis cuen som knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.</summary>
+    public bool Cart { get => _cart; set => SetCue(ref _cart, value); }
 
     /// <summary>Hurtigtast og MIDI-trigger samlet, for visning i lista.</summary>
     [JsonIgnore] public string TriggerText => string.Join(" · ",
@@ -165,6 +171,9 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
     public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
     /// <summary>Lengden på lydfila. Fylles inn automatisk.</summary>
     public double FileDuration { get => _fileDuration; set => SetCue(ref _fileDuration, value); }
+    private double? _loudness;
+    /// <summary>Målt lydstyrke (LUFS, integrert) mellom start og slutt, før nivået. null = ikke målt.</summary>
+    public double? Loudness { get => _loudness; set => SetCue(ref _loudness, value); }
     [JsonIgnore] public double MediaLength => FileDuration;
     [JsonIgnore] public bool IsVideo => false;
 
@@ -399,6 +408,50 @@ public sealed class PlaylistCue : Cue, IRoutedAudio
     public override string TypeIcon => "☰";
     public override string Summary => $"{Files.Count} spor" + (Shuffle ? "  tilfeldig" : "") + (Loop ? "  ⟲" : "")
         + (Crossfade > 0 ? $"  krysstoning {Crossfade:0.#}s" : "");
+}
+
+// ======================================================================
+//  MEMO OG NETTVERK
+// ======================================================================
+/// <summary>Beskjed til operatøren (f.eks. «Vent på applaus»). Vises stort når cuen kjøres, gjør ellers ingenting.</summary>
+public sealed class MemoCue : Cue
+{
+    private string _text = "";
+
+    public string Text { get => _text; set => SetCue(ref _text, value ?? ""); }
+
+    public override string TypeName => "Memo";
+    public override string TypeIcon => "✎";
+    protected override string DefaultName => FirstLine is { Length: > 0 } l ? l : "Memo";
+    public override string Summary => FirstLine;
+    private string FirstLine => Text.Split('\n', 2)[0].Trim();
+}
+
+/// <summary>Sender tekst over UDP eller TCP, eller en HTTP-forespørsel (styring av projektorer, mediaservere, PTZ-kamera …).</summary>
+public sealed class NetworkCue : Cue
+{
+    private NetworkProtocol _protocol = NetworkProtocol.Udp;
+    private string _host = "127.0.0.1";
+    private int _port = 9000;
+    private string _message = "";
+    private string _url = "http://";
+    private string _method = "GET";
+
+    public NetworkProtocol Protocol { get => _protocol; set => SetCue(ref _protocol, value); }
+    public string Host { get => _host; set => SetCue(ref _host, value?.Trim() ?? ""); }
+    public int Port { get => _port; set => SetCue(ref _port, Math.Clamp(value, 1, 65535)); }
+    /// <summary>Teksten som sendes (UDP/TCP) eller innholdet i forespørselen (HTTP). \r \n \t \\ og \xHH tolkes.</summary>
+    public string Message { get => _message; set => SetCue(ref _message, value ?? ""); }
+    public string Url { get => _url; set => SetCue(ref _url, value?.Trim() ?? ""); }
+    /// <summary>GET, POST, PUT eller DELETE.</summary>
+    public string Method { get => _method; set => SetCue(ref _method, string.IsNullOrWhiteSpace(value) ? "GET" : value.Trim().ToUpperInvariant()); }
+
+    public override string TypeName => "Nettverk";
+    public override string TypeIcon => "⇄";
+    protected override string DefaultName => Protocol == NetworkProtocol.Http ? $"HTTP {Method}" : $"{Protocol.ToString().ToUpperInvariant()} {Host}";
+    public override string Summary => Protocol == NetworkProtocol.Http
+        ? $"{Method} {Url}"
+        : $"{Protocol.ToString().ToUpperInvariant()} {Host}:{Port}  {Message}".TrimEnd();
 }
 
 public sealed class OscCue : Cue

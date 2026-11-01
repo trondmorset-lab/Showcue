@@ -213,6 +213,8 @@ struct SettingsView: View {
             FieldLabel("Stopp alt: fade-tid (s)"); NumberInput(value: $draft.panicFadeTime, range: 0...30)
             FieldLabel("Dobbel-GO-sperre (ms)"); IntInput(value: $draft.doubleGoProtectionMs, range: 0...2000)
             Hint("GO ignoreres hvis det kommer innen denne tiden etter forrige GO (prell på tast eller kontroller).")
+            FieldLabel("Mål for «Normaliser lydstyrke» (LUFS)"); NumberInput(value: $draft.loudnessTarget, range: -40...(-5))
+            Hint("−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke.")
         }
     }
 }

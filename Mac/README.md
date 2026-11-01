@@ -69,6 +69,8 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
 | ⌘P | Pause / fortsett alt |
+| ⇧⌘M, ⇧⌘N | Legg til memo-, nettverks-cue |
+| ⌘K | Cart-vindu |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |
@@ -83,7 +85,8 @@ Du kan dra filer fra Finder rett inn i lista.
 Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagring`), sikkerhetskopier
 (`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
 i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
-(*Pause, spillelister og loop*).
+(*Pause, spillelister og loop*), og cart-vinduet, nettverks- og memo-cuer, lydstyrke-normalisering og finn/samle
+mediefiler (menyen *Verktøy*) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*.
 
 ## Oppbygning
 
