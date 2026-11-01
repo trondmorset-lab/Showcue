@@ -27,9 +27,6 @@ final class LayerPair {
         }
     }
 
-    /// Nåværende synlighet (midt i en fade).
-    var currentOpacity: Float { output.presentation()?.opacity ?? output.opacity }
-
     func remove() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -207,10 +204,6 @@ final class MediaCache {
         guard let img = NSImage(contentsOfFile: path) else { return nil }
         var rect = NSRect(origin: .zero, size: img.size)
         return img.cgImage(forProposedRect: &rect, context: nil, hints: nil)
-    }
-
-    static func pdfPageCount(_ path: String) -> Int {
-        PDFDocument(url: URL(fileURLWithPath: path))?.pageCount ?? 0
     }
 
     static func renderPdf(path: String, page: Int, width: CGFloat) -> CGImage? {

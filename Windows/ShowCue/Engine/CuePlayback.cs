@@ -14,12 +14,7 @@ public sealed class CuePlayback : IBusSource, IDisposable
 {
     public const double SilenceDb = -80;
 
-    private readonly struct Send
-    {
-        public readonly int Bus;
-        public readonly float Gain;
-        public Send(int bus, float gain) { Bus = bus; Gain = gain; }
-    }
+    private readonly record struct Send(int Bus, float Gain);
 
     private readonly WaveStream _reader;
     private readonly ISampleProvider _source;
@@ -57,8 +52,6 @@ public sealed class CuePlayback : IBusSource, IDisposable
     public double PassPosition => Interlocked.Read(ref _passFrames) / (double)_rate;
     /// <summary>Lengde på én gjennomspilling i sekunder (0 = ukjent).</summary>
     public double PassLength => _framesPerPass == long.MaxValue ? 0 : _framesPerPass / (double)_rate;
-    public double CurrentDb { get { lock (_lock) return _currentDb; } }
-    public bool IsRamping { get { lock (_lock) return _rampFramesLeft > 0 || _stopAfterRamp; } }
 
     /// <summary>Innstillinger for én avspilling.</summary>
     public sealed record Options(double VolumeDb, double StartTime, double EndTime, bool Loop, double FadeIn, double FadeOut);

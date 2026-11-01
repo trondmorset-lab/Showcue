@@ -31,8 +31,6 @@ public sealed class CueEngine : IDisposable
     public event Action? Ticked;
     public event Action<string>? Log;
 
-    public OutputWindow? Output => _output;
-
     public CueEngine(AppSettings settings, Func<IList<Cue>> cueList)
     {
         Settings = settings;

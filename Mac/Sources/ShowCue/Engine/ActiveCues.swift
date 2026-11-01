@@ -52,6 +52,20 @@ class ActiveCue: ObservableObject, Identifiable {
     }
 
     func onComplete() {}
+
+    /// Endringer i routing og nivå høres med en gang (nyttig under lydsjekk).
+    func followLiveChanges(of playback: @escaping () -> Playback?) -> Set<AnyCancellable> {
+        [
+            cue.$routes.dropFirst().sink { [weak self] _ in
+                guard let self, let pb = playback() else { return }
+                DispatchQueue.main.async { pb.setRouting(self.cue.effectiveRoutes(fileChannels: pb.fileChannels)) }
+            },
+            cue.$volumeDb.dropFirst().sink { [weak self] db in
+                guard let self, !self.isStopping else { return }
+                playback()?.adjustLevel(db)
+            },
+        ]
+    }
 }
 
 // MARK: - Lyd
@@ -69,15 +83,7 @@ final class AudioActive: ActiveCue {
         if cue.fileChannels != pb.fileChannels { cue.fileChannels = pb.fileChannels }
         if cue.fileDuration <= 0, let len = pb.passLength, cue.endTime <= 0 { cue.fileDuration = cue.startTime + len }
         pb.start()
-        // Endringer i routing og nivå høres med en gang (nyttig under lydsjekk).
-        cue.$routes.dropFirst().sink { [weak self] _ in
-            guard let self, let pb = self.playback else { return }
-            DispatchQueue.main.async { pb.setRouting(self.cue.effectiveRoutes(fileChannels: pb.fileChannels)) }
-        }.store(in: &subs)
-        cue.$volumeDb.dropFirst().sink { [weak self] db in
-            guard let self, !self.isStopping else { return }
-            self.playback?.adjustLevel(db)
-        }.store(in: &subs)
+        subs = followLiveChanges { [weak self] in self?.playback }
     }
 
     override func tick() {
@@ -243,14 +249,7 @@ final class VideoActive: VisualActive {
         endObs = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
             self?.reachedEnd()
         }
-        cue.$routes.dropFirst().sink { [weak self] _ in
-            guard let self, let a = self.audio else { return }
-            DispatchQueue.main.async { a.setRouting(self.cue.effectiveRoutes(fileChannels: a.fileChannels)) }
-        }.store(in: &subs)
-        cue.$volumeDb.dropFirst().sink { [weak self] db in
-            guard let self, !self.isStopping else { return }
-            self.audio?.adjustLevel(db)
-        }.store(in: &subs)
+        subs = followLiveChanges { [weak self] in self?.audio }
 
         if startTime == 0 { p.play() } // ellers: spol først når fila er klar (itemStatusChanged)
         return engine.output.addVideo(p, stretch: cue.stretch)
@@ -350,15 +349,16 @@ final class VideoActive: VisualActive {
 
 // MARK: - Fade og stopp
 
-final class FadeActive: ActiveCue {
+/// Fade- og stopp-cue: gjør jobben ved start og «varer» så lenge faden tar.
+class TimedActive: ActiveCue {
     private var begin: Double = 0
+
+    func act() {}
 
     override func onBegin() throws {
         begin = engine.now
         duration = cue.fadeTime
-        let targets = engine.findActive(cue.target)
-        if targets.isEmpty { cue.error = cue.target.isEmpty ? "Mangler mål-cue" : "Cue \(cue.target) kjører ikke" }
-        targets.forEach { $0.applyFade(cue) }
+        act()
         if cue.fadeTime <= 0 { complete() }
     }
 
@@ -372,27 +372,21 @@ final class FadeActive: ActiveCue {
     override func stop(fade: Double) { super.stop(fade: fade); complete() }
 }
 
-final class StopActive: ActiveCue {
-    private var begin: Double = 0
+final class FadeActive: TimedActive {
+    override func act() {
+        let targets = engine.findActive(cue.target)
+        if targets.isEmpty { cue.error = cue.target.isEmpty ? "Mangler mål-cue" : "Cue \(cue.target) kjører ikke" }
+        targets.forEach { $0.applyFade(cue) }
+    }
+}
 
-    override func onBegin() throws {
-        begin = engine.now
-        duration = cue.fadeTime
+final class StopActive: TimedActive {
+    override func act() {
         let targets = cue.target.isEmpty
             ? engine.active.filter { $0 !== self && !($0 is StopActive) }
             : engine.findActive(cue.target)
         targets.forEach { $0.stop(fade: cue.fadeTime) }
-        if cue.fadeTime <= 0 { complete() }
     }
-
-    override func tick() {
-        super.tick()
-        guard started, !done else { return }
-        elapsed = engine.now - begin
-        if elapsed >= cue.fadeTime { complete() }
-    }
-
-    override func stop(fade: Double) { super.stop(fade: fade); complete() }
 }
 
 // MARK: - OSC og MIDI (umiddelbare)

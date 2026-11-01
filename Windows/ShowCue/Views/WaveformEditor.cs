@@ -137,7 +137,7 @@ public sealed class WaveformEditor : UserControl
     }
 
     /// <summary>Tegn på nytt og oppdater tekst og rullefelt.</summary>
-    private void Refresh()
+    internal void Refresh()
     {
         var cue = Cue;
         double len = _canvas.Length;
@@ -159,8 +159,6 @@ public sealed class WaveformEditor : UserControl
         }
         _canvas.InvalidateVisual();
     }
-
-    internal void ViewChanged() => Refresh();
 
     public static string Fmt(double s)
     {
@@ -449,14 +447,14 @@ public sealed class WaveformEditor : UserControl
             double newLen = Math.Clamp(ViewLength * factor, Math.Min(len, 0.05), len);
             ViewStart = Math.Clamp(anchorT - frac * newLen, 0, Math.Max(0, len - newLen));
             ViewLength = newLen;
-            _owner.ViewChanged();
+            _owner.Refresh();
         }
 
         public void ZoomAll()
         {
             ViewStart = 0;
             ViewLength = Length;
-            _owner.ViewChanged();
+            _owner.Refresh();
         }
 
         private Drag HitTest(double x)
@@ -478,7 +476,7 @@ public sealed class WaveformEditor : UserControl
             {
                 CursorTime = Math.Clamp(T(x), 0, Length);
                 _owner.PlayFrom(CursorTime);
-                _owner.ViewChanged();
+                _owner.Refresh();
                 e.Handled = true;
                 return;
             }
@@ -508,7 +506,7 @@ public sealed class WaveformEditor : UserControl
             {
                 case Drag.Start: _owner.SetStart(t); break;
                 case Drag.End: _owner.SetEnd(t); break;
-                case Drag.Cursor: CursorTime = t; _owner.ViewChanged(); break;
+                case Drag.Cursor: CursorTime = t; _owner.Refresh(); break;
             }
         }
 
@@ -519,7 +517,7 @@ public sealed class WaveformEditor : UserControl
             {
                 double len = Length;
                 ViewStart = Math.Clamp(ViewStart - Math.Sign(e.Delta) * ViewLength * 0.15, 0, Math.Max(0, len - ViewLength));
-                _owner.ViewChanged();
+                _owner.Refresh();
             }
             else Zoom(e.Delta > 0 ? 0.7 : 1 / 0.7, e.GetPosition(this).X);
             e.Handled = true;

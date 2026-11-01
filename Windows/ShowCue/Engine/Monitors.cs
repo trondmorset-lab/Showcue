@@ -5,7 +5,7 @@ namespace ShowCue.Engine;
 /// <summary>Skjermoversikt via Win32 (fysiske piksler), uten å dra inn WinForms.</summary>
 public static class Monitors
 {
-    public sealed record MonitorInfo(int Index, string Name, int Left, int Top, int Width, int Height, bool Primary)
+    public sealed record MonitorInfo(int Index, int Left, int Top, int Width, int Height, bool Primary)
     {
         public override string ToString() => $"Skjerm {Index + 1}: {Width}×{Height}{(Primary ? " (hovedskjerm)" : "")}";
     }
@@ -19,7 +19,7 @@ public static class Monitors
             if (GetMonitorInfo(h, ref mi))
             {
                 var r = mi.rcMonitor;
-                list.Add(new MonitorInfo(list.Count, mi.szDevice, r.left, r.top, r.right - r.left, r.bottom - r.top, (mi.dwFlags & 1) != 0));
+                list.Add(new MonitorInfo(list.Count, r.left, r.top, r.right - r.left, r.bottom - r.top, (mi.dwFlags & 1) != 0));
             }
             return true;
         }, IntPtr.Zero);

@@ -12,7 +12,6 @@
     <Window.Resources>
         <local:EnumTextConverter x:Key="EnumText" />
         <local:ContinueGlyphConverter x:Key="ContinueGlyph" />
-        <local:InverseBoolConverter x:Key="Not" />
         <BooleanToVisibilityConverter x:Key="BoolVis" />
         <local:EqualsToVisibilityConverter x:Key="EqVis" />
         <local:EqualsToVisibilityConverter x:Key="NotEqVis" Invert="True" />

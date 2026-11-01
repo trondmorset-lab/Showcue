@@ -16,7 +16,7 @@ public static class MediaCache
     private static readonly Dictionary<string, Task<BitmapSource>> Pdfs = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Bredde PDF-sider rendres i (piksler).</summary>
-    public static uint PdfRenderWidth { get; set; } = 1920;
+    private const uint PdfRenderWidth = 1920;
 
     public static BitmapSource GetImage(string path)
     {
@@ -64,13 +64,6 @@ public static class MediaCache
         }
         img.Freeze();
         return img;
-    }
-
-    public static async Task<int> GetPdfPageCount(string path)
-    {
-        var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path));
-        var doc = await PdfDocument.LoadFromFileAsync(file);
-        return (int)doc.PageCount;
     }
 
     /// <summary>Forhåndslast alle bilder/PDF-sider i showet i bakgrunnen.</summary>

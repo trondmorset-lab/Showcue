@@ -182,8 +182,6 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     var isFileCue: Bool { [.audio, .video, .image, .pdf].contains(type) }
     var isVisual: Bool { [.video, .image, .pdf].contains(type) }
-    var isStill: Bool { type == .image || type == .pdf }
-    var hasRouting: Bool { type == .audio || type == .video }
     var hasNoAudio: Bool { type == .video && fileChannels == 0 }
 
     var typeName: String {
