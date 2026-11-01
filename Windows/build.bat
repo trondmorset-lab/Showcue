@@ -1,10 +1,10 @@
 @echo off
 REM Bygger ShowCue til en frittstående ShowCue.exe i mappa "publish".
-REM Krever .NET 8 SDK: https://dotnet.microsoft.com/download/dotnet/8.0
+REM Krever .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0
 
 where dotnet >nul 2>nul
 if errorlevel 1 (
-  echo Fant ikke .NET SDK. Last ned .NET 8 SDK fra https://dotnet.microsoft.com/download/dotnet/8.0
+  echo Fant ikke .NET SDK. Last ned .NET 10 SDK fra https://dotnet.microsoft.com/download/dotnet/10.0
   pause
   exit /b 1
 )

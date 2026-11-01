@@ -13,6 +13,7 @@ rm -rf "$STAGE" build/ShowCue-Mac.dmg
 mkdir -p "$STAGE"
 ditto "$APP" "$STAGE/ShowCue.app"
 ln -s /Applications "$STAGE/Programmer"
+cp ../LICENSE "$STAGE/LICENSE.txt"
 cat > "$STAGE/Les meg.txt" <<EOF
 ShowCue $VERSION for Mac
 
@@ -26,6 +27,7 @@ Første gang du åpner ShowCue:
 
   macOS spør også om tilgang til lokalt nettverk. Si ja, ellers virker ikke OSC.
 
+ShowCue er fri programvare under GNU GPL versjon 3 (se LICENSE.txt), uten noen form for garanti.
 Endringslogg og kildekode: https://github.com/trondmorset-lab/Showcue-
 EOF
 

@@ -4,9 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "Bygger ShowCue …"
-if swift build -c release --arch arm64 --arch x86_64 2>/dev/null; then
+# Universell app (Apple Silicon + Intel). Krever Xcode; med bare Command Line Tools: UNIVERSAL=0 ./build-app.sh
+if [ "${UNIVERSAL:-1}" = "1" ]; then
+    swift build -c release --arch arm64 --arch x86_64
     BIN_DIR=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
-    echo "Universell app (Apple Silicon + Intel)."
 else
     swift build -c release
     BIN_DIR=$(swift build -c release --show-bin-path)
@@ -21,7 +22,14 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 VERSION=$(tr -d '[:space:]' < ../VERSION)
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP/Contents/Info.plist"
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+codesign --force --deep --sign - "$APP"
+
+ARCHS=$(lipo -archs "$APP/Contents/MacOS/ShowCue")
+echo "Arkitekturer: $ARCHS"
+if [ "${UNIVERSAL:-1}" = "1" ] && ! { [[ "$ARCHS" == *arm64* ]] && [[ "$ARCHS" == *x86_64* ]]; }; then
+    echo "Feil: appen er ikke universell ($ARCHS)." >&2
+    exit 1
+fi
 
 echo ""
 echo "Ferdig: $(pwd)/$APP"

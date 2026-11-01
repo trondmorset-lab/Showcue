@@ -1,0 +1,146 @@
+name: Bygg og test
+
+# Kjører på pull requests (bygg + test) og på main (bygg + test + utgivelse).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Minste rettigheter som standard; bare utgivelsesjobben får skrivetilgang.
+permissions:
+  contents: read
+
+# Ett bygg om gangen per gren. På main venter nye bygg (så en eldre kjøring aldri overskriver en nyere utgivelse);
+# på pull requests avbrytes den gamle kjøringen.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  windows:
+    name: Windows
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'   # global.json i roten låser til .NET 10 SDK
+
+      - name: Tester
+        run: dotnet test Windows/ShowCue.Tests/ShowCue.Tests.csproj -c Release --logger "console;verbosity=normal"
+
+      - name: Publiser
+        working-directory: Windows
+        run: dotnet publish ShowCue/ShowCue.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+
+      - name: Lag installasjonsprogram
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          $version = (Get-Content VERSION -Raw).Trim()
+          & $iscc "/DAppVersion=$version" Windows\installer\ShowCue.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows
+          path: |
+            Windows/publish/ShowCue.exe
+            Windows/publish/ShowCue-Setup.exe
+          if-no-files-found: error
+          retention-days: 3
+
+  mac:
+    name: Mac
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verktøy
+        run: swift --version && xcodebuild -version
+
+      - name: Bygg
+        working-directory: Mac
+        run: |
+          set -o pipefail
+          swift build 2>&1 | tee "$GITHUB_WORKSPACE/build.log" || echo "FAILED=1" >> "$GITHUB_ENV"
+
+      - name: Tester
+        if: env.FAILED != '1'
+        working-directory: Mac
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee "$GITHUB_WORKSPACE/build.log" || echo "FAILED=1" >> "$GITHUB_ENV"
+
+      # Feilene legges ut som annotasjoner (10 per steg), så de kan leses uten å laste ned loggen.
+      - name: Feil 1–10
+        if: env.FAILED == '1'
+        run: python3 .github/scripts/annotate.py build.log 1
+      - name: Feil 11–20
+        if: env.FAILED == '1'
+        run: python3 .github/scripts/annotate.py build.log 2
+      - name: Feil 21–30
+        if: env.FAILED == '1'
+        run: python3 .github/scripts/annotate.py build.log 3
+      - name: Stopp ved feil
+        if: env.FAILED == '1'
+        run: exit 1
+
+      - name: Lag ShowCue.app (universell)
+        working-directory: Mac
+        run: ./build-app.sh
+
+      - name: Pakk zip og dmg
+        working-directory: Mac
+        run: |
+          (cd build && ditto -c -k --keepParent ShowCue.app ShowCue-Mac.zip)
+          ./make-dmg.sh
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mac
+          path: |
+            Mac/build/ShowCue-Mac.zip
+            Mac/build/ShowCue-Mac.dmg
+          if-no-files-found: error
+          retention-days: 3
+
+  # Publiserer først når både Windows og Mac er bygget og testet, med nøyaktig de samme filene.
+  release:
+    name: Utgivelse
+    needs: [windows, mac]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write       # lage utgivelser og flytte taggen «siste»
+      id-token: write       # signere opprinnelsesattester
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Opprinnelsesattest (hvor og hvordan filene ble bygget)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: Publiser utgivelse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/release.sh dist/ShowCue-Setup.exe dist/ShowCue.exe dist/ShowCue-Mac.dmg dist/ShowCue-Mac.zip
