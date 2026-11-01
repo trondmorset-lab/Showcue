@@ -66,7 +66,8 @@ struct AppSettings: Codable, Equatable {
 
     // OSC inn
     var oscInEnabled = true
-    var oscInPort = 53000
+    /// 8000 = standardporten Companion-modulen «Generic OSC» sender til.
+    var oscInPort = 8000
 
     // OSC ut (status)
     var oscFeedbackEnabled = false

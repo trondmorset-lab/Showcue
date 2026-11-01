@@ -79,7 +79,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 
 ## Fjernstyring: OSC og MIDI inn
 
-**OSC** (UDP, port 53000 som standard):
+**OSC** (UDP, port 8000 som standard – samme som Companion-modulen «Generic OSC» sender til):
 
 | Adresse | Funksjon |
 |---|---|
@@ -100,7 +100,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 - Statuslinja nederst viser porten, maskinens IP-adresser og siste mottatte melding.
 - Windows-brannmuren spør første gang: tillat ShowCue på private nettverk.
 
-**Bitfocus Companion / Stream Deck:** bruk modulen «Generic OSC», sett mål-IP til show-PC-en og port 53000,
+**Bitfocus Companion / Stream Deck:** bruk modulen «Generic OSC», sett mål-IP til show-PC-en (porten 8000 er allerede modulens standard),
 og send f.eks. `/go` eller `/cue/5/start`.
 
 ### Status tilbake til Companion (OSC ut)

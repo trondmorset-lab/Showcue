@@ -4,6 +4,14 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.6.2 – 2026-11-01
+
+### Endret
+- Standard OSC-port for fjernstyring er nå **8000**, samme port som Companion-modulen «Generic OSC» sender til,
+  så Companion virker uten å endre porten. Gjelder nye installasjoner; har du allerede lagret en port, beholdes den.
+  Nye OSC-cuer sender også til port 8000 som standard.
+- Intern opprydding: ubrukt kode fjernet og duplisert logikk slått sammen (ingen endring i hvordan programmet virker).
+
 ## 0.6.1 – 2026-11-01
 
 ### Endret
