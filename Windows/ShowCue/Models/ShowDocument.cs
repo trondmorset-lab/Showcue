@@ -33,16 +33,19 @@ public sealed class ShowDocument
     {
         var doc = JsonSerializer.Deserialize<ShowDocument>(File.ReadAllText(path), JsonOptions)
                   ?? throw new InvalidDataException("Tom eller ugyldig showfil.");
-        // Medier som er flyttet sammen med showfila finnes ofte ved siden av den.
+        // Medier som er flyttet sammen med showfila finnes ofte ved siden av den, eller i undermappa «Media».
         var dir = Path.GetDirectoryName(path) ?? "";
-        foreach (var fc in doc.Cues.OfType<IFileCue>())
+        string Locate(string file)
         {
-            if (string.IsNullOrEmpty(fc.FilePath) || File.Exists(fc.FilePath)) continue;
-            var candidate = Path.Combine(dir, Path.GetFileName(fc.FilePath));
-            if (File.Exists(candidate)) { fc.FilePath = candidate; continue; }
-            candidate = Path.Combine(dir, "Media", Path.GetFileName(fc.FilePath));
-            if (File.Exists(candidate)) fc.FilePath = candidate;
+            if (string.IsNullOrEmpty(file) || File.Exists(file)) return file;
+            var name = MediaTools.FileName(file);
+            foreach (var candidate in new[] { Path.Combine(dir, name), Path.Combine(dir, "Media", name), Path.Combine(dir, "..", "Media", name) })
+                if (File.Exists(candidate)) return Path.GetFullPath(candidate);
+            return file;
         }
+        foreach (var fc in doc.Cues.OfType<IFileCue>()) fc.FilePath = Locate(fc.FilePath);
+        foreach (var pl in doc.Cues.OfType<PlaylistCue>())
+            if (pl.Files.Any(f => Locate(f) != f)) pl.Files = pl.Files.Select(Locate).ToList();
         return doc;
     }
 }
@@ -55,7 +58,7 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
     {
         ["audio"] = typeof(AudioCue), ["video"] = typeof(VideoCue), ["image"] = typeof(ImageCue), ["pdf"] = typeof(PdfCue),
         ["fade"] = typeof(FadeCue), ["stop"] = typeof(StopCue), ["osc"] = typeof(OscCue), ["midi"] = typeof(MidiCue),
-        ["goto"] = typeof(GotoCue), ["playlist"] = typeof(PlaylistCue),
+        ["goto"] = typeof(GotoCue), ["playlist"] = typeof(PlaylistCue), ["memo"] = typeof(MemoCue), ["network"] = typeof(NetworkCue),
     };
 
     public override bool CanConvert(Type t) => t == typeof(Cue);

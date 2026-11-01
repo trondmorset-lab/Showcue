@@ -79,6 +79,10 @@ public sealed class AppSettings
 
     /// <summary>-1 = eget vindu (for testing på én skjerm), ellers skjermindeks.</summary>
     public int VideoScreen { get; set; } = -1;
+    /// <summary>Mål for «Normaliser lydstyrke» (LUFS). −23 er EBU R128.</summary>
+    public double LoudnessTarget { get; set; } = -23;
+    /// <summary>Antall kolonner i cart-vinduet.</summary>
+    public int CartColumns { get; set; } = 4;
 
     public double PanicFadeTime { get; set; } = 1.0;
     /// <summary>Hindrer dobbel-GO ved prell på tasten.</summary>

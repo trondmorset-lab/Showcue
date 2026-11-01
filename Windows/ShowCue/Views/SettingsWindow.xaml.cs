@@ -93,6 +93,7 @@ public partial class SettingsWindow : Window
 
         // ---- Sikkerhet ----
         PanicBox.Text = settings.PanicFadeTime.ToString(CultureInfo.CurrentCulture);
+        LoudnessBox.Text = settings.LoudnessTarget.ToString(CultureInfo.CurrentCulture);
         DoubleGoBox.Text = settings.DoubleGoProtectionMs.ToString();
 
         UpdatePanels();
@@ -198,6 +199,7 @@ public partial class SettingsWindow : Window
         if (int.TryParse(MscIdBox.Text, out var msc)) Result.MscInDeviceId = Math.Clamp(msc, 0, 127);
 
         if (TryDouble(PanicBox.Text, out var p)) Result.PanicFadeTime = Math.Clamp(p, 0, 30);
+        if (TryDouble(LoudnessBox.Text, out var lufs)) Result.LoudnessTarget = Math.Clamp(lufs, -40, -5);
         if (int.TryParse(DoubleGoBox.Text, out var dg)) Result.DoubleGoProtectionMs = Math.Clamp(dg, 0, 2000);
 
         if (Result.AudioDriver == AudioDriverType.Asio && string.IsNullOrEmpty(Result.AsioDriverName))

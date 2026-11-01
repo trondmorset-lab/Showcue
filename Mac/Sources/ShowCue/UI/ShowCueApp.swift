@@ -178,6 +178,13 @@ struct ShowCommands: Commands {
                 if let tv = NSApp.keyWindow?.firstResponder as? NSTextView, tv.isEditable { tv.undoManager?.redo() } else { model.redo() }
             }.keyboardShortcut("z", modifiers: [.command, .shift])
         }
+        CommandMenu("Verktøy") {
+            Button("Finn manglende mediefiler …") { model.relinkMenu() }
+            Button("Samle show og mediefiler i én mappe …") { model.collectShow() }
+            Divider()
+            Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }
+            Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }
+        }
         CommandMenu("Cue") {
             Button("GO (Mellomrom)") { model.go() }
             Button("Stopp alt (Esc)") { model.panic() }
@@ -192,6 +199,8 @@ struct ShowCommands: Commands {
             Button("Ny MIDI-cue") { model.add(.midi) }.keyboardShortcut("8")
             Button("Ny spilleliste …") { model.add(.playlist) }.keyboardShortcut("9")
             Button("Ny «gå til»-cue") { model.add(.goto) }.keyboardShortcut("0")
+            Button("Ny memo-cue") { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
+            Button("Ny nettverks-cue") { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])
             Divider()
             Button("Dupliser") { model.duplicateSelected() }.keyboardShortcut("d")
             Button("Slett") { model.deleteSelected() }.keyboardShortcut(.delete)
@@ -205,6 +214,7 @@ struct ShowCommands: Commands {
             Button("Showmodus (lås/lås opp redigering)") { model.showMode.toggle() }.keyboardShortcut("l")
             Divider()
             Button("Vis/skjul utgang") { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
+            Button("Cart-vindu (berøringsskjerm)") { model.showCart() }.keyboardShortcut("k")
             Button("Bytt tema") { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])
         }
     }

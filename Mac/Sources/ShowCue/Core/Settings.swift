@@ -93,6 +93,10 @@ struct AppSettings: Codable, Equatable {
     var theme: AppTheme = .dark
     var panicFadeTime = 1.0
     var doubleGoProtectionMs = 300
+    /// Mål for «Normaliser lydstyrke» (LUFS). −23 er EBU R128.
+    var loudnessTarget = -23.0
+    /// Antall kolonner i cart-vinduet.
+    var cartColumns = 4
 
     var lastShowPath = ""
 
@@ -102,7 +106,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath
+        case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, cartColumns
     }
 
     init(from decoder: Decoder) throws {
@@ -135,6 +139,8 @@ struct AppSettings: Codable, Equatable {
         panicFadeTime = v(.panicFadeTime, d.panicFadeTime)
         doubleGoProtectionMs = v(.doubleGoProtectionMs, d.doubleGoProtectionMs)
         lastShowPath = v(.lastShowPath, d.lastShowPath)
+        loudnessTarget = v(.loudnessTarget, d.loudnessTarget)
+        cartColumns = v(.cartColumns, d.cartColumns)
     }
 
     /// Nøkkel for lydoppsettet: bare endringer her krever omstart av lyden.

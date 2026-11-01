@@ -696,11 +696,20 @@ public sealed class InstantActive : ActiveCue
                 case OscCue o: Osc.Send(o.Host, o.Port, o.Address, o.Arguments); break;
                 case MidiCue m: Engine.Midi.Send(m); break;
                 case GotoCue g: Engine.RequestGoto(g.Target, g.Fire); break;
+                case MemoCue m: Engine.ShowMemo(m); break;
+                case NetworkCue n: SendNetwork(n); break;
             }
         }
         finally
         {
             Complete();
         }
+    }
+
+    /// <summary>Sendes i bakgrunnen så GO aldri venter på nettverket. Feil vises på cuen.</summary>
+    private static async void SendNetwork(NetworkCue n)
+    {
+        var error = await NetworkSender.SendAsync(n);
+        if (error != null) n.Error = "Nettverk: " + error;
     }
 }

@@ -4,7 +4,20 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network
+}
+
+/// Hvordan en nettverks-cue sender.
+enum NetworkProtocol: String, Codable, CaseIterable {
+    case udp = "Udp", tcp = "Tcp", http = "Http"
+
+    var label: String {
+        switch self {
+        case .udp: return "UDP"
+        case .tcp: return "TCP"
+        case .http: return "HTTP-forespørsel"
+        }
+    }
 }
 
 /// Formen på en fade: lineær i dB (jevn for øret), S-kurve (myk start og slutt) eller lineær amplitude.
@@ -141,6 +154,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var color: CueColor = .none
     /// "N:60", "CC:20", "PC:5" eller tom.
     @Published var midiTrigger = ""
+    /// Knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.
+    @Published var cart = false
 
     // Filer (lyd, video, bilde, PDF)
     @Published var filePath = ""
@@ -157,6 +172,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var fileChannels = 0
     /// nil = standard routing, tom = alt av.
     @Published var routes: [AudioRoute]? = nil
+    /// Målt lydstyrke (LUFS, integrert) mellom start og slutt, før nivået. nil = ikke målt.
+    @Published var loudness: Double? = nil
 
     // Visuelt
     @Published var replaceOthers = true
@@ -193,6 +210,16 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var address = "/"
     @Published var arguments = ""
 
+    // Memo
+    @Published var text = ""
+
+    // Nettverk (bruker også host og port)
+    @Published var networkProtocol: NetworkProtocol = .udp
+    /// Teksten som sendes (UDP/TCP) eller innholdet i forespørselen (HTTP). \r \n \t \\ og \xHH tolkes.
+    @Published var message = ""
+    @Published var url = "http://"
+    @Published var method = "GET"
+
     // MIDI
     @Published var device = ""
     @Published var messageType: MidiMessageType = .noteOn
@@ -221,6 +248,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             fadeTime = 3
         case .playlist:
             loop = true; fadeOut = 3; fileChannels = 2
+        case .network:
+            port = 9000
         default: break
         }
     }
@@ -243,6 +272,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return "Spilleliste"
         case .goto: return "Gå til"
+        case .memo: return "Memo"
+        case .network: return "Nettverk"
         }
     }
 
@@ -258,6 +289,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "♫"
         case .playlist: return "☰"
         case .goto: return "↪"
+        case .memo: return "✎"
+        case .network: return "⇄"
         }
     }
 
@@ -288,6 +321,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return "Spilleliste"
         case .goto: return target.isEmpty ? "Gå til" : "Gå til \(target)"
+        case .memo: return memoFirstLine.isEmpty ? "Memo" : memoFirstLine
+        case .network:
+            return networkProtocol == .http ? "HTTP \(method)" : "\(networkProtocol.rawValue.uppercased()) \(host)"
         }
     }
 
@@ -323,6 +359,11 @@ final class Cue: ObservableObject, Identifiable, Codable {
                 + (crossfade > 0 ? "  krysstoning \(Cue.fmt(crossfade))s" : "")
         case .goto:
             return (target.isEmpty ? "(mål mangler)" : "→ " + target) + (fire ? "  + GO" : "")
+        case .memo:
+            return memoFirstLine
+        case .network:
+            if networkProtocol == .http { return "\(method) \(url)" }
+            return "\(networkProtocol.rawValue.uppercased()) \(host):\(port)  \(message)".trimmingCharacters(in: .whitespaces)
         case .osc:
             return "\(host):\(port)  \(address) \(arguments)".trimmingCharacters(in: .whitespaces)
         case .midi:
@@ -336,6 +377,10 @@ final class Cue: ObservableObject, Identifiable, Codable {
             }
             return s + (device.isEmpty ? "" : "  [\(device)]")
         }
+    }
+
+    var memoFirstLine: String {
+        String(text.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first ?? "").trimmingCharacters(in: .whitespaces)
     }
 
     /// Lengden på hele fila (lyd eller video), 0 = ukjent.
@@ -401,6 +446,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
         case Curve, Release, Fire, Files, Shuffle, Crossfade
+        case Cart, Loudness, Text, Message, Url, Method
+        case protocolKey = "Protocol"
     }
 
     convenience init(from decoder: Decoder) throws {
@@ -435,6 +482,10 @@ final class Cue: ObservableObject, Identifiable, Codable {
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")
         curve = v(.Curve, FadeCurve.db); release = v(.Release, false); fire = v(.Fire, false)
         files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
+        cart = v(.Cart, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
+        text = v(.Text, ""); networkProtocol = v(.protocolKey, NetworkProtocol.udp); message = v(.Message, "")
+        url = v(.Url, "http://"); method = v(.Method, "GET").uppercased()
+        if t == .network { port = v(.Port, 9000) }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -449,6 +500,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(disabled, forKey: .Disabled)
         try c.encode(color, forKey: .Color)
         try c.encode(midiTrigger, forKey: .MidiTrigger)
+        try c.encode(cart, forKey: .Cart)
         switch type {
         case .audio:
             try c.encode(filePath, forKey: .FilePath)
@@ -461,6 +513,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(fileDuration, forKey: .FileDuration)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
+            try c.encode(loudness, forKey: .Loudness)
         case .video, .image, .pdf:
             try c.encode(filePath, forKey: .FilePath)
             try c.encode(fadeIn, forKey: .FadeIn)
@@ -504,6 +557,15 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(fadeOut, forKey: .FadeOut)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
+        case .memo:
+            try c.encode(text, forKey: .Text)
+        case .network:
+            try c.encode(networkProtocol, forKey: .protocolKey)
+            try c.encode(host, forKey: .Host)
+            try c.encode(port, forKey: .Port)
+            try c.encode(message, forKey: .Message)
+            try c.encode(url, forKey: .Url)
+            try c.encode(method, forKey: .Method)
         case .osc:
             try c.encode(host, forKey: .Host)
             try c.encode(port, forKey: .Port)
@@ -559,12 +621,18 @@ struct ShowDocument: Codable {
         var doc = try JSONDecoder().decode(ShowDocument.self, from: Data(contentsOf: url))
         let dir = url.deletingLastPathComponent()
         let fm = FileManager.default
-        for cue in doc.cues where cue.isFileCue && !cue.filePath.isEmpty && !fm.fileExists(atPath: cue.filePath) {
-            let name = Cue.lastPathComponent(cue.filePath)
+        func locate(_ path: String) -> String {
+            if path.isEmpty || fm.fileExists(atPath: path) { return path }
+            let name = Cue.lastPathComponent(path)
             let candidates = [dir.appendingPathComponent(name),
                               dir.appendingPathComponent("Media").appendingPathComponent(name),
                               dir.deletingLastPathComponent().appendingPathComponent("Media").appendingPathComponent(name)]
-            if let found = candidates.first(where: { fm.fileExists(atPath: $0.path) }) { cue.filePath = found.path }
+            return candidates.first(where: { fm.fileExists(atPath: $0.path) })?.path ?? path
+        }
+        for cue in doc.cues where cue.isFileCue { cue.filePath = locate(cue.filePath) }
+        for cue in doc.cues where cue.type == .playlist {
+            let moved = cue.files.map(locate)
+            if moved != cue.files { cue.files = moved }
         }
         doc.title = url.deletingPathExtension().lastPathComponent
         return doc

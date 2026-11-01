@@ -43,6 +43,7 @@ struct TopBar: View {
 
             NextCueInfo(cue: model.playhead)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .leading) { if !model.memoText.isEmpty { MemoBanner() } }
 
             VStack(alignment: .trailing, spacing: 2) {
                 ClockText(live: model.live)
@@ -78,6 +79,27 @@ struct TopBar: View {
         .padding(.horizontal, 14).padding(.vertical, 12)
         .background(theme.panel)
         .overlay(Rectangle().fill(theme.line).frame(height: 1), alignment: .bottom)
+    }
+}
+
+/// Beskjeden fra en memo-cue, over «neste cue» til den lukkes.
+struct MemoBanner: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.theme) var theme
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("BESKJED").font(.system(size: 11, weight: .semibold)).foregroundColor(theme.wait)
+                Text(model.memoText).font(.system(size: 22, weight: .semibold)).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+            Button("✕") { model.closeMemo() }.buttonStyle(PanelButtonStyle()).help("Lukk beskjeden")
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(theme.panel3))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.wait, lineWidth: 2))
     }
 }
 
@@ -179,6 +201,11 @@ struct ToolbarRow: View {
                 Button("↪ Gå til") { model.add(.goto) }.help("Flytt GO-markøren (⌘0)")
             }
             .disabled(model.showMode)
+            Group {
+                Button("✎ Memo") { model.add(.memo) }.help("Beskjed til operatøren (⇧⌘M)")
+                Button("⇄ Nett") { model.add(.network) }.help("Send UDP, TCP eller HTTP (⇧⌘N)")
+            }
+            .disabled(model.showMode)
             divider
             Group {
                 Button("Dupliser") { model.duplicateSelected() }.help("⌘D")
@@ -189,6 +216,18 @@ struct ToolbarRow: View {
             }
             .disabled(model.showMode)
             Spacer(minLength: 8)
+            Button("▦ Cart") { model.showCart() }.help("Store knapper for berøringsskjerm (⌘K)")
+            Menu("Verktøy") {
+                Button("Finn manglende mediefiler …") { model.relinkMenu() }.disabled(model.showMode)
+                Button("Samle show og mediefiler i én mappe …") { model.collectShow() }
+                Divider()
+                Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }.disabled(model.showMode)
+                Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }.disabled(model.showMode)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .font(.system(size: 12.5))
+            .padding(.horizontal, 6)
             Button(model.showMode ? "🔓 Lås opp" : "🔒 Showmodus") { model.showMode.toggle() }
                 .help("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)")
             Button("Lydpatch") { openWindow(id: "patch") }.help("Utganger og kanaler på lydkortet (Dante, flerkanals)")
