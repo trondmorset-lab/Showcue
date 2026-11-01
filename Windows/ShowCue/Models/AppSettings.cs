@@ -43,7 +43,8 @@ public sealed class AppSettings
 
     // ---- OSC inn ----
     public bool OscInEnabled { get; set; } = true;
-    public int OscInPort { get; set; } = 53000;
+    /// <summary>8000 = standardporten Companion-modulen «Generic OSC» sender til.</summary>
+    public int OscInPort { get; set; } = 8000;
 
     // ---- OSC-status ut (til Companion o.l.) ----
     public bool OscFeedbackEnabled { get; set; }

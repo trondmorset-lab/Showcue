@@ -342,7 +342,7 @@ public sealed class StopCue : Cue
 public sealed class OscCue : Cue
 {
     private string _host = "127.0.0.1";
-    private int _port = 53000;
+    private int _port = 8000;
     private string _address = "/";
     private string _arguments = "";
 
