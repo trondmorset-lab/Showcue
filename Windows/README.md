@@ -5,11 +5,12 @@ GO-knapp med cueliste, hurtigtaster for jingler og walk-in, og utgang til projek
 
 ## Bygge programmet
 
-1. Installer **.NET 8 SDK** (ikke bare runtime): https://dotnet.microsoft.com/download/dotnet/8.0
+1. Installer **.NET 10 SDK** (ikke bare runtime): https://dotnet.microsoft.com/download/dotnet/10.0
 2. Dobbeltklikk `build.bat`.
 3. Ferdig program: `publish\ShowCue.exe` (én fil, trenger ingen installasjon – kan kopieres til show-PC-en).
 
-Alternativt: åpne `ShowCue.sln` i Visual Studio 2022 og trykk F5.
+Alternativt: åpne `ShowCue.sln` i Visual Studio 2022 (17.14 eller nyere) eller 2026 og trykk F5.
+Testene ligger i `ShowCue.Tests` og kjøres med `dotnet test ShowCue.Tests` (eller Test Explorer i Visual Studio).
 GitHub Actions bygger både `ShowCue.exe` og installasjonsprogrammet `ShowCue-Setup.exe` (Inno Setup, skriptet ligger i
 `installer/ShowCue.iss`) og legger dem under *Releases*. Installasjonsprogrammet lager snarvei i Start-menyen,
 valgfritt skrivebordsikon og kobler `.showcue`-filer til ShowCue, og kan installere for én bruker uten administratorrettigheter.

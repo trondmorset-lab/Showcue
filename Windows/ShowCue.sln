@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowCue", "ShowCue\ShowCue.csproj", "{6B1E2C4A-3F5D-4E8B-9C2A-7D1F0E3B5A91}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowCue.Tests", "ShowCue.Tests\ShowCue.Tests.csproj", "{B8964CEC-1490-4021-B7F0-7181EE64AA77}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{6B1E2C4A-3F5D-4E8B-9C2A-7D1F0E3B5A91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B1E2C4A-3F5D-4E8B-9C2A-7D1F0E3B5A91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B1E2C4A-3F5D-4E8B-9C2A-7D1F0E3B5A91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8964CEC-1490-4021-B7F0-7181EE64AA77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8964CEC-1490-4021-B7F0-7181EE64AA77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8964CEC-1490-4021-B7F0-7181EE64AA77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8964CEC-1490-4021-B7F0-7181EE64AA77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

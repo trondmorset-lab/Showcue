@@ -1,0 +1,17 @@
+# Holder GitHub Actions (låst til commit-SHA) og NuGet-pakker oppdatert med ukentlige pull requests.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: nuget
+    directory: /Windows
+    schedule:
+      interval: weekly
+    groups:
+      nuget:
+        patterns: ["*"]
