@@ -1,5 +1,4 @@
 using System.IO;
-using NAudio.Wave;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -608,7 +607,7 @@ public sealed class PlaylistActive : ActiveCue
         }
         var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
         var o = new CuePlayback.Options(P.VolumeDb, StartOffset > 0 && _index == 0 ? StartOffset : 0, 0, false, fadeIn, 0);
-        var pb = new CuePlayback(P, new AudioFileReader(_order[_index]), P, o, mixer.WaveFormat.SampleRate);
+        var pb = new CuePlayback(P, new NAudio.Wave.AudioFileReader(_order[_index]), P, o, mixer.WaveFormat.SampleRate);
         pb.Finished += done => Application.Current.Dispatcher.BeginInvoke(() => { _playing.Remove(done); done.Dispose(); });
         _playing.Add(pb);
         _current = pb;
