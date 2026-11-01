@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- WPF-prosjekter tar ikke med System.IO automatisk (navnekollisjon med System.Windows.Shapes.Path). -->
+    <Using Include="System.IO" />
   </ItemGroup>
 
 </Project>
