@@ -10,7 +10,7 @@ enum DmxLevels {
     static func parse(_ text: String) throws -> [Int: UInt8] {
         var levels: [Int: UInt8] = [:]
         for raw in text.split(whereSeparator: { " ,;\n\r\t".contains($0) }).map(String.init) {
-            let at = raw.split(whereSeparator: { $0 == "@" || $0 == "=" }, omittingEmptySubsequences: false).map(String.init)
+            let at = raw.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "@" || $0 == "=" }).map(String.init)
             guard at.count == 2 else { throw ParseError.invalid("«\(raw)»: skriv kanal@verdi, f.eks. 1@255 eller 1-4@50%") }
             let range = at[0].split(separator: "-", omittingEmptySubsequences: false).map(String.init)
             guard range.count <= 2, let from = Int(range[0]), let to = Int(range[range.count - 1]),
