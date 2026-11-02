@@ -159,7 +159,7 @@ public sealed class RoutingMatrix : UserControl
         var existing = list.FirstOrDefault(r => r.Source == src && r.Bus == bus);
 
         text = text.Trim();
-        if (text.Length == 0 || text is "-" or "-inf" or Loc.T("av"))
+        if (text.Length == 0 || text.ToLowerInvariant() is "-" or "-inf" or "av" or "off")
         {
             if (existing == null) return;
             list.Remove(existing);
