@@ -118,6 +118,7 @@ public class RemoteControlTests
         public void RefreshFeedback() => Log.Add("refresh");
         public void SetPaused(bool? p) => Log.Add("pause " + (p?.ToString() ?? "toggle"));
         public bool ReleaseCue(string n) { Log.Add("release " + n); return true; }
+        public int FireTimecodeTriggers(long prev, long frame, TimecodeRate rate) { Log.Add($"tc {prev}-{frame}"); return 0; }
     }
 
     private readonly FakeShow _show = new();
@@ -131,6 +132,19 @@ public class RemoteControlTests
     private void Msc(MscCommand m) => Invoke("HandleMsc", m);
     private void Invoke(string method, params object[] args)
         => typeof(RemoteControl).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(_rc, args);
+
+    [Fact]
+    public void TimecodeTriggersNeedMtcInAndTwoFrames()
+    {
+        var tc = new Timecode(1, 0, 0, 0);
+        _rc.HandleTimecode(tc, TimecodeRate.Fps25);
+        Assert.DoesNotContain(_show.Log, x => x.StartsWith("tc"));
+        _settings.MtcInEnabled = true;
+        _rc.HandleTimecode(tc, TimecodeRate.Fps25);                    // første: bare husket
+        _rc.HandleTimecode(new Timecode(1, 0, 0, 2), TimecodeRate.Fps25);
+        Assert.Equal(new[] { "tc 90000-90002" }, _show.Log.Where(x => x.StartsWith("tc")));
+        Assert.Equal("MTC inn: 01:00:00:02", _rc.TimecodeStatus);
+    }
 
     [Fact]
     public void GoWithArguments()

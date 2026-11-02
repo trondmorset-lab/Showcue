@@ -142,6 +142,7 @@ final class FakeShow: ShowControl {
     func refreshFeedback() { log.append("refresh") }
     func setPaused(_ paused: Bool?) { log.append("pause \(paused.map { String($0) } ?? "toggle")") }
     func releaseCue(_ n: String) -> Bool { log.append("release \(n)"); return true }
+    func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int { log.append("tc \(previous)-\(frame)"); return 0 }
 }
 
 final class RemoteTests: XCTestCase {

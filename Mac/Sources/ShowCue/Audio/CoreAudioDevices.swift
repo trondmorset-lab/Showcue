@@ -30,8 +30,11 @@ enum CoreAudioDevices {
         return v.takeRetainedValue() as String
     }
 
-    static func outputChannelCount(_ id: AudioDeviceID) -> Int {
-        var addr = address(kAudioDevicePropertyStreamConfiguration, kAudioObjectPropertyScopeOutput)
+    static func outputChannelCount(_ id: AudioDeviceID) -> Int { channelCount(id, kAudioObjectPropertyScopeOutput) }
+    static func inputChannelCount(_ id: AudioDeviceID) -> Int { channelCount(id, kAudioObjectPropertyScopeInput) }
+
+    private static func channelCount(_ id: AudioDeviceID, _ scope: AudioObjectPropertyScope) -> Int {
+        var addr = address(kAudioDevicePropertyStreamConfiguration, scope)
         var size: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(id, &addr, 0, nil, &size) == noErr, size > 0 else { return 0 }
         let raw = UnsafeMutableRawPointer.allocate(byteCount: Int(size), alignment: MemoryLayout<AudioBufferList>.alignment)
@@ -56,15 +59,30 @@ enum CoreAudioDevices {
                         sampleRate: nominalSampleRate(id))
     }
 
-    /// Alle enheter med utganger.
-    static func outputDevices() -> [AudioDeviceInfo] {
+    private static func allDeviceIDs() -> [AudioDeviceID] {
         var addr = address(kAudioHardwarePropertyDevices)
         var size: UInt32 = 0
         let system = AudioObjectID(kAudioObjectSystemObject)
         guard AudioObjectGetPropertyDataSize(system, &addr, 0, nil, &size) == noErr else { return [] }
         var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
         guard AudioObjectGetPropertyData(system, &addr, 0, nil, &size, &ids) == noErr else { return [] }
-        return ids.map(info).filter { $0.outputChannels > 0 }
+        return ids
+    }
+
+    /// Alle enheter med utganger.
+    static func outputDevices() -> [AudioDeviceInfo] { allDeviceIDs().map(info).filter { $0.outputChannels > 0 } }
+
+    /// Alle enheter med innganger (mikrofon, linje inn, Dante Virtual Soundcard …): (UID, navn med kanalantall).
+    static func inputDevices() -> [(uid: String, label: String)] {
+        allDeviceIDs().compactMap { id in
+            let n = inputChannelCount(id)
+            guard n > 0, let uid = string(id, kAudioDevicePropertyDeviceUID) else { return nil }
+            return (uid, "\(string(id, kAudioObjectPropertyName) ?? "Lydenhet \(id)")  (\(n) kanaler)")
+        }
+    }
+
+    static func deviceID(forUID uid: String) -> AudioDeviceID? {
+        allDeviceIDs().first { string($0, kAudioDevicePropertyDeviceUID) == uid }
     }
 
     static func defaultOutput() -> AudioDeviceInfo? {

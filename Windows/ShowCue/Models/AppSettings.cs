@@ -69,6 +69,10 @@ public sealed class AppSettings
     public bool MscInEnabled { get; set; } = true;
     /// <summary>MSC device ID vi svarer på (127 = alle).</summary>
     public int MscInDeviceId { get; set; } = 127;
+    /// <summary>Start cuer med tidskode-trigger fra innkommende MTC (på MIDI-inngangen).</summary>
+    public bool MtcInEnabled { get; set; }
+    /// <summary>Lydenhet for live-inngang-cuer (WASAPI-opptaksenhet, tom = Windows standard).</summary>
+    public string InputDeviceId { get; set; } = "";
     public int LatencyMs { get; set; } = 60;
 
     // ---- Forhåndslytting (bølgeformen) ----

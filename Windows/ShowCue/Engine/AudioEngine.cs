@@ -187,13 +187,18 @@ public sealed class AudioEngine : IDisposable
 
     public void Dispose() => StopOutput();
 
-    public static List<KeyValuePair<string, string>> GetWasapiDevices()
+    public static List<KeyValuePair<string, string>> GetWasapiDevices() => Devices(DataFlow.Render);
+
+    /// <summary>Opptaksenheter (mikrofon, linje inn, Dante WDM-innganger) for live-inngang-cuer.</summary>
+    public static List<KeyValuePair<string, string>> GetCaptureDevices() => Devices(DataFlow.Capture);
+
+    private static List<KeyValuePair<string, string>> Devices(DataFlow flow)
     {
         var list = new List<KeyValuePair<string, string>> { new("", "Windows standardenhet") };
         try
         {
             using var en = new MMDeviceEnumerator();
-            foreach (var d in en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+            foreach (var d in en.EnumerateAudioEndPoints(flow, DeviceState.Active))
             {
                 string extra = "";
                 try { using var c = d.AudioClient; extra = $"  ({c.MixFormat.Channels} kanaler)"; } catch { }

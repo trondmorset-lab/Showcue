@@ -59,6 +59,8 @@
                         <ComboBox x:Name="PreviewDeviceBox" DisplayMemberPath="Value" SelectedValuePath="Key" />
                         <TextBlock Style="{StaticResource Label}" Text="…eller utgang i lydpatchen (første av to, 0 = cuens egne utganger)" />
                         <TextBox x:Name="PreviewBusBox" />
+                        <TextBlock Style="{StaticResource Label}" Text="Live-inngang (for inngang-cuer)" Margin="0,18,0,3" />
+                        <ComboBox x:Name="InputDeviceBox" DisplayMemberPath="Value" SelectedValuePath="Key" />
                         <TextBlock Style="{StaticResource Hint}"
                                    Text="Velg hodetelefonene (f.eks. PC-ens egen utgang), eller en utgang i lydpatchen som går til en lyttehøyttaler. Da kan du lytte på cuer under forestillingen uten at det høres i salen. Med 0 og ingen enhet går lyttingen ut på cuens vanlige utganger." />
                     </StackPanel>
@@ -146,7 +148,8 @@
                         <TextBlock Style="{StaticResource Hint}" x:Name="LearnHint"
                                    Text="«Lær»: klikk, og trykk en tast/knapp på kontrolleren. Lær bruker inngangen som er aktiv nå – bytter du inngang, trykk OK og åpne innstillingene igjen først. Hver cue kan også få sin egen MIDI-trigger i panelet til høyre i hovedvinduet." />
 
-                        <CheckBox x:Name="MscBox" Content="Ta imot MIDI Show Control (MSC GO / STOP med cuenummer)" Margin="0,14,0,0" />
+                        <CheckBox x:Name="MtcInBox" Content="Ta imot MIDI Time Code (starter cuer med tidskode-trigger)" Margin="0,14,0,0" />
+                        <CheckBox x:Name="MscBox" Content="Ta imot MIDI Show Control (MSC GO / STOP med cuenummer)" Margin="0,8,0,0" />
                         <TextBlock Style="{StaticResource Label}" Text="MSC device ID (127 = alle)" />
                         <TextBox x:Name="MscIdBox" />
                     </StackPanel>

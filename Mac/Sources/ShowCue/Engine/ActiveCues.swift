@@ -561,3 +561,137 @@ final class InstantActive: ActiveCue {
         }
     }
 }
+
+// MARK: - Tidskode, lys og live-inngang
+
+/// Tidskode-cue: MTC til en MIDI-utgang og/eller LTC som lyd, fra starttiden.
+final class TimecodeActive: ActiveCue {
+    private var ltc: LtcSource?
+    private var mtc: MtcSender?
+    private var begin = 0.0
+
+    /// Tidskoden som sendes nå.
+    var current: String {
+        Timecode.fromSeconds(cue.startTimecode.toSeconds(cue.rate) + elapsed, cue.rate).format(cue.rate)
+    }
+
+    override func onBegin() throws {
+        guard cue.sendMtc || cue.sendLtc else {
+            throw NSError(domain: "ShowCue.TC", code: 1, userInfo: [NSLocalizedDescriptionKey: "Velg MTC og/eller LTC"])
+        }
+        let start = Timecode.fromSeconds(cue.startTimecode.toSeconds(cue.rate) + startOffset, cue.rate)
+        if cue.sendLtc {
+            guard let m = engine.audio.mixer else {
+                throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."])
+            }
+            let src = LtcSource(busIndex: cue.ltcBus - 1, levelDb: cue.ltcLevelDb, start: start, rate: cue.rate, sampleRate: m.sampleRate)
+            m.add(src)
+            ltc = src
+        }
+        if cue.sendMtc {
+            let midi = engine.midi, device = cue.device
+            mtc = MtcSender(send: { try? midi.send($0, device: device) }, start: start, rate: cue.rate)
+        }
+        begin = engine.now
+        duration = cue.length
+    }
+
+    override func tick() {
+        super.tick()
+        guard started, !done else { return }
+        elapsed = engine.now - begin
+        if cue.length > 0 && elapsed >= cue.length { complete() }
+    }
+
+    override func pause() { ltc?.pause(); mtc?.pause() }
+    override func resume() { ltc?.resume(); mtc?.resume() }
+    override func stop(fade: Double) { super.stop(fade: fade); complete() }
+
+    override func onComplete() {
+        ltc?.stop()
+        mtc?.stop()
+    }
+}
+
+/// Lys-cue: fader DMX-kanaler over Art-Net. Å stoppe cuen lar lyset stå (som på et lysbord).
+final class LightActive: TimedActive {
+    override func onBegin() throws {
+        let levels = try DmxLevels.parse(cue.levels)
+        guard !cue.host.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw NSError(domain: "ShowCue.DMX", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mangler IP-adresse for Art-Net"])
+        }
+        engine.dmx.fade(host: cue.host.trimmingCharacters(in: .whitespaces), universe: cue.universe, to: levels, seconds: cue.fadeTime)
+        try super.onBegin()
+    }
+}
+
+/// Live-inngang gjennom lydpatchen (mikrofon, linje inn).
+final class InputActive: ActiveCue {
+    private var voice: Voice?
+    private var begin = 0.0
+    private var subs: Set<AnyCancellable> = []
+
+    override func onBegin() throws {
+        guard let m = engine.audio.mixer else {
+            throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."])
+        }
+        let ring: LiveRing
+        do { ring = try engine.input.open(deviceUID: engine.inputDeviceUID, outputRate: m.sampleRate) }
+        catch { throw NSError(domain: "ShowCue.Input", code: 1, userInfo: [NSLocalizedDescriptionKey: "Kunne ikke åpne inngangen: \(error.localizedDescription)"]) }
+        if cue.fileChannels != ring.channels { cue.fileChannels = ring.channels }
+        let src = LiveSource(ring: ring)
+        let input = engine.input
+        src.onClose = { [weak input] r in input?.close(r) }
+        let v = Voice(source: src, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: cue.fadeIn, fadeOut: cue.fadeOut,
+                      loop: true, routes: cue.effectiveRoutes(fileChannels: ring.channels))
+        v.onFinished = { [weak self, weak m] in
+            DispatchQueue.main.async {
+                if let self, let v = self.voice { m?.remove(v) }
+                self?.complete()
+            }
+        }
+        m.add(v)
+        voice = v
+        begin = engine.now
+        subs = [
+            cue.$routes.dropFirst().sink { [weak self] _ in
+                DispatchQueue.main.async { guard let self, let v = self.voice else { return }
+                    v.setRouting(self.cue.effectiveRoutes(fileChannels: self.cue.fileChannels)) }
+            },
+            cue.$volumeDb.dropFirst().sink { [weak self] db in
+                guard let self, !self.isStopping else { return }
+                self.voice?.adjustLevel(db)
+            },
+        ]
+    }
+
+    override func tick() {
+        super.tick()
+        if started && !done { elapsed = engine.now - begin }
+    }
+
+    override func stop(fade: Double) {
+        super.stop(fade: fade)
+        guard let v = voice, !done else { return }
+        isStopping = true
+        v.stop(fade: fade)
+        if fade <= 0 { complete() }
+    }
+
+    override func applyFade(_ f: Cue) {
+        guard let v = voice else { return }
+        if f.fadeAudio {
+            if f.stopWhenDone { wasStopped = true; isStopping = true }
+            v.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: f.stopWhenDone, curve: f.curve)
+        } else if f.stopWhenDone { stop(fade: 0) }
+    }
+
+    override func pause() { voice?.pause() }
+    override func resume() { voice?.resume() }
+
+    override func onComplete() {
+        subs.removeAll()
+        if let v = voice { engine.audio.mixer?.remove(v) }
+        voice = nil
+    }
+}

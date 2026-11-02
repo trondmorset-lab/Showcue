@@ -156,6 +156,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+P** | Pause / fortsett alt |
 | **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til memo / nettverks-cue |
 | **Ctrl+K** | Cart-vindu |
+| **Ctrl+Shift+T / L / I** | Legg til tidskode-, lys-, inngang-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
@@ -193,6 +194,18 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Verktøy → Normaliser lydstyrke*, måler
   lydstyrken (integrert LUFS etter EBU R128) mellom start og slutt og setter nivået så cuen treffer målet
   (standard −23 LUFS, endres under *Innstillinger → Sikkerhet*).
+
+## Tidskode, lys og live-inngang
+
+- **Tidskode-cue** (⏱ TC): sender MTC til en MIDI-utgang og/eller LTC som lyd til en egen utgang i lydpatchen,
+  fra starttiden (f.eks. 01:00:00:00). Lengde 0 = til cuen stoppes. Pause stopper tidskoden.
+- **Tidskode-trigger:** skriv et tidspunkt (tt:mm:ss:ff) i panelet, og slå på *MTC inn* under *Innstillinger → MIDI*.
+  Cuen starter når innkommende MIDI Time Code passerer tidspunktet (ikke ved spoling forbi).
+- **Lys-cue** (✺ Lys): sender DMX over Art-Net (UDP 6454) til en node eller som kringkasting. Nivåer skrives
+  `kanal@verdi`, f.eks. `1@255 2-4@50% 10@0`, og fades over valgt tid. Kanaler som ikke nevnes, beholder nivået.
+- **Live-inngang** (◉ Inn): lyden fra inngangen valgt under *Innstillinger → Lyd* (WASAPI: mikrofon, linje inn,
+  Dante WDM) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
+  ASIO-innganger støttes ikke ennå – bruk Dante i WDM-modus.
 
 ## Mediefiler: finn og samle
 

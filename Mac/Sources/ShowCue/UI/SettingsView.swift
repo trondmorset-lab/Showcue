@@ -78,6 +78,14 @@ struct SettingsView: View {
             FieldLabel("…eller utgang i lydpatchen (første av to, 0 = cuens egne utganger)")
             IntInput(value: $draft.previewBus, range: 0...128).frame(width: 90)
             Hint("Da kan du lytte på cuer under forestillingen uten at det høres i salen. Med 0 og ingen enhet går lyttingen ut på cuens vanlige utganger.")
+
+            SectionHeader("LIVE-INNGANG").padding(.top, 18)
+            FieldLabel("Inngang for inngang-cuer")
+            Picker("", selection: $draft.inputDeviceUID) {
+                Text("Systemets standard inngang").tag("")
+                ForEach(CoreAudioDevices.inputDevices(), id: \.uid) { Text($0.label).tag($0.uid) }
+            }.labelsHidden()
+            Hint("Mikrofon, linje inn eller Dante Virtual Soundcard. macOS spør om tilgang til mikrofonen første gang.")
         }
     }
 
@@ -162,7 +170,8 @@ struct SettingsView: View {
             learnRow("Forrige", \.midiPrevious)
             Hint("«Lær»: klikk, og trykk en tast/knapp på kontrolleren. Lær bruker inngangen som er aktiv nå – bytter du inngang, trykk «Bruk» først. Hver cue kan også få sin egen MIDI-trigger i panelet til høyre i hovedvinduet.")
 
-            Toggle("Ta imot MIDI Show Control (MSC GO / STOP med cuenummer)", isOn: $draft.mscInEnabled).padding(.top, 14)
+            Toggle("Ta imot MIDI Time Code (starter cuer med tidskode-trigger)", isOn: $draft.mtcInEnabled).padding(.top, 14)
+            Toggle("Ta imot MIDI Show Control (MSC GO / STOP med cuenummer)", isOn: $draft.mscInEnabled).padding(.top, 8)
             FieldLabel("MSC device ID (127 = alle)"); IntInput(value: $draft.mscInDeviceId, range: 0...127)
         }
     }

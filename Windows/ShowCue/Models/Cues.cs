@@ -73,9 +73,17 @@ public abstract class Cue : ObservableObject
     /// <summary>Vis cuen som knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.</summary>
     public bool Cart { get => _cart; set => SetCue(ref _cart, value); }
 
-    /// <summary>Hurtigtast og MIDI-trigger samlet, for visning i lista.</summary>
+    private string _timecodeTrigger = "";
+    /// <summary>Start cuen når innkommende tidskode (MTC) passerer dette tidspunktet, «tt:mm:ss:ff». Tom = ingen.</summary>
+    public string TimecodeTrigger
+    {
+        get => _timecodeTrigger;
+        set { if (SetCue(ref _timecodeTrigger, Timecode.TryParse(value, out var tc) ? tc.ToString() : "")) OnPropertyChanged(nameof(TriggerText)); }
+    }
+
+    /// <summary>Hurtigtast, MIDI- og tidskode-trigger samlet, for visning i lista.</summary>
     [JsonIgnore] public string TriggerText => string.Join(" · ",
-        new[] { Hotkey, MidiTriggers.Describe(MidiTrigger) }.Where(s => !string.IsNullOrEmpty(s)));
+        new[] { Hotkey, MidiTriggers.Describe(MidiTrigger), TimecodeTrigger.Length > 0 ? "TC " + TimecodeTrigger : "" }.Where(s => !string.IsNullOrEmpty(s)));
 
     [JsonIgnore] public abstract string TypeName { get; }
     [JsonIgnore] public abstract string TypeIcon { get; }
@@ -452,6 +460,89 @@ public sealed class NetworkCue : Cue
     public override string Summary => Protocol == NetworkProtocol.Http
         ? $"{Method} {Url}"
         : $"{Protocol.ToString().ToUpperInvariant()} {Host}:{Port}  {Message}".TrimEnd();
+}
+
+// ======================================================================
+//  TIDSKODE, LYS OG LIVE-INNGANG
+// ======================================================================
+/// <summary>Sender tidskode (MTC til en MIDI-utgang og/eller LTC som lyd på en utgang) fra et starttidspunkt.</summary>
+public sealed class TimecodeCue : Cue
+{
+    private string _start = "01:00:00:00";
+    private TimecodeRate _rate = TimecodeRate.Fps25;
+    private bool _sendMtc = true;
+    private string _device = "";
+    private bool _sendLtc;
+    private int _ltcBus = 1;
+    private double _ltcLevelDb = -12;
+    private double _length;
+
+    public string Start { get => _start; set => SetCue(ref _start, Timecode.TryParse(value, out var tc) ? tc.ToString() : _start); }
+    public TimecodeRate Rate { get => _rate; set => SetCue(ref _rate, value); }
+    public bool SendMtc { get => _sendMtc; set => SetCue(ref _sendMtc, value); }
+    /// <summary>MIDI-utgang for MTC (tom = første).</summary>
+    public string Device { get => _device; set => SetCue(ref _device, value ?? ""); }
+    public bool SendLtc { get => _sendLtc; set => SetCue(ref _sendLtc, value); }
+    /// <summary>Utgang i lydpatchen for LTC (fra 1).</summary>
+    public int LtcBus { get => _ltcBus; set => SetCue(ref _ltcBus, Math.Clamp(value, 1, 64)); }
+    public double LtcLevelDb { get => _ltcLevelDb; set => SetCue(ref _ltcLevelDb, Math.Clamp(value, -40, 0)); }
+    /// <summary>Hvor lenge tidskoden går (sekunder). 0 = til cuen stoppes.</summary>
+    public double Length { get => _length; set => SetCue(ref _length, Math.Max(0, value)); }
+
+    [JsonIgnore] public Timecode StartTimecode => Timecode.TryParse(Start, out var tc) ? tc : default;
+
+    public override string TypeName => "Tidskode";
+    public override string TypeIcon => "⏱";
+    protected override string DefaultName => "Tidskode " + Start;
+    public override string Summary => $"{Start} @ {Timecode.Label(Rate).Split(' ')[0]} fps"
+        + (SendMtc ? "  MTC" : "") + (SendLtc ? $"  LTC → ut {LtcBus}" : "");
+    public override double Duration => Length;
+}
+
+/// <summary>Lys: fader DMX-kanaler i et Art-Net-univers til nye nivåer.</summary>
+public sealed class LightCue : Cue
+{
+    private string _host = "255.255.255.255";
+    private int _universe;
+    private string _levels = "1@255";
+    private double _fadeTime = 2;
+
+    /// <summary>Art-Net-node eller kringkasting (255.255.255.255, 2.255.255.255 …).</summary>
+    public string Host { get => _host; set => SetCue(ref _host, value?.Trim() ?? ""); }
+    /// <summary>Art-Net-univers (0 = det første).</summary>
+    public int Universe { get => _universe; set => SetCue(ref _universe, Math.Clamp(value, 0, 32767)); }
+    /// <summary>«kanal@verdi», f.eks. «1@255 2-4@50% 10@0».</summary>
+    public string Levels { get => _levels; set => SetCue(ref _levels, value ?? ""); }
+    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Clamp(value, 0, 600)); }
+
+    public override string TypeName => "Lys";
+    public override string TypeIcon => "✺";
+    public override string Summary => $"Univers {Universe}  {DmxLevels.Summary(Levels)}" + (FadeTime > 0 ? $"  fade {FadeTime:0.#}s" : "");
+    public override double Duration => FadeTime;
+}
+
+/// <summary>Live-inngang (mikrofon, linje) gjennom lydpatchen, med nivå, fades og routing.</summary>
+public sealed class InputCue : Cue, IRoutedAudio
+{
+    private int _fileChannels = 2;
+    private List<AudioRoute>? _routes;
+    private double _volumeDb;
+    private double _fadeIn = 0.5;
+    private double _fadeOut = 1;
+
+    /// <summary>Antall kanaler fra inngangen (settes fra lydenheten).</summary>
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Clamp(value, 1, 64)); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
+    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Math.Max(0, value)); }
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+
+    public override string TypeName => "Inngang";
+    public override string TypeIcon => "◉";
+    protected override string DefaultName => "Live-inngang";
+    public override string Summary => $"{FileChannels} kanal(er)" + (VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "")
+        + (Routes != null ? "  → ut " + string.Join(",", Routes.Select(r => r.Bus).Distinct().OrderBy(b => b)) : "");
 }
 
 public sealed class OscCue : Cue

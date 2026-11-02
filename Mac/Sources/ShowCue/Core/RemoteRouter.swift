@@ -20,6 +20,8 @@ protocol ShowControl: AnyObject {
     func setPaused(_ paused: Bool?)
     /// Slipp loopen i en cue («devamp»).
     @discardableResult func releaseCue(_ number: String) -> Bool
+    /// Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.
+    func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int
 }
 
 /// Oversetter OSC, MIDI og MSC til kommandoer. Samme kommandoer som Windows-versjonen:
@@ -34,6 +36,26 @@ final class RemoteRouter {
     private var learn: ((String) -> Void)?
 
     init(settings: AppSettings) { self.settings = settings }
+
+    /// Siste mottatte tidskode (tom = ingen).
+    private(set) var timecodeStatus = ""
+    var onTimecodeStatus: ((String) -> Void)?
+    private var lastTcFrame: Int?
+    private var lastTcRate: TimecodeRate = .fps25
+
+    /// Innkommende tidskode: start cuer med tidskode-trigger som passeres.
+    func handleTimecode(_ tc: Timecode, rate: TimecodeRate) {
+        guard settings.mtcInEnabled, let show else { return }
+        let frame = tc.toFrame(rate)
+        if let prev = lastTcFrame, lastTcRate == rate {
+            let n = show.fireTimecodeTriggers(from: prev, to: frame, rate: rate)
+            if n > 0 { show.remoteLog("MTC \(tc.format(rate)) → " + (n == 1 ? "1 cue" : "\(n) cuer")) }
+        }
+        lastTcFrame = frame
+        lastTcRate = rate
+        let text = "MTC inn: " + tc.format(rate)
+        if text != timecodeStatus { timecodeStatus = text; onTimecodeStatus?(text) }
+    }
 
     var isLearning: Bool { learn != nil }
     func beginLearn(_ callback: @escaping (String) -> Void) { learn = callback }

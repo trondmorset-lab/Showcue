@@ -22,6 +22,8 @@ enum MidiEvent: Equatable {
     case controlChange(channel: Int, controller: Int, value: Int)
     case programChange(channel: Int, program: Int)
     case sysex([UInt8])
+    /// MTC-kvartbilde (databyten etter F1).
+    case quarterFrame(UInt8)
     case other
 }
 
@@ -46,11 +48,12 @@ final class MidiByteParser {
                 sysex = nil // statusbyte avbryter sysex
             }
             if b >= 0x80 {
-                status = b >= 0xF0 ? 0 : b
+                status = b >= 0xF0 && b != 0xF1 ? 0 : b
                 data.removeAll(keepingCapacity: true)
                 continue
             }
             guard status != 0 else { continue }
+            if status == 0xF1 { out.append(.quarterFrame(b)); status = 0; continue }
             data.append(b)
             let kind = status & 0xF0
             let ch = Int(status & 0x0F) + 1

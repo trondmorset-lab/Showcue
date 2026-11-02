@@ -12,6 +12,7 @@ Det finnes i to utgaver som deler showformat:
 
 Begge har:
 - Cuer for lyd, video, bilde, PDF, fade, stopp, OSC, MIDI, spilleliste, «gå til», memo og nettverk (UDP/TCP/HTTP)
+- **Tidskode** (MTC/LTC ut, MTC-triggere inn), **lys over Art-Net** og **live-inngang** gjennom lydpatchen
 - **Cart-vindu** for berøringsskjerm, **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
 - **Pause/fortsett alt**, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
