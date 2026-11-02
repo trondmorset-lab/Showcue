@@ -172,6 +172,9 @@
                     <TextBlock Style="{StaticResource Label}" Text="Dobbel-GO-sperre (ms)" />
                     <TextBox x:Name="DoubleGoBox" />
                     <TextBlock Style="{StaticResource Hint}" Text="GO ignoreres hvis det kommer innen denne tiden etter forrige GO (prell på tast eller kontroller)." />
+                    <TextBlock Style="{StaticResource Label}" Text="Mål for «Normaliser lydstyrke» (LUFS)" />
+                    <TextBox x:Name="LoudnessBox" />
+                    <TextBlock Style="{StaticResource Hint}" Text="−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke." />
                 </StackPanel>
             </TabItem>
         </TabControl>

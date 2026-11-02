@@ -546,6 +546,17 @@ final class InstantActive: ActiveCue {
             try engine.midi.send(MidiOut.bytes(for: cue), device: cue.device)
         case .goto:
             engine.requestGoto(cue.target, fire: cue.fire)
+        case .memo:
+            engine.onMemo?(cue)
+        case .network:
+            // Sendes i bakgrunnen så GO aldri venter på nettverket. Feil vises på cuen.
+            let c = cue
+            let (p, host, port, msg, url, method) = (c.networkProtocol, c.host, c.port, c.message, c.url, c.method)
+            Task { @MainActor in
+                if let err = await NetworkSender.send(protocol: p, host: host, port: port, message: msg, url: url, method: method) {
+                    c.error = "Nettverk: " + err
+                }
+            }
         default: break
         }
     }

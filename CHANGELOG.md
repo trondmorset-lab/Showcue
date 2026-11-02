@@ -4,6 +4,24 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.9.0 – 2026-11-01
+
+### Nytt
+- **Cart-vindu** (▦ Cart, Ctrl+K / ⌘K): store knapper for berøringsskjerm med farge, nummer og fremdrift.
+  Viser cuer med hurtigtast og cuer merket «Knapp i cart-vinduet». Trykk for å starte, trykk igjen for å stoppe.
+- **Finn manglende mediefiler:** når et show åpnes og filer mangler, kan du velge en mappe å lete i (undermapper tas med).
+  Også under *Verktøy*. Gjelder lyd, video, bilde, PDF og spillelister.
+- **Samle show:** kopierer showet og alle mediefilene til én mappe (`Media/`), klar til å flyttes til en annen maskin.
+- **Nettverks-cue** (⇄ Nett, Ctrl+Shift+N / ⇧⌘N): send tekst over UDP eller TCP, eller en HTTP-forespørsel
+  (GET/POST/PUT/DELETE). Til projektorer (PJLink), mediaservere, PTZ-kamera, smarthus og lignende.
+- **Memo-cue** (✎ Memo, Ctrl+Shift+M / ⇧⌘M): en beskjed til operatøren som vises stort øverst til den lukkes.
+- **Normaliser lydstyrke:** måler lydstyrken (LUFS, EBU R128) mellom start og slutt og setter nivået så alle
+  lyd-cuer høres like sterke. Per cue i panelet, eller for valgte/alle under *Verktøy*. Målet velges under Innstillinger.
+
+### Endret
+- «Nummerer» oppdaterer nå også mål i gå til-cuer.
+- Spillelister finner også flyttede filer ved siden av showfila og i `Media`-mappa.
+
 ## 0.8.0 – 2026-11-01
 
 ### Nytt

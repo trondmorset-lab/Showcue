@@ -154,6 +154,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+1 … Ctrl+8** | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | **Ctrl+9 / Ctrl+0** | Legg til spilleliste / gå til-cue |
 | **Ctrl+P** | Pause / fortsett alt |
+| **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til memo / nettverks-cue |
+| **Ctrl+K** | Cart-vindu |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
@@ -179,6 +181,25 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Kjør herfra:** knappen under bølgeformen starter cuen fra den blå markøren, på de vanlige utgangene – nyttig på prøver.
 - **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
   *lineær amplitude* (som en fysisk fader).
+
+## Cart, nettverk, memo og lydstyrke
+
+- **Cart-vindu** (▦ Cart eller Ctrl+K): store knapper for berøringsskjerm. Viser cuer med hurtigtast og cuer merket
+  «Knapp i cart-vinduet». Trykk for å starte, trykk igjen for å stoppe (med cuens fade ut). Antall kolonner kan justeres.
+- **Nettverks-cue** (⇄ Nett): sender tekst over **UDP** eller **TCP**, eller en **HTTP**-forespørsel. `\r`, `\n`, `\t`
+  og `\xHH` i meldingen gir linjeskift, tab og enkeltbytes. Eksempel PJLink-projektor av: TCP, port 4352, `%1POWR 0\r`.
+  Feil (f.eks. ingen kontakt) vises på cuen; GO venter aldri på nettverket.
+- **Memo-cue** (✎ Memo): en beskjed til operatøren («Vent på applaus») som vises stort øverst til den lukkes.
+- **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Verktøy → Normaliser lydstyrke*, måler
+  lydstyrken (integrert LUFS etter EBU R128) mellom start og slutt og setter nivået så cuen treffer målet
+  (standard −23 LUFS, endres under *Innstillinger → Sikkerhet*).
+
+## Mediefiler: finn og samle
+
+- Mangler det filer når et show åpnes, tilbyr ShowCue å lete i en mappe du velger (med undermapper), på filnavn.
+  Det samme finnes under *Verktøy → Finn manglende mediefiler*.
+- *Verktøy → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
+  `Media/`. Kopier mappa til en minnepinne eller en annen maskin (også Mac), så finner showet filene selv.
 
 ## Trygt under forestillingen
 

@@ -40,6 +40,9 @@ public sealed class EnumTextConverter : IValueConverter
         [FadeCurve.Db] = "Jevn (lineær i dB)",
         [FadeCurve.SCurve] = "S-kurve (myk start og slutt)",
         [FadeCurve.Linear] = "Lineær amplitude (som en fader)",
+        [NetworkProtocol.Udp] = "UDP",
+        [NetworkProtocol.Tcp] = "TCP",
+        [NetworkProtocol.Http] = "HTTP-forespørsel",
     };
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -108,6 +111,8 @@ public static class EnumValues
     public static Array FeedbackFormats { get; } = Enum.GetValues(typeof(OscFeedbackFormat));
     public static Array CueColors { get; } = Enum.GetValues(typeof(CueColor));
     public static Array FadeCurves { get; } = Enum.GetValues(typeof(FadeCurve));
+    public static Array NetworkProtocols { get; } = Enum.GetValues(typeof(NetworkProtocol));
+    public static string[] HttpMethods { get; } = { "GET", "POST", "PUT", "DELETE" };
 }
 
 public sealed class MidiTriggerTextConverter : IValueConverter

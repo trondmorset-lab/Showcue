@@ -46,6 +46,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private double _meterL, _meterR;
     private string _lastClock = "";
     private PatchWindow? _patchWindow;
+    private CartWindow? _cartWindow;
+    private string _memoText = "";
+    private CancellationTokenSource? _loudnessCancel;
     private OscFeedback? _feedback;
     private int _feedbackTick;
 
@@ -131,6 +134,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
     public bool IsEditable => !_showMode;
     public string PauseGlyph => Engine.IsPaused ? "▶" : "⏸";
+    /// <summary>Teksten fra siste memo-cue (tom = ingen beskjed vises).</summary>
+    public string MemoText { get => _memoText; set { _memoText = value ?? ""; Raise(); } }
     public string PauseText => Engine.IsPaused ? "Fortsett" : "Pause";
     public string ShowModeLabel => _showMode ? "🔓 Lås opp" : "🔒 Showmodus";
     public bool CanUndo => IsEditable && _history.CanUndo;
@@ -173,6 +178,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             SelectedCue = c;
             if (fire) { _lastGo = DateTime.MinValue; Go(); }
         });
+        Engine.MemoShown += m => Dispatcher.BeginInvoke(() => MemoText = m.Text.Trim().Length > 0 ? m.Text.Trim() : m.DisplayName);
         Engine.Active.CollectionChanged += (_, _) => { Raise(nameof(NothingActive)); Raise(nameof(ActiveCountText)); };
 
         PreviewKeyDown += (_, e) => HandleKey(e);
@@ -228,6 +234,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Raise(nameof(Cues));
         Raise(nameof(HotkeyCues));
         Raise(nameof(NoHotkeys));
+        _cartWindow?.SetCues(_show.Cues);
+        MemoText = "";
         Raise(nameof(IsEmpty));
         SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled);
         RaiseTitle();
@@ -324,6 +332,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             _settings.Save();
             if (string.IsNullOrEmpty(StatusText) || !StatusText.StartsWith("Advarsel")) StatusText = "Åpnet " + path;
             OfferRecovery();
+            OfferRelink();
         }
         catch (Exception ex)
         {
@@ -344,6 +353,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         ShowSafety.DeleteAutosave(_showPath);
         _settings.Save();
         _patchWindow?.Close();
+        _cartWindow?.Close();
+        _loudnessCancel?.Cancel();
         Remote.Dispose();
         Engine.Dispose();
     }
@@ -425,6 +436,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
                 case Key.P: Engine.TogglePause(); e.Handled = true; return;
+                case Key.K: Cart_Click(this, new RoutedEventArgs()); e.Handled = true; return;
             }
             if (!typing)
             {
@@ -442,7 +454,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             }
         }
 
-        if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Z && !typing) { Redo(); e.Handled = true; return; }
+        if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && !typing)
+        {
+            switch (key)
+            {
+                case Key.Z: Redo(); e.Handled = true; return;
+                case Key.M: AddCue("memo"); e.Handled = true; return;
+                case Key.N: AddCue("network"); e.Handled = true; return;
+            }
+        }
 
         if (typing)
         {
@@ -646,6 +666,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
+            "memo" => new() { new MemoCue() },
+            "network" => new() { new NetworkCue() },
             _ => new() { new MidiCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
         };
         InsertCues(list, at);
@@ -721,7 +743,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, "Gi alle cues nye nummer 1, 2, 3 …?\nFade- og stopp-cues oppdateres automatisk.", "ShowCue",
+        if (MessageBox.Show(this, "Gi alle cues nye nummer 1, 2, 3 …?\nFade-, stopp- og gå til-cues oppdateres automatisk.", "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < Cues.Count; i++)
@@ -732,6 +754,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         }
         foreach (var f in Cues.OfType<FadeCue>()) if (map.TryGetValue(f.Target, out var t)) f.Target = t;
         foreach (var s in Cues.OfType<StopCue>()) if (map.TryGetValue(s.Target, out var t)) s.Target = t;
+        foreach (var g in Cues.OfType<GotoCue>()) if (map.TryGetValue(g.Target, out var t)) g.Target = t;
     }
 
     private void PdfNextPage_Click(object sender, RoutedEventArgs e)
@@ -847,6 +870,118 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void HotButton_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).DataContext is Cue c) ToggleHotCue(c);
+    }
+
+    private void CloseMemo_Click(object sender, RoutedEventArgs e) => MemoText = "";
+
+    // ==================================================================
+    //  Cart, mediefiler og lydstyrke
+    // ==================================================================
+    private void Cart_Click(object sender, RoutedEventArgs e)
+    {
+        if (_cartWindow != null) { _cartWindow.Activate(); return; }
+        _cartWindow = new CartWindow(_settings.CartColumns, ToggleHotCue, () => Engine.TogglePause(), Panic,
+            cols => { _settings.CartColumns = cols; _settings.Save(); }) { Owner = this };
+        _cartWindow.SetCues(_show.Cues);
+        _cartWindow.Closed += (_, _) => _cartWindow = null;
+        _cartWindow.Show();
+    }
+
+    private void Tools_Click(object sender, RoutedEventArgs e)
+    {
+        var b = (Button)sender;
+        b.ContextMenu.PlacementTarget = b;
+        b.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        b.ContextMenu.IsOpen = true;
+    }
+
+    /// <summary>Etter åpning: mangler det mediefiler, tilbys det å lete etter dem i en mappe.</summary>
+    private void OfferRelink()
+    {
+        var missing = MediaTools.Missing(Cues);
+        if (missing.Count == 0) return;
+        var text = missing.Count == 1 ? $"Fant ikke mediefila «{MediaTools.FileName(missing[0])}»." : $"Fant ikke {missing.Count} mediefiler.";
+        if (MessageBox.Show(this, text + "\n\nVil du velge en mappe å lete i (undermapper tas med)?", "ShowCue",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            Relink();
+        else StatusText = $"Advarsel: {missing.Count} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.";
+    }
+
+    private void Relink_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsEditable) return;
+        if (MediaTools.Missing(Cues).Count == 0) { StatusText = "Ingen mediefiler mangler."; return; }
+        Relink();
+    }
+
+    private void Relink()
+    {
+        var dlg = new OpenFolderDialog { Title = "Velg mappa mediefilene ligger i" };
+        if (_showPath != null) dlg.InitialDirectory = Path.GetDirectoryName(_showPath);
+        if (dlg.ShowDialog(this) != true) return;
+        var found = MediaTools.Relink(Cues, dlg.FolderName);
+        foreach (var a in Cues.OfType<AudioCue>().Where(a => a.FileDuration <= 0 && File.Exists(a.FilePath)))
+            (a.FileDuration, a.FileChannels) = AudioEngine.Probe(a.FilePath);
+        foreach (var c in Cues.Where(c => c is IFileCue f && File.Exists(f.FilePath))) c.Error = null;
+        MediaCache.Clear();
+        MediaCache.Preload(Cues);
+        var left = MediaTools.Missing(Cues).Count;
+        StatusText = $"Fant {found} fil(er)." + (left > 0 ? $" {left} mangler fortsatt." : " Alle mediefiler er på plass.");
+    }
+
+    private void Collect_Click(object sender, RoutedEventArgs e)
+    {
+        CommitFocusedTextBox();
+        var dlg = new OpenFolderDialog { Title = "Velg (eller lag) en mappe for showet og mediefilene" };
+        if (dlg.ShowDialog(this) != true) return;
+        var name = _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Show";
+        try
+        {
+            var r = MediaTools.Collect(_show, dlg.FolderName, name);
+            var msg = $"Showet og {r.Copied} mediefil(er) er kopiert til\n{dlg.FolderName}\n\nShowfil: {Path.GetFileName(r.ShowPath)}, mediefiler i undermappa «Media»."
+                      + (r.Missing.Count > 0 ? $"\n\n{r.Missing.Count} fil(er) manglet og ble ikke kopiert." : "")
+                      + "\n\nVil du åpne den samlede kopien nå?";
+            if (MessageBox.Show(this, msg, "Samle show", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes && ConfirmDiscard())
+                TryOpen(r.ShowPath);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Kunne ikke samle showet: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void Normalize_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCue is AudioCue a) Normalize(new[] { a });
+    }
+
+    private void NormalizeSelected_Click(object sender, RoutedEventArgs e) => Normalize(CueGrid.SelectedItems.OfType<AudioCue>().ToList());
+    private void NormalizeAll_Click(object sender, RoutedEventArgs e) => Normalize(Cues.OfType<AudioCue>().ToList());
+
+    /// <summary>Måler lydstyrken i bakgrunnen og setter nivået så cuene treffer målet i innstillingene.</summary>
+    private async void Normalize(IReadOnlyList<AudioCue> cues)
+    {
+        if (!IsEditable) return;
+        CommitFocusedTextBox();
+        cues = cues.Where(c => File.Exists(c.FilePath)).ToList();
+        if (cues.Count == 0) { StatusText = "Ingen lyd-cuer med fil å normalisere."; return; }
+        _loudnessCancel?.Cancel();
+        var cancel = _loudnessCancel = new CancellationTokenSource();
+        var target = _settings.LoudnessTarget;
+        int done = 0, silent = 0;
+        foreach (var c in cues)
+        {
+            StatusText = $"Måler lydstyrke {++done}/{cues.Count}: {c.DisplayName} …";
+            var (path, start, end) = (c.FilePath, c.StartTime, c.EndTime);
+            double? lufs;
+            try { lufs = await Task.Run(() => LoudnessMeter.MeasureFile(path, start, end, cancel.Token)); }
+            catch (Exception ex) { c.Error = "Lydstyrke: " + ex.Message; continue; }
+            if (cancel.IsCancellationRequested) return;
+            c.Loudness = lufs.HasValue ? Math.Round(lufs.Value, 1) : null;
+            if (lufs is double l) c.VolumeDb = LoudnessMeter.GainFor(l, target);
+            else silent++;
+        }
+        StatusText = $"Normalisert {cues.Count - silent} lyd-cue(r) til {target:0.#} LUFS." + (silent > 0 ? $" {silent} var stille eller for korte." : "");
     }
 
     private void New_Click(object sender, RoutedEventArgs e)
