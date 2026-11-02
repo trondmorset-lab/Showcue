@@ -173,7 +173,7 @@ public sealed class TestToneSource : IBusSource
         if (Bus >= busCount) return true;
         for (int f = 0; f < frames; f++)
         {
-            // Paul Kellett sin rosa støy-filter
+            // Rosa støy: hvit støy gjennom sju parallelle lavpassfiltre (−3 dB per oktav)
             double w = _rng.NextDouble() * 2 - 1;
             _b0 = 0.99886 * _b0 + w * 0.0555179;
             _b1 = 0.99332 * _b1 + w * 0.0750759;

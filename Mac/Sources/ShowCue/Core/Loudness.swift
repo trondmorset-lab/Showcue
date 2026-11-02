@@ -15,7 +15,7 @@ final class LoudnessMeter {
             return y
         }
 
-        // Koeffisientene regnes ut for hver samplingsfrekvens (samme formler som libebur128).
+        // K-vektingen (ITU-R BS.1770) regnes om til hver samplingsfrekvens med bilineær transformasjon.
         static func shelf(_ rate: Double) -> Biquad {
             let f0 = 1681.974450955533, g = 3.999843853973347, q = 0.7071752369554196
             let k = tan(Double.pi * f0 / rate)
