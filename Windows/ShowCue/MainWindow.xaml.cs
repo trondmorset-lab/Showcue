@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -46,7 +47,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private double _meterL, _meterR;
     private string _lastClock = "";
     private PatchWindow? _patchWindow;
-    private CartWindow? _cartWindow;
+    private ButtonPanelWindow? _panelWindow;
     private string _memoText = "";
     private CancellationTokenSource? _loudnessCancel;
     private OscFeedback? _feedback;
@@ -232,7 +233,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Raise(nameof(Cues));
         Raise(nameof(HotkeyCues));
         Raise(nameof(NoHotkeys));
-        _cartWindow?.SetCues(_show.Cues);
+        _panelWindow?.SetCues(_show.Cues);
         MemoText = "";
         Raise(nameof(IsEmpty));
         SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled);
@@ -351,7 +352,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         ShowSafety.DeleteAutosave(_showPath);
         _settings.Save();
         _patchWindow?.Close();
-        _cartWindow?.Close();
+        _panelWindow?.Close();
         _loudnessCancel?.Cancel();
         Remote.Dispose();
         Engine.Dispose();
@@ -434,7 +435,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
                 case Key.P: Engine.TogglePause(); e.Handled = true; return;
-                case Key.K: Cart_Click(this, new RoutedEventArgs()); e.Handled = true; return;
+                case Key.K: ButtonPanel_Click(this, new RoutedEventArgs()); e.Handled = true; return;
+                case Key.OemPlus or Key.Add: SetZoom(1); e.Handled = true; return;
+                case Key.OemMinus or Key.Subtract: SetZoom(-1); e.Handled = true; return;
             }
             if (!typing)
             {
@@ -757,7 +760,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, "Gi alle cues nye nummer 1, 2, 3 …?\nFade-, stopp- og gå til-cues oppdateres automatisk.", "ShowCue",
+        if (MessageBox.Show(this, "Gi alle cues nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cues oppdateres automatisk.", "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < Cues.Count; i++)
@@ -906,16 +909,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
 
     // ==================================================================
-    //  Cart, mediefiler og lydstyrke
+    //  Knappepanel, mediefiler og lydstyrke
     // ==================================================================
-    private void Cart_Click(object sender, RoutedEventArgs e)
+    private void ButtonPanel_Click(object sender, RoutedEventArgs e)
     {
-        if (_cartWindow != null) { _cartWindow.Activate(); return; }
-        _cartWindow = new CartWindow(_settings.CartColumns, ToggleHotCue, () => Engine.TogglePause(), Panic,
-            cols => { _settings.CartColumns = cols; _settings.Save(); }) { Owner = this };
-        _cartWindow.SetCues(_show.Cues);
-        _cartWindow.Closed += (_, _) => _cartWindow = null;
-        _cartWindow.Show();
+        if (_panelWindow != null) { _panelWindow.Activate(); return; }
+        _panelWindow = new ButtonPanelWindow(_settings.ButtonPanelColumns, ToggleHotCue, () => Engine.TogglePause(), Panic,
+            cols => { _settings.ButtonPanelColumns = cols; _settings.Save(); }) { Owner = this };
+        _panelWindow.SetCues(_show.Cues);
+        _panelWindow.Closed += (_, _) => _panelWindow = null;
+        _panelWindow.Show();
     }
 
     private void Menu_Click(object sender, RoutedEventArgs e)
@@ -1060,8 +1063,43 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Remote.Apply(_settings);
         ApplyFeedbackSettings();
         if (ThemeManager.Current != _settings.Theme) ThemeManager.Apply(_settings.Theme);
+        Raise(nameof(Zoom));
+        Raise(nameof(ListTextScale));
         MidiDevices = MidiEngine.GetDevices();
         Raise(nameof(MidiDevices));
+    }
+
+    // ---- Zoom og tekststørrelse ----
+
+    public double Zoom => _settings.Zoom;
+    public double ListTextScale => _settings.ListTextScale;
+
+    /// <summary>Zoom inn (<paramref name="direction"/> &gt; 0), ut (&lt; 0) eller tilbake til vanlig størrelse (0).</summary>
+    private void SetZoom(int direction)
+    {
+        _settings.Zoom = direction == 0 ? 1 : UiZoom.Step(_settings.Zoom, direction);
+        _settings.Save();
+        Raise(nameof(Zoom));
+        StatusText = $"Zoom: {UiZoom.Percent(_settings.Zoom)}";
+    }
+
+    private void Zoom_Click(object sender, RoutedEventArgs e) =>
+        SetZoom(int.Parse((string)((FrameworkElement)sender).Tag, CultureInfo.InvariantCulture));
+
+    private void ListScaleMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        ListScaleMenu.Items.Clear();
+        foreach (var (label, scale) in UiZoom.ListSizes)
+        {
+            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = Math.Abs(scale - _settings.ListTextScale) < 0.01 };
+            item.Click += (_, _) =>
+            {
+                _settings.ListTextScale = scale;
+                _settings.Save();
+                Raise(nameof(ListTextScale));
+            };
+            ListScaleMenu.Items.Add(item);
+        }
     }
 
     private void ThemeToggle_Click(object sender, RoutedEventArgs e)

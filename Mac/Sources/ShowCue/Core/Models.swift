@@ -154,8 +154,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var color: CueColor = .none
     /// "N:60", "CC:20", "PC:5" eller tom.
     @Published var midiTrigger = ""
-    /// Knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.
-    @Published var cart = false
+    /// Vis cuen som knapp i knappepanelet. Cuer med hurtigtast vises der uansett.
+    @Published var inButtonPanel = false
     /// Start cuen når innkommende tidskode (MTC) passerer dette tidspunktet, «tt:mm:ss:ff». Tom = ingen.
     @Published var timecodeTrigger = ""
 
@@ -304,7 +304,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return "Spilleliste"
         case .goto: return "Gå til"
-        case .memo: return "Memo"
+        case .memo: return "Beskjed"
         case .network: return "Nettverk"
         case .timecode: return "Tidskode"
         case .light: return "Lys"
@@ -361,7 +361,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return "Spilleliste"
         case .goto: return target.isEmpty ? "Gå til" : "Gå til \(target)"
-        case .memo: return memoFirstLine.isEmpty ? "Memo" : memoFirstLine
+        case .memo: return memoFirstLine.isEmpty ? "Beskjed" : memoFirstLine
         case .network:
             return networkProtocol == .http ? "HTTP \(method)" : "\(networkProtocol.rawValue.uppercased()) \(host)"
         case .timecode: return "Tidskode " + tcStart
@@ -506,7 +506,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
         case Curve, Release, Fire, Files, Shuffle, Crossfade
-        case Cart, Loudness, Text, Message, Url, Method
+        case InButtonPanel, Loudness, Text, Message, Url, Method
         case TimecodeTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
         case protocolKey = "Protocol"
     }
@@ -543,7 +543,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")
         curve = v(.Curve, FadeCurve.db); release = v(.Release, false); fire = v(.Fire, false)
         files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
-        cart = v(.Cart, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
+        inButtonPanel = v(.InButtonPanel, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
         text = v(.Text, ""); networkProtocol = v(.protocolKey, NetworkProtocol.udp); message = v(.Message, "")
         url = v(.Url, t == .web ? "https://" : "http://"); method = v(.Method, "GET").uppercased()
         if t == .network { port = v(.Port, 9000) }
@@ -567,7 +567,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(disabled, forKey: .Disabled)
         try c.encode(color, forKey: .Color)
         try c.encode(midiTrigger, forKey: .MidiTrigger)
-        try c.encode(cart, forKey: .Cart)
+        try c.encode(inButtonPanel, forKey: .InButtonPanel)
         try c.encode(timecodeTrigger, forKey: .TimecodeTrigger)
         switch type {
         case .audio:

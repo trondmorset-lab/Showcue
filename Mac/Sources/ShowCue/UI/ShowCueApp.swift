@@ -166,11 +166,11 @@ struct ShowCommands: Commands {
         }
         CommandGroup(replacing: .newItem) {
             Button("Nytt show") { model.newShow() }.keyboardShortcut("n")
-            Button("Åpne …") { model.openDialog() }.keyboardShortcut("o")
+            Button("Åpne") { model.openDialog() }.keyboardShortcut("o")
         }
         CommandGroup(replacing: .saveItem) {
             Button("Lagre") { model.save(as: false) }.keyboardShortcut("s")
-            Button("Lagre som …") { model.save(as: true) }.keyboardShortcut("s", modifiers: [.command, .shift])
+            Button("Lagre som") { model.save(as: true) }.keyboardShortcut("s", modifiers: [.command, .shift])
         }
         CommandGroup(replacing: .undoRedo) {
             // I et tekstfelt angrer ⌘Z skrivingen; ellers angres endringer i showet.
@@ -182,8 +182,8 @@ struct ShowCommands: Commands {
             }.keyboardShortcut("z", modifiers: [.command, .shift])
         }
         CommandMenu("Verktøy") {
-            Button("Finn manglende mediefiler …") { model.relinkMenu() }
-            Button("Samle show og mediefiler i én mappe …") { model.collectShow() }
+            Button("Finn manglende mediefiler") { model.relinkMenu() }
+            Button("Samle show og mediefiler i én mappe") { model.collectShow() }
             Divider()
             Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }
             Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }
@@ -192,17 +192,17 @@ struct ShowCommands: Commands {
             Button("GO (Mellomrom)") { model.go() }
             Button("Stopp alt (Esc)") { model.panic() }
             Divider()
-            Button("Ny lyd-cue …") { model.add(.audio) }.keyboardShortcut("1")
-            Button("Ny video-cue …") { model.add(.video) }.keyboardShortcut("2")
-            Button("Ny bilde-cue …") { model.add(.image) }.keyboardShortcut("3")
-            Button("Ny PDF-cue …") { model.add(.pdf) }.keyboardShortcut("4")
+            Button("Ny lyd-cue") { model.add(.audio) }.keyboardShortcut("1")
+            Button("Ny video-cue") { model.add(.video) }.keyboardShortcut("2")
+            Button("Ny bilde-cue") { model.add(.image) }.keyboardShortcut("3")
+            Button("Ny PDF-cue") { model.add(.pdf) }.keyboardShortcut("4")
             Button("Ny fade-cue") { model.add(.fade) }.keyboardShortcut("5")
             Button("Ny stopp-cue") { model.add(.stop) }.keyboardShortcut("6")
             Button("Ny OSC-cue") { model.add(.osc) }.keyboardShortcut("7")
             Button("Ny MIDI-cue") { model.add(.midi) }.keyboardShortcut("8")
-            Button("Ny spilleliste …") { model.add(.playlist) }.keyboardShortcut("9")
+            Button("Ny spilleliste") { model.add(.playlist) }.keyboardShortcut("9")
             Button("Ny «gå til»-cue") { model.add(.goto) }.keyboardShortcut("0")
-            Button("Ny memo-cue") { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
+            Button("Ny beskjed-cue") { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
             Button("Ny nettverks-cue") { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])
             Button("Ny tidskode-cue") { model.add(.timecode) }.keyboardShortcut("t", modifiers: [.command, .option])
             Button("Ny lys-cue (Art-Net)") { model.add(.light) }.keyboardShortcut("l", modifiers: [.command, .shift])
@@ -213,7 +213,7 @@ struct ShowCommands: Commands {
             Button("Slett") { model.deleteSelected() }.keyboardShortcut(.delete)
             Button("Flytt opp") { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
             Button("Flytt ned") { model.moveSelected(1) }.keyboardShortcut(.downArrow)
-            Button("Nummerer alle …") { model.renumber() }
+            Button("Nummerer alle (1, 2, 3)") { model.renumber() }
             Divider()
             Button("Pause / fortsett alt") { model.togglePause() }.keyboardShortcut("p")
             Button("Slipp loop (devamp) i valgt cue") { model.releaseSelected() }
@@ -221,8 +221,12 @@ struct ShowCommands: Commands {
             Button("Showmodus (lås/lås opp redigering)") { model.showMode.toggle() }.keyboardShortcut("l")
             Divider()
             Button("Vis/skjul utgang") { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
-            Button("Cart-vindu (berøringsskjerm)") { model.showCart() }.keyboardShortcut("k")
+            Button("Knappepanel") { model.showButtonPanel() }.keyboardShortcut("k")
             Button("Bytt tema") { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])
+            Divider()
+            Button("Zoom inn") { model.zoom(1) }.keyboardShortcut("+")
+            Button("Zoom ut") { model.zoom(-1) }.keyboardShortcut("-")
+            Button("Vanlig størrelse (100 %)") { model.zoom(0) }
         }
     }
 }

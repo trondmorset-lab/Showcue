@@ -283,7 +283,7 @@ final class ToolsTests: XCTestCase {
     // MARK: Showfil
 
     func testNewCueTypesRoundTrip() throws {
-        let m = Cue(type: .memo); m.text = "Vent på applaus\nså GO"; m.cart = true
+        let m = Cue(type: .memo); m.text = "Vent på applaus\nså GO"; m.inButtonPanel = true
         let n = Cue(type: .network); n.networkProtocol = .http; n.method = "PUT"; n.url = "http://10.0.0.5/x"; n.message = "a"
         let a = Cue(type: .audio); a.filePath = "a.wav"; a.loudness = -17.3
         var doc = ShowDocument()
@@ -294,7 +294,7 @@ final class ToolsTests: XCTestCase {
         XCTAssertTrue(json.contains("\"type\" : \"network\""))
         XCTAssertTrue(json.contains("\"Protocol\" : \"Http\""))
         let back = try JSONDecoder().decode(ShowDocument.self, from: data)
-        XCTAssertTrue(back.cues[0].cart)
+        XCTAssertTrue(back.cues[0].inButtonPanel)
         XCTAssertEqual(back.cues[0].displayName, "Vent på applaus")
         XCTAssertTrue(back.cues[1].networkProtocol == .http && back.cues[1].method == "PUT" && back.cues[1].url == "http://10.0.0.5/x"
                       && back.cues[1].message == "a")
@@ -307,8 +307,8 @@ final class ToolsTests: XCTestCase {
     func testReadsWindowsNetworkAndMemo() throws {
         let json = """
         {"FormatVersion":1,"Cues":[
-          {"type":"network","Number":"1","Cart":false,"Protocol":"Tcp","Host":"10.0.0.9","Port":4352,"Message":"%1POWR 1\\\\r","Url":"http://","Method":"GET"},
-          {"type":"memo","Number":"2","Cart":true,"Text":"Pause"},
+          {"type":"network","Number":"1","InButtonPanel":false,"Protocol":"Tcp","Host":"10.0.0.9","Port":4352,"Message":"%1POWR 1\\\\r","Url":"http://","Method":"GET"},
+          {"type":"memo","Number":"2","InButtonPanel":true,"Text":"Pause"},
           {"type":"audio","Number":"3","FilePath":"a.wav","Loudness":null}
         ]}
         """
@@ -317,7 +317,19 @@ final class ToolsTests: XCTestCase {
         XCTAssertEqual(doc.cues[0].port, 4352)
         XCTAssertEqual(doc.cues[0].message, "%1POWR 1\\r")
         XCTAssertEqual(doc.cues[1].text, "Pause")
-        XCTAssertTrue(doc.cues[1].cart)
+        XCTAssertTrue(doc.cues[1].inButtonPanel)
         XCTAssertNil(doc.cues[2].loudness)
+    }
+
+    func testZoomStepsUpAndDownWithinLimits() {
+        XCTAssertEqual(UIZoom.step(1.0, 1), 1.1)
+        XCTAssertEqual(UIZoom.step(1.0, -1), 0.9)
+        XCTAssertEqual(UIZoom.step(1.17, 1), 1.25)   // mellom to trinn: neste hele trinn
+        XCTAssertEqual(UIZoom.step(2.0, 1), 2.0)
+        XCTAssertEqual(UIZoom.step(0.8, -1), 0.8)
+        XCTAssertEqual(UIZoom.clamp(5), 2.0)
+        XCTAssertEqual(UIZoom.clamp(.nan), 1.0)
+        XCTAssertEqual(UIZoom.clampList(0.5), 1.0)
+        XCTAssertEqual(UIZoom.percent(1.25), "125 %")
     }
 }

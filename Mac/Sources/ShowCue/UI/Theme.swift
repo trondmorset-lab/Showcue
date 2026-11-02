@@ -62,10 +62,34 @@ private struct ThemeKey: EnvironmentKey {
     static let defaultValue = Theme.of(.dark)
 }
 
+private struct UIScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
 extension EnvironmentValues {
     var theme: Theme {
         get { self[ThemeKey.self] }
         set { self[ThemeKey.self] = newValue }
+    }
+    /// Skalering av tekst og mål (zoom). 1 = vanlig størrelse.
+    var uiScale: CGFloat {
+        get { self[UIScaleKey.self] }
+        set { self[UIScaleKey.self] = newValue }
+    }
+}
+
+/// Systemfont som følger zoom (`uiScale`).
+private struct ScaledFont: ViewModifier {
+    @Environment(\.uiScale) private var scale
+    let size: CGFloat, weight: Font.Weight, design: Font.Design
+    func body(content: Content) -> some View {
+        content.font(.system(size: size * scale, weight: weight, design: design))
+    }
+}
+
+extension View {
+    func uiFont(_ size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(ScaledFont(size: size, weight: weight, design: design))
     }
 }
 
@@ -90,7 +114,7 @@ struct ToolButtonStyle: ButtonStyle {
     @Environment(\.theme) var theme
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5))
+            .uiFont(12.5)
             .padding(.horizontal, 9).padding(.vertical, 5)
             .background(RoundedRectangle(cornerRadius: 5).fill(configuration.isPressed ? theme.panel3 : Color.clear))
             .contentShape(Rectangle())
@@ -103,7 +127,7 @@ struct PanelButtonStyle: ButtonStyle {
     var foreground: Color? = nil
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5))
+            .uiFont(12.5)
             .foregroundColor(foreground ?? theme.text)
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(RoundedRectangle(cornerRadius: 5).fill(fill ?? theme.panel3))
@@ -118,7 +142,7 @@ struct SectionHeader: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundColor(theme.muted)
+        Text(text).uiFont(11, weight: .semibold).foregroundColor(theme.muted)
     }
 }
 
@@ -127,7 +151,7 @@ struct FieldLabel: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text).font(.system(size: 11.5)).foregroundColor(theme.muted).padding(.top, 8).padding(.bottom, 1)
+        Text(text).uiFont(11.5).foregroundColor(theme.muted).padding(.top, 8).padding(.bottom, 1)
     }
 }
 
@@ -136,7 +160,7 @@ struct Hint: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text).font(.system(size: 11.5)).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true).padding(.top, 3)
+        Text(text).uiFont(11.5).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true).padding(.top, 3)
     }
 }
 
@@ -147,7 +171,7 @@ struct StyledField: ViewModifier {
     func body(content: Content) -> some View {
         content
             .textFieldStyle(.plain)
-            .font(mono ? .system(size: 13, design: .monospaced) : .system(size: 13))
+            .uiFont(13, design: mono ? .monospaced : .default)
             .padding(.horizontal, 6).padding(.vertical, 5)
             .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line, lineWidth: 1))

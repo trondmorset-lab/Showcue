@@ -1,15 +1,19 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Kolonnebredder (samme som Windows-versjonen).
-private enum Col {
-    static let status: CGFloat = 30, number: CGFloat = 60, type: CGFloat = 66
-    static let preWait: CGFloat = 76, length: CGFloat = 76, cont: CGFloat = 28, trigger: CGFloat = 104
+/// Kolonnebredder (samme som Windows-versjonen) ved vanlig størrelse. Ganges med zoom.
+private struct Col {
+    let status, number, type, preWait, length, cont, trigger: CGFloat
+    init(_ s: CGFloat) {
+        status = 30 * s; number = 60 * s; type = 66 * s
+        preWait = 76 * s; length = 76 * s; cont = 28 * s; trigger = 104 * s
+    }
 }
 
 struct CueListView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.theme) var theme
+    @Environment(\.uiScale) var scale
     @State private var dropTargeted = false
 
     var body: some View {
@@ -35,8 +39,8 @@ struct CueListView: View {
             .overlay {
                 if model.cues.isEmpty {
                     VStack(spacing: 6) {
-                        Text("Dra lyd-, video-, bilde- eller PDF-filer hit").font(.system(size: 18)).foregroundColor(theme.muted)
-                        Text("eller bruk «Legg til» i verktøylinja").font(.system(size: 13)).foregroundColor(theme.faint)
+                        Text("Dra lyd-, video-, bilde- eller PDF-filer hit").uiFont(18).foregroundColor(theme.muted)
+                        Text("eller bruk «Legg til» i verktøylinja").uiFont(13).foregroundColor(theme.faint)
                     }
                     .allowsHitTesting(false)
                 }
@@ -51,16 +55,17 @@ struct CueListView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 0) {
-            Text("").frame(width: Col.status)
-            h("NR").frame(width: Col.number, alignment: .leading)
-            h("TYPE").frame(width: Col.type, alignment: .leading)
+        let col = Col(scale)
+        return HStack(spacing: 0) {
+            Text("").frame(width: col.status)
+            h("NR").frame(width: col.number, alignment: .leading)
+            h("TYPE").frame(width: col.type, alignment: .leading)
             h("NAVN").frame(maxWidth: .infinity, alignment: .leading)
             h("MÅL / FIL").frame(maxWidth: .infinity, alignment: .leading)
-            h("PRE-WAIT").frame(width: Col.preWait, alignment: .leading)
-            h("LENGDE").frame(width: Col.length, alignment: .leading)
-            Text("").frame(width: Col.cont)
-            h("TRIGGER").frame(width: Col.trigger, alignment: .leading)
+            h("PRE-WAIT").frame(width: col.preWait, alignment: .leading)
+            h("LENGDE").frame(width: col.length, alignment: .leading)
+            Text("").frame(width: col.cont)
+            h("TRIGGER").frame(width: col.trigger, alignment: .leading)
         }
         .padding(.leading, 3)
         .padding(.vertical, 7)
@@ -68,7 +73,7 @@ struct CueListView: View {
     }
 
     private func h(_ s: String) -> some View {
-        Text(s).font(.system(size: 11, weight: .semibold)).foregroundColor(theme.muted).padding(.horizontal, 8)
+        Text(s).uiFont(11, weight: .semibold).foregroundColor(theme.muted).padding(.horizontal, 8)
     }
 
     private func loadURLs(_ providers: [NSItemProvider], then: @escaping ([URL]) -> Void) {
@@ -92,6 +97,7 @@ struct CueListView: View {
 struct CueRow: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.theme) var theme
+    @Environment(\.uiScale) var scale
     @ObservedObject var cue: Cue
     let index: Int
     let selected: Bool
@@ -109,22 +115,23 @@ struct CueRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        let col = Col(scale)
+        return HStack(spacing: 0) {
             ZStack {
                 if cue.isRunning { Circle().fill(theme.running).frame(width: 9, height: 9) }
                 if cue.isPreWaiting { Circle().fill(theme.wait).frame(width: 9, height: 9) }
                 if let e = cue.error {
-                    Text("!").font(.system(size: 15, weight: .bold)).foregroundColor(theme.danger).help(e)
+                    Text("!").uiFont(15, weight: .bold).foregroundColor(theme.danger).help(e)
                 }
             }
-            .frame(width: Col.status)
-            Text(cue.number).font(.system(size: 13.5, weight: .semibold, design: .monospaced))
-                .padding(.horizontal, 8).frame(width: Col.number, alignment: .leading)
+            .frame(width: col.status)
+            Text(cue.number).uiFont(13.5, weight: .semibold, design: .monospaced)
+                .padding(.horizontal, 8).frame(width: col.number, alignment: .leading)
             HStack(spacing: 2) {
-                Text(cue.typeIcon).frame(width: 16)
-                Text(cue.typeName).font(.system(size: 12))
+                Text(cue.typeIcon).frame(width: 16 * scale)
+                Text(cue.typeName).uiFont(12)
             }
-            .foregroundColor(theme.muted).padding(.horizontal, 8).frame(width: Col.type, alignment: .leading)
+            .foregroundColor(theme.muted).padding(.horizontal, 8).frame(width: col.type, alignment: .leading)
             Text(cue.displayName).lineLimit(1).padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .bottom) {
@@ -134,17 +141,17 @@ struct CueRow: View {
                 }
             Text(cue.summary).foregroundColor(theme.muted).lineLimit(1).padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(cue.preWaitText).font(.system(size: 13, design: .monospaced)).foregroundColor(theme.wait)
-                .padding(.horizontal, 8).frame(width: Col.preWait, alignment: .leading)
-            Text(cue.durationText).font(.system(size: 13, design: .monospaced))
-                .padding(.horizontal, 8).frame(width: Col.length, alignment: .leading)
-            Text(cue.continueMode.glyph).font(.system(size: 16)).foregroundColor(theme.playhead)
-                .frame(width: Col.cont)
-            Text(cue.triggerText).font(.system(size: 12.5, design: .monospaced)).foregroundColor(theme.wait).lineLimit(1)
-                .padding(.horizontal, 8).frame(width: Col.trigger, alignment: .leading)
+            Text(cue.preWaitText).uiFont(13, design: .monospaced).foregroundColor(theme.wait)
+                .padding(.horizontal, 8).frame(width: col.preWait, alignment: .leading)
+            Text(cue.durationText).uiFont(13, design: .monospaced)
+                .padding(.horizontal, 8).frame(width: col.length, alignment: .leading)
+            Text(cue.continueMode.glyph).uiFont(16).foregroundColor(theme.playhead)
+                .frame(width: col.cont)
+            Text(cue.triggerText).uiFont(12.5, design: .monospaced).foregroundColor(theme.wait).lineLimit(1)
+                .padding(.horizontal, 8).frame(width: col.trigger, alignment: .leading)
         }
-        .font(.system(size: 13.5))
-        .frame(height: 34)
+        .uiFont(13.5)
+        .frame(height: 34 * scale)
         .background(background)
         .overlay(Rectangle().fill(stripe).frame(width: 3), alignment: .leading)
         .overlay(Rectangle().fill(theme.gridLine).frame(height: 1), alignment: .bottom)

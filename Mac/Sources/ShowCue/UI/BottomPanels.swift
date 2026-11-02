@@ -66,12 +66,12 @@ struct ActiveRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Text(active.cue.number).font(.system(size: 13, design: .monospaced)).foregroundColor(theme.muted).frame(width: 44, alignment: .leading)
+            Text(active.cue.number).uiFont(13, design: .monospaced).foregroundColor(theme.muted).frame(width: 44, alignment: .leading)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    Text(active.cue.displayName).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Text(active.cue.displayName).uiFont(13, weight: .semibold).lineLimit(1)
                     Spacer()
-                    Text(active.stateText).font(.system(size: 11)).foregroundColor(theme.muted)
+                    Text(active.stateText).uiFont(11).foregroundColor(theme.muted)
                 }
                 ProgressBar(value: active.progress)
             }
@@ -79,7 +79,7 @@ struct ActiveRow: View {
                 Text(active.elapsedText)
                 Text(active.remainingText).foregroundColor(theme.wait)
             }
-            .font(.system(size: 13, design: .monospaced))
+            .uiFont(13, design: .monospaced)
             .frame(minWidth: 76, alignment: .trailing)
             .padding(.horizontal, 12)
             Button("■") { active.stop(fade: AppModel.fadeOut(of: active.cue)) }
@@ -100,8 +100,8 @@ struct HotButton: View {
         Button { model.toggleHot(cue) } label: {
             VStack(alignment: .leading, spacing: 3) {
                 RoundedRectangle(cornerRadius: 1.5).fill(theme.stripe(cue.color) ?? .clear).frame(height: 3)
-                Text(cue.hotkey).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundColor(theme.wait)
-                Text(cue.displayName).font(.system(size: 13)).lineLimit(1)
+                Text(cue.hotkey).uiFont(13, weight: .bold, design: .monospaced).foregroundColor(theme.wait)
+                Text(cue.displayName).uiFont(13).lineLimit(1)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 9).padding(.vertical, 6)

@@ -4,6 +4,20 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.12.0 – 2026-11-02
+
+### Nytt
+- **Zoom:** gjør hele hovedvinduet større eller mindre (80–200 %) med Ctrl/⌘ og + / −, fra *Oppsett*-menyen
+  eller under *Innstillinger → Utseende*. Valget huskes.
+- **Tekst i cuelista:** Vanlig, Stor eller Ekstra stor – gjør bare cuelista større, i tillegg til zoom.
+
+### Endret
+- **Knappepanel** (tidligere «Cart»): store knapper som starter og stopper cuer direkte uten å flytte GO-markøren.
+  Avkrysningen i cue-panelet heter nå «Vis i knappepanelet». Show lagret med eldre versjoner må krysses av på nytt.
+- **Beskjed-cue** (tidligere «Memo»): viser en beskjed til operatøren i toppfeltet.
+- **Utstyr** (tidligere «Signal ut»): menyen for lys, miksere, videoservere og andre programmer.
+- Menyvalg og knapper har ikke lenger «…» på slutten.
+
 ## 0.11.1 – 2026-11-02
 
 ### Nytt

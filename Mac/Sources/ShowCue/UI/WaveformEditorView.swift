@@ -50,7 +50,7 @@ struct WaveformEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(infoText).font(.system(size: 11.5, design: .monospaced)).foregroundColor(theme.muted).lineLimit(1)
+            Text(infoText).uiFont(11.5, design: .monospaced).foregroundColor(theme.muted).lineLimit(1)
             GeometryReader { geo in
                 canvas(size: geo.size)
             }
@@ -76,7 +76,7 @@ struct WaveformEditorView: View {
             }.buttonStyle(PanelButtonStyle())
             if preview.goesToShowOutputs {
                 Text("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.")
-                    .font(.system(size: 11.5)).foregroundColor(theme.wait).fixedSize(horizontal: false, vertical: true)
+                    .uiFont(11.5).foregroundColor(theme.wait).fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 6) {
                 Button("Start = markør") { setStart(currentPoint) }.help("Sett startpunktet der markøren (eller lyttingen) er nå")
@@ -331,7 +331,7 @@ private struct TrimWindowContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\(cue.number.isEmpty ? "" : cue.number + " · ")\(cue.displayName)").font(.system(size: 15, weight: .semibold))
+            Text("\(cue.number.isEmpty ? "" : cue.number + " · ")\(cue.displayName)").uiFont(15, weight: .semibold)
             WaveformEditorView(cue: cue, preview: preview, large: true).id(cue.id)
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {

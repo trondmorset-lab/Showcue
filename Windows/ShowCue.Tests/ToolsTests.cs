@@ -266,7 +266,7 @@ public class ToolsTests
     public void NewCueTypesRoundTrip()
     {
         var doc = new ShowDocument();
-        doc.Cues.Add(new MemoCue { Text = "Vent på applaus\nså GO", Cart = true });
+        doc.Cues.Add(new MemoCue { Text = "Vent på applaus\nså GO", InButtonPanel = true });
         doc.Cues.Add(new NetworkCue { Protocol = NetworkProtocol.Http, Method = "PUT", Url = "http://10.0.0.5/x", Message = "a" });
         doc.Cues.Add(new AudioCue { FilePath = "a.wav", Loudness = -17.3 });
         var json = doc.ToJson();
@@ -275,12 +275,26 @@ public class ToolsTests
         Assert.Contains("\"Protocol\": \"Http\"", json);
         var back = JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!;
         var m = Assert.IsType<MemoCue>(back.Cues[0]);
-        Assert.True(m.Cart);
+        Assert.True(m.InButtonPanel);
         Assert.Equal("Vent på applaus", m.DisplayName);
         var n = Assert.IsType<NetworkCue>(back.Cues[1]);
         Assert.True(n.Protocol == NetworkProtocol.Http && n.Method == "PUT" && n.Url == "http://10.0.0.5/x" && n.Message == "a");
         Assert.Equal(-17.3, Assert.IsType<AudioCue>(back.Cues[2]).Loudness);
         Assert.Null(new AudioCue().Loudness);
         Assert.Equal(json, back.ToJson());
+    }
+
+    [Fact]
+    public void ZoomStepsUpAndDownWithinLimits()
+    {
+        Assert.Equal(1.1, UiZoom.Step(1.0, 1));
+        Assert.Equal(0.9, UiZoom.Step(1.0, -1));
+        Assert.Equal(1.25, UiZoom.Step(1.17, 1));   // mellom to trinn: neste hele trinn
+        Assert.Equal(2.0, UiZoom.Step(2.0, 1));
+        Assert.Equal(0.8, UiZoom.Step(0.8, -1));
+        Assert.Equal(2.0, UiZoom.Clamp(5));
+        Assert.Equal(1.0, UiZoom.Clamp(double.NaN));
+        Assert.Equal(1.0, UiZoom.ClampList(0.5));
+        Assert.Equal("125 %", UiZoom.Percent(1.25));
     }
 }

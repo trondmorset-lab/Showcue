@@ -13,9 +13,9 @@ Det finnes i to utgaver som deler showformat:
 | `Mac/` | macOS 13+ | Swift / SwiftUI / CoreAudio / AVFoundation | Åpne `Package.swift` i Xcode, eller `./build-app.sh` |
 
 Begge har:
-- Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, «gå til», memo og nettverk (UDP/TCP/HTTP)
+- Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, «gå til», beskjed og nettverk (UDP/TCP/HTTP)
 - **Tidskode** (MTC/LTC ut, MTC-triggere inn), **lys over Art-Net** og **live-inngang** gjennom lydpatchen
-- **Cart-vindu** for berøringsskjerm, **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
+- **Knappepanel** med store knapper (jingler, effekter, berøringsskjerm), **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
 - **Pause/fortsett alt**, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
@@ -24,7 +24,7 @@ Begge har:
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
 - **Fjernstyring** med OSC inn, MIDI inn og MSC
 - **Status ut over OSC** (f.eks. til Companion): neste cue, hva som spiller og tid igjen
-- **Lys, mørk og nattmodus**, og fargemerking av cuer
+- **Lys, mørk og nattmodus**, **zoom** og større tekst i cuelista, og fargemerking av cuer
 
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,
 eller i en undermappe `Media`.

@@ -72,6 +72,8 @@ public partial class SettingsWindow : Window
         // ---- Utseende ----
         _originalTheme = settings.Theme;
         ThemeBox.SelectedItem = settings.Theme;
+        Choices(ZoomBox, UiZoom.Steps.Select(z => (UiZoom.Percent(z), z)), settings.Zoom);
+        Choices(ListScaleBox, UiZoom.ListSizes, settings.ListTextScale);
 
         // ---- MIDI ----
         var midiIns = new List<string> { "" };
@@ -191,6 +193,8 @@ public partial class SettingsWindow : Window
         if (int.TryParse(FbPortBox.Text, out var fp) && fp is > 0 and < 65536) Result.OscFeedbackPort = fp;
         Result.OscFeedbackFormat = FbFormatBox.SelectedItem is OscFeedbackFormat ff ? ff : OscFeedbackFormat.Companion;
         Result.Theme = ThemeBox.SelectedItem is AppTheme th ? th : AppTheme.Dark;
+        if (ZoomBox.SelectedItem is ComboBoxItem { Tag: double z }) Result.Zoom = z;
+        if (ListScaleBox.SelectedItem is ComboBoxItem { Tag: double ls }) Result.ListTextScale = ls;
 
         var midiName = MidiInBox.SelectedItem as string ?? "";
         Result.MidiInDevice = midiName == "(av)" ? "" : midiName;
@@ -216,5 +220,13 @@ public partial class SettingsWindow : Window
         }
         _ok = true;
         DialogResult = true;
+    }
+
+    /// <summary>Fyller en nedtrekksliste med tekst/verdi-par og velger den verdien som ligger nærmest <paramref name="current"/>.</summary>
+    private static void Choices(ComboBox box, IEnumerable<(string Label, double Value)> items, double current)
+    {
+        box.Items.Clear();
+        foreach (var (label, value) in items) box.Items.Add(new ComboBoxItem { Content = label, Tag = value });
+        box.SelectedItem = box.Items.Cast<ComboBoxItem>().MinBy(i => Math.Abs((double)i.Tag - current));
     }
 }
