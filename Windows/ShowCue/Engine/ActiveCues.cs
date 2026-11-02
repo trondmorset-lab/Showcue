@@ -98,81 +98,94 @@ public abstract class ActiveCue : ObservableObject
 }
 
 // ======================================================================
-public sealed class AudioActive : ActiveCue
+/// <summary>Felles for cuer som spilles som én <see cref="CuePlayback"/> gjennom lydpatchen (lyd og live-inngang):
+/// stopp med fade, fade-cuer, pause, endringer i nivå/routing mens den spiller, og opprydding.</summary>
+public abstract class PlaybackActive : ActiveCue
 {
-    private CuePlayback? _pb;
-    private AudioCue AudioCue => (AudioCue)Cue;
+    protected CuePlayback? Pb;
+    private IRoutedAudio Routed => (IRoutedAudio)Cue;
 
-    public AudioActive(AudioCue cue, CueEngine engine) : base(cue, engine) { }
+    protected PlaybackActive(Cue cue, CueEngine engine) : base(cue, engine) { }
+
+    /// <summary>Lag avspillingen (lagt til i mikseren).</summary>
+    protected abstract CuePlayback Start();
 
     protected override void OnBegin()
     {
-        if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException("Lydfila finnes ikke: " + AudioCue.FilePath);
-        _pb = Engine.Audio.Play(AudioCue, StartOffset);
-        var pb = _pb;
-        // Fila lukkes først når lydtråden har sluppet den.
+        var pb = Pb = Start();
+        // Kilden lukkes først når lydtråden har sluppet den.
         pb.Finished += _ => Application.Current.Dispatcher.BeginInvoke(() => { pb.Dispose(); Complete(); });
-        Duration = AudioCue.Loop ? 0 : _pb.PassLength;
-        if (AudioCue.FileDuration <= 0 && _pb.PassLength > 0 && AudioCue.EndTime <= 0)
-            AudioCue.FileDuration = AudioCue.StartTime + _pb.PassLength;
-        if (AudioCue.FileChannels != _pb.FileChannels) AudioCue.FileChannels = _pb.FileChannels;
-        AudioCue.PropertyChanged += OnCueChanged;
+        if (Routed.FileChannels != pb.FileChannels) Routed.FileChannels = pb.FileChannels;
+        Routed.PropertyChanged += OnCueChanged;
     }
 
     private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        => FollowLiveChanges(AudioCue, _pb, e.PropertyName);
-
-    internal override void Tick()
-    {
-        base.Tick();
-        if (_pb != null) Elapsed = AudioCue.Loop ? _pb.Elapsed : _pb.PassPosition;
-    }
+        => FollowLiveChanges(Routed, Pb, e.PropertyName);
 
     public override void Stop(double fadeSeconds)
     {
         base.Stop(fadeSeconds);
-        if (_pb == null) return;
+        if (Pb == null) return;
         IsStopping = true;
-        _pb.Stop(fadeSeconds);
+        Pb.Stop(fadeSeconds);
         // Uten fade: fjern fra lista med en gang, selv om lydutgangen skulle ha hengt seg.
         if (fadeSeconds <= 0) Complete();
     }
 
     public override void ApplyFade(FadeCue fade)
     {
-        if (_pb == null) return;
+        if (Pb == null) return;
         if (fade.FadeAudio)
         {
             if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; }
-            _pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
+            Pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
         }
-        else if (fade.StopWhenDone)
-        {
-            Stop(0);
-        }
+        else if (fade.StopWhenDone) Stop(0);
     }
 
-    public override void Pause() => _pb?.Pause();
-    public override void Resume() => _pb?.Resume();
-
-    public override bool Release()
-    {
-        if (_pb is not { IsLooping: true }) return false;
-        _pb.ReleaseLoop();
-        Duration = 0; // ukjent til fila er ferdig
-        return true;
-    }
+    public override void Pause() => Pb?.Pause();
+    public override void Resume() => Pb?.Resume();
 
     protected override void OnCompleted()
     {
-        AudioCue.PropertyChanged -= OnCueChanged;
-        if (_pb == null) return;
-        var pb = _pb;
-        // Sørg for at fila lukkes selv om lydutgangen er stoppet/byttet (da kommer aldri Finished).
+        Routed.PropertyChanged -= OnCueChanged;
+        if (Pb == null) return;
+        var pb = Pb;
+        // Sørg for at kilden lukkes selv om lydutgangen er stoppet/byttet (da kommer aldri Finished).
         Engine.Audio.Mixer?.Remove(pb);
         _ = Task.Delay(500).ContinueWith(_ => pb.Dispose());
     }
+}
 
+public sealed class AudioActive : PlaybackActive
+{
+    private AudioCue AudioCue => (AudioCue)Cue;
+
+    public AudioActive(AudioCue cue, CueEngine engine) : base(cue, engine) { }
+
+    protected override CuePlayback Start()
+    {
+        if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException("Lydfila finnes ikke: " + AudioCue.FilePath);
+        var pb = Engine.Audio.Play(AudioCue, StartOffset);
+        Duration = AudioCue.Loop ? 0 : pb.PassLength;
+        if (AudioCue.FileDuration <= 0 && pb.PassLength > 0 && AudioCue.EndTime <= 0)
+            AudioCue.FileDuration = AudioCue.StartTime + pb.PassLength;
+        return pb;
+    }
+
+    internal override void Tick()
+    {
+        base.Tick();
+        if (Pb != null) Elapsed = AudioCue.Loop ? Pb.Elapsed : Pb.PassPosition;
+    }
+
+    public override bool Release()
+    {
+        if (Pb is not { IsLooping: true }) return false;
+        Pb.ReleaseLoop();
+        Duration = 0; // ukjent til fila er ferdig
+        return true;
+    }
 }
 
 // ======================================================================
@@ -605,9 +618,6 @@ public sealed class PlaylistActive : ActiveCue
 
     public PlaylistActive(PlaylistCue cue, CueEngine engine) : base(cue, engine) { }
 
-    /// <summary>Navnet på sporet som spiller nå.</summary>
-    public string CurrentTrack => _index >= 0 && _index < _order.Count ? Path.GetFileNameWithoutExtension(_order[_index]) : "";
-
     private List<string> NewOrder()
     {
         var files = P.Files.Where(File.Exists).ToList();
@@ -640,7 +650,6 @@ public sealed class PlaylistActive : ActiveCue
         _playing.Add(pb);
         _current = pb;
         mixer.Add(pb);
-        OnPropertyChanged(nameof(CurrentTrack));
         return true;
     }
 
@@ -753,9 +762,6 @@ public sealed class TimecodeActive : ActiveCue
 
     public TimecodeActive(TimecodeCue cue, CueEngine engine) : base(cue, engine) { }
 
-    /// <summary>Tidskoden som sendes nå (vises i lista over aktive cuer).</summary>
-    public string Current => Timecode.FromSeconds(T.StartTimecode.ToSeconds(T.Rate) + Elapsed, T.Rate).Format(T.Rate);
-
     protected override void OnBegin()
     {
         if (!T.SendMtc && !T.SendLtc) throw new InvalidOperationException("Velg MTC og/eller LTC");
@@ -781,7 +787,6 @@ public sealed class TimecodeActive : ActiveCue
         base.Tick();
         if (!Started || Done) return;
         Elapsed = Engine.Now - _begin;
-        OnPropertyChanged(nameof(Current));
         if (T.Length > 0 && Elapsed >= T.Length) Complete();
     }
 
@@ -812,67 +817,30 @@ public sealed class LightActive : TimedActive
 }
 
 /// <summary>Live-inngang gjennom lydpatchen (mikrofon, linje inn).</summary>
-public sealed class InputActive : ActiveCue
+public sealed class InputActive : PlaybackActive
 {
-    private CuePlayback? _pb;
     private InputCue I => (InputCue)Cue;
     private double _begin;
 
     public InputActive(InputCue cue, CueEngine engine) : base(cue, engine) { }
 
-    protected override void OnBegin()
+    protected override CuePlayback Start()
     {
         var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
         int rate = mixer.WaveFormat.SampleRate;
         LiveRing ring;
         try { ring = Engine.Input.Open(Engine.Settings.InputDeviceId, rate); }
         catch (Exception ex) { throw new InvalidOperationException("Kunne ikke åpne inngangen: " + ex.Message); }
-        if (I.FileChannels != ring.Channels) I.FileChannels = ring.Channels;
         var stream = new LiveInputStream(ring, rate, Engine.Input.Close);
-        var pb = _pb = new CuePlayback(I, stream, I, new CuePlayback.Options(I.VolumeDb, 0, 0, false, I.FadeIn, I.FadeOut), rate);
-        pb.Finished += _ => Application.Current.Dispatcher.BeginInvoke(() => { pb.Dispose(); Complete(); });
+        var pb = new CuePlayback(I, stream, I, new CuePlayback.Options(I.VolumeDb, 0, 0, false, I.FadeIn, I.FadeOut), rate);
         mixer.Add(pb);
         _begin = Engine.Now;
-        I.PropertyChanged += OnCueChanged;
+        return pb;
     }
-
-    private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => FollowLiveChanges(I, _pb, e.PropertyName);
 
     internal override void Tick()
     {
         base.Tick();
         if (Started && !Done) Elapsed = Engine.Now - _begin;
-    }
-
-    public override void Stop(double fadeSeconds)
-    {
-        base.Stop(fadeSeconds);
-        if (_pb == null) return;
-        IsStopping = true;
-        _pb.Stop(fadeSeconds);
-        if (fadeSeconds <= 0) Complete();
-    }
-
-    public override void ApplyFade(FadeCue fade)
-    {
-        if (_pb == null) return;
-        if (fade.FadeAudio)
-        {
-            if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; }
-            _pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
-        }
-        else if (fade.StopWhenDone) Stop(0);
-    }
-
-    public override void Pause() => _pb?.Pause();
-    public override void Resume() => _pb?.Resume();
-
-    protected override void OnCompleted()
-    {
-        I.PropertyChanged -= OnCueChanged;
-        if (_pb == null) return;
-        var pb = _pb;
-        Engine.Audio.Mixer?.Remove(pb);
-        _ = Task.Delay(500).ContinueWith(_ => pb.Dispose());
     }
 }

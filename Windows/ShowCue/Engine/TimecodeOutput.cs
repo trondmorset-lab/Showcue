@@ -28,8 +28,6 @@ public sealed class LtcSource : IBusSource
         _level = _amp;
     }
 
-    /// <summary>Bildet som sendes nå.</summary>
-    public long Frame => Interlocked.Read(ref _frame);
     public void Stop() => _stopped = true;
     public void Pause() => _paused = true;
     public void Resume() => _paused = false;
@@ -50,8 +48,7 @@ public sealed class LtcSource : IBusSource
             if (_phase >= 80)
             {
                 _phase -= 80;
-                long n = Interlocked.Increment(ref _frame);
-                _bits = Ltc.Bits(Timecode.FromFrame(n, _rate), _rate);
+                _bits = Ltc.Bits(Timecode.FromFrame(++_frame, _rate), _rate);
             }
         }
         return true;

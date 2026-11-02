@@ -69,8 +69,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
         + (_settings.OscFeedbackEnabled ? $"   ·   Status ut: {_settings.OscFeedbackHost}:{_settings.OscFeedbackPort}" : "");
-    /// <summary>Ikon for temaknappen: viser hvilket tema man bytter til.</summary>
-    public string ThemeGlyph => ThemeManager.Current switch { AppTheme.Dark => "☀", AppTheme.Light => "☾", _ => "◐" };
     private string _learnText = "";
     /// <summary>Vises i inspector mens vi venter på en MIDI-melding.</summary>
     public string LearnText { get => _learnText; set { _learnText = value; Raise(); } }
@@ -148,7 +146,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _settings = AppSettings.Load();
         ThemeManager.Apply(_settings.Theme);
         ThemeManager.Register(this);
-        ThemeManager.Changed += () => Raise(nameof(ThemeGlyph));
         Engine = new CueEngine(_settings, () => Cues);
         WaveformEditor.Engine = Engine;
         Remote = new RemoteControl(this, Dispatcher, _settings);

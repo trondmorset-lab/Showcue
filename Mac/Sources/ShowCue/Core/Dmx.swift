@@ -83,9 +83,4 @@ final class DmxFader {
         lock.lock(); defer { lock.unlock() }
         return (0..<512).map { UInt8(min(255, max(0, value($0, now))).rounded(.toNearestOrAwayFromZero)) }
     }
-
-    func isFading(_ now: Double) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        return (0..<512).contains { length[$0] > 0 && now < start[$0] + length[$0] }
-    }
 }

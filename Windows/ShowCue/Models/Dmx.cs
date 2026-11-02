@@ -100,11 +100,4 @@ public sealed class DmxFader
         lock (_lock) for (int i = 0; i < 512; i++) b[i] = (byte)Math.Round(Math.Clamp(ValueAt(i, now), 0, 255));
         return b;
     }
-
-    /// <summary>Fader noe nå?</summary>
-    public bool IsFading(double now)
-    {
-        lock (_lock) for (int i = 0; i < 512; i++) if (_length[i] > 0 && now < _start[i] + _length[i]) return true;
-        return false;
-    }
 }
