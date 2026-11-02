@@ -61,6 +61,7 @@ Source: "..\publish\ShowCue.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; DestName: "Les meg.md"; Flags: ignoreversion
 Source: "..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\..\CHANGELOG.md"; DestDir: "{app}"; DestName: "Endringslogg.md"; Flags: ignoreversion
+Source: "..\..\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\ShowCue"; Filename: "{app}\ShowCue.exe"

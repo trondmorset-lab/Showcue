@@ -161,6 +161,9 @@ struct ShowCommands: Commands {
     let model: AppModel
 
     var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button("Om ShowCue") { AboutPanel.show() }
+        }
         CommandGroup(replacing: .newItem) {
             Button("Nytt show") { model.newShow() }.keyboardShortcut("n")
             Button("Åpne …") { model.openDialog() }.keyboardShortcut("o")
@@ -220,5 +223,33 @@ struct ShowCommands: Commands {
             Button("Cart-vindu (berøringsskjerm)") { model.showCart() }.keyboardShortcut("k")
             Button("Bytt tema") { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])
         }
+    }
+}
+
+/// «Om ShowCue»: versjon, opphavsrett, at det ikke gis garanti (GPL 3, punkt 5d) og lisensene som følger med.
+enum AboutPanel {
+    static let copyright = "Copyright © 2026 Trond Morset"
+    static let source = "https://github.com/trondmorset-lab/Showcue-"
+
+    static func show() {
+        var text = """
+        ShowCue er fri programvare: du kan dele det videre og endre det under vilkårene i GNU General Public License versjon 3. \
+        Programmet leveres UTEN NOEN FORM FOR GARANTI, heller ikke underforstått garanti for salgbarhet eller egnethet for et bestemt formål.
+
+        Kildekode: \(source)
+        """
+        if let url = Bundle.main.url(forResource: "THIRD-PARTY-NOTICES", withExtension: "txt"),
+           let notices = try? String(contentsOf: url, encoding: .utf8) {
+            text += "\n\n" + notices
+        }
+        let credits = NSAttributedString(string: text, attributes: [
+            .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular),
+            .foregroundColor: NSColor.labelColor,
+        ])
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .credits: credits,
+            NSApplication.AboutPanelOptionKey(rawValue: "Copyright"): copyright,
+        ])
+        NSApp.activate(ignoringOtherApps: true)
     }
 }

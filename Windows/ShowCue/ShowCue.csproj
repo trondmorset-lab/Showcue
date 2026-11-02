@@ -13,12 +13,19 @@
     <!-- Versjonen hentes fra VERSION i roten av repoet (felles for Windows og Mac). -->
     <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../../VERSION').Trim())</Version>
     <Product>ShowCue</Product>
+    <Copyright>Copyright (C) 2026 Trond Morset. GNU GPL v3.</Copyright>
     <Description>Cue-basert avspillingsprogram for lyd, video, bilder, PDF, OSC og MIDI</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lisensene følger med i selve programmet (vises under «Om ShowCue»). -->
+    <EmbeddedResource Include="../../THIRD-PARTY-NOTICES.txt" LogicalName="ThirdPartyNotices.txt" />
+    <EmbeddedResource Include="../../LICENSE" LogicalName="License.txt" />
   </ItemGroup>
 
 </Project>

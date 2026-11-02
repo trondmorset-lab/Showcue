@@ -614,6 +614,7 @@
                     <Button Style="{StaticResource ToolButton}" Content="Lydpatch" Click="Patch_Click" ToolTip="Utganger og kanaler på lydkortet (Dante, ASIO, flerkanals)" />
                     <Button Style="{StaticResource ToolButton}" Content="Utgang" Click="ToggleOutput_Click" ToolTip="Vis/skjul utgangsvinduet (video, bilde, PDF)" />
                     <Button Style="{StaticResource ToolButton}" Content="Innstillinger" Click="Settings_Click" />
+                    <Button Style="{StaticResource ToolButton}" Content="Om" Click="About_Click" ToolTip="Versjon, opphavsrett og lisenser" />
                     <Button Style="{StaticResource ToolButton}" Content="{Binding ThemeGlyph}" Click="ThemeToggle_Click" FontSize="15"
                             ToolTip="Bytt tema: mørk → lys → natt" />
                 </StackPanel>
