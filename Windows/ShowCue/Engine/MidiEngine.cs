@@ -52,6 +52,11 @@ public sealed class MidiEngine : IDisposable
         }
     }
 
+    /// <summary>Kort melding (status | data1 &lt;&lt; 8 | data2 &lt;&lt; 16), f.eks. MTC-kvartbilder.</summary>
+    public void SendShort(string device, int message) { var mo = GetOut(device); lock (mo) mo.Send(message); }
+
+    public void SendSysex(string device, byte[] data) { var mo = GetOut(device); lock (mo) mo.SendBuffer(data); }
+
     /// <summary>MIDI Show Control GO: F0 7F dev 02 fmt 01 [cue] F7</summary>
     public static byte[] BuildMscGo(int deviceId, int commandFormat, string cue)
     {

@@ -41,6 +41,9 @@ public partial class SettingsWindow : Window
         PreviewDeviceBox.SelectedValue = settings.PreviewDeviceId;
         if (PreviewDeviceBox.SelectedIndex < 0) PreviewDeviceBox.SelectedIndex = 0;
         PreviewBusBox.Text = settings.PreviewBus.ToString();
+        InputDeviceBox.ItemsSource = AudioEngine.GetCaptureDevices();
+        InputDeviceBox.SelectedValue = settings.InputDeviceId;
+        if (InputDeviceBox.SelectedIndex < 0) InputDeviceBox.SelectedIndex = 0;
 
         RateBox.ItemsSource = new[] { 44100, 48000, 88200, 96000 };
         RateBox.SelectedItem = settings.SampleRate;
@@ -89,6 +92,7 @@ public partial class SettingsWindow : Window
         BuildMidiMap();
 
         MscBox.IsChecked = settings.MscInEnabled;
+        MtcInBox.IsChecked = settings.MtcInEnabled;
         MscIdBox.Text = settings.MscInDeviceId.ToString();
 
         // ---- Sikkerhet ----
@@ -196,6 +200,8 @@ public partial class SettingsWindow : Window
         Result.MidiNext = _midiMap["Neste"];
         Result.MidiPrevious = _midiMap["Forrige"];
         Result.MscInEnabled = MscBox.IsChecked == true;
+        Result.MtcInEnabled = MtcInBox.IsChecked == true;
+        Result.InputDeviceId = InputDeviceBox.SelectedValue as string ?? "";
         if (int.TryParse(MscIdBox.Text, out var msc)) Result.MscInDeviceId = Math.Clamp(msc, 0, 127);
 
         if (TryDouble(PanicBox.Text, out var p)) Result.PanicFadeTime = Math.Clamp(p, 0, 30);
