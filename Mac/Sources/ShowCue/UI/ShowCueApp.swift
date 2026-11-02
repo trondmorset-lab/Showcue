@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if a.runModal() != .alertFirstButtonReturn { return .terminateCancel }
         }
         guard model.confirmDiscard() else { return .terminateCancel }
+        ShowSafety.deleteAutosave(for: model.showURL)
         model.engine.stopAll(fade: 0)
         model.audio.stop()
         model.settings.save()
@@ -168,6 +169,15 @@ struct ShowCommands: Commands {
             Button("Lagre") { model.save(as: false) }.keyboardShortcut("s")
             Button("Lagre som …") { model.save(as: true) }.keyboardShortcut("s", modifiers: [.command, .shift])
         }
+        CommandGroup(replacing: .undoRedo) {
+            // I et tekstfelt angrer ⌘Z skrivingen; ellers angres endringer i showet.
+            Button("Angre") {
+                if let tv = NSApp.keyWindow?.firstResponder as? NSTextView, tv.isEditable { tv.undoManager?.undo() } else { model.undo() }
+            }.keyboardShortcut("z")
+            Button("Gjør om") {
+                if let tv = NSApp.keyWindow?.firstResponder as? NSTextView, tv.isEditable { tv.undoManager?.redo() } else { model.redo() }
+            }.keyboardShortcut("z", modifiers: [.command, .shift])
+        }
         CommandMenu("Cue") {
             Button("GO (Mellomrom)") { model.go() }
             Button("Stopp alt (Esc)") { model.panic() }
@@ -186,6 +196,8 @@ struct ShowCommands: Commands {
             Button("Flytt opp") { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
             Button("Flytt ned") { model.moveSelected(1) }.keyboardShortcut(.downArrow)
             Button("Nummerer alle …") { model.renumber() }
+            Divider()
+            Button("Showmodus (lås/lås opp redigering)") { model.showMode.toggle() }.keyboardShortcut("l")
             Divider()
             Button("Vis/skjul utgang") { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
             Button("Bytt tema") { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])

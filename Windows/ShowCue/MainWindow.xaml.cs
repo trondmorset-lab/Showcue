@@ -49,6 +49,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private OscFeedback? _feedback;
     private int _feedbackTick;
 
+    // Angre, autolagring og showmodus
+    private readonly UndoHistory _history = new();
+    private readonly System.Windows.Threading.DispatcherTimer _undoTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private readonly System.Windows.Threading.DispatcherTimer _autosaveTimer = new() { Interval = TimeSpan.FromSeconds(30) };
+    private bool _restoring;
+    private bool _showMode;
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void Raise([CallerMemberName] string? n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
@@ -94,7 +101,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public string ActiveCountText => Engine.Active.Count == 0 ? "" : $"{Engine.Active.Count} aktive";
     public string StatusText { get => _statusText; set { _statusText = value; Raise(); } }
     public string WindowTitle =>
-        $"{(_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn")}{(IsDirty ? " •" : "")} — ShowCue {AppVersion}";
+        $"{(_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn")}{(IsDirty ? " •" : "")}{(_showMode ? "  🔒 SHOWMODUS" : "")} — ShowCue {AppVersion}";
 
     /// <summary>Programversjonen (fra VERSION-fila ved bygging), f.eks. «0.5.0».</summary>
     public static string AppVersion
@@ -108,6 +115,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private bool IsDirty => _show.ToJson() != _savedJson;
 
+    /// <summary>Showmodus: bare GO, stopp og hurtigtaster virker – ingenting kan endres ved et uhell.</summary>
+    public bool IsShowMode
+    {
+        get => _showMode;
+        set
+        {
+            if (_showMode == value) return;
+            CommitFocusedTextBox();
+            _showMode = value;
+            if (value) Engine.Preview.Stop();
+            Raise(); Raise(nameof(IsEditable)); Raise(nameof(ShowModeLabel)); RaiseUndo(); RaiseTitle();
+            StatusText = value ? "Showmodus: redigering er låst (Ctrl+L for å låse opp)." : "Redigering er låst opp.";
+        }
+    }
+    public bool IsEditable => !_showMode;
+    public string ShowModeLabel => _showMode ? "🔓 Lås opp" : "🔒 Showmodus";
+    public bool CanUndo => IsEditable && _history.CanUndo;
+    public bool CanRedo => IsEditable && _history.CanRedo;
+    private void RaiseUndo() { Raise(nameof(CanUndo)); Raise(nameof(CanRedo)); }
+
     public MainWindow()
     {
         _settings = AppSettings.Load();
@@ -118,6 +145,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         WaveformEditor.Engine = Engine;
         Remote = new RemoteControl(this, Dispatcher, _settings);
         Remote.StatusChanged += () => Raise(nameof(RemoteStatus));
+
+        _undoTimer.Tick += (_, _) => FlushUndo();
+        _autosaveTimer.Tick += (_, _) => Autosave();
+        _autosaveTimer.Start();
 
         InitializeComponent();
         SetShow(new ShowDocument(), null);
@@ -141,6 +172,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             if (arg != null) TryOpen(arg);
             else if (!string.IsNullOrEmpty(_settings.LastShowPath) && File.Exists(_settings.LastShowPath))
                 TryOpen(_settings.LastShowPath);
+            else OfferRecovery();
             Activate();
             CueGrid.Focus();
         };
@@ -176,6 +208,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         foreach (var v in _show.Cues.OfType<VideoCue>().Where(v => v.FileChannels < 0)) ProbeVideoAudio(v);
 
         _savedJson = _show.ToJson();
+        _history.Reset(_savedJson);
+        RaiseUndo();
         Raise(nameof(Cues));
         Raise(nameof(HotkeyCues));
         Raise(nameof(NoHotkeys));
@@ -192,6 +226,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         if (e.NewItems != null) foreach (Cue c in e.NewItems) c.PropertyChanged += Cue_PropertyChanged;
         if (e.OldItems != null) foreach (Cue c in e.OldItems) c.PropertyChanged -= Cue_PropertyChanged;
+        ScheduleUndo();
         Raise(nameof(IsEmpty));
         Raise(nameof(NextCueTitle));
         RaiseTitle();
@@ -203,6 +238,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         // Kjøretidsstatus endrer ikke showet.
         if (e.PropertyName is nameof(Cue.Progress) or nameof(Cue.ActiveCount) or nameof(Cue.IsRunning)
             or nameof(Cue.IsPreWaiting) or nameof(Cue.Error) or nameof(Cue.HasError)) return;
+        ScheduleUndo();
 
         if (e.PropertyName == nameof(IFileCue.FilePath))
         {
@@ -228,6 +264,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var r = MessageBox.Show(this, "Vil du lagre endringene i showet?", "ShowCue", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (r == MessageBoxResult.Cancel) return false;
         if (r == MessageBoxResult.Yes) return Save(false);
+        ShowSafety.DeleteAutosave(_showPath);
         return true;
     }
 
@@ -244,7 +281,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         try
         {
             _show.Title = Path.GetFileNameWithoutExtension(path);
+            try { ShowSafety.Backup(path); } catch { /* sikkerhetskopi skal aldri hindre lagring */ }
             _show.Save(path);
+            ShowSafety.DeleteAutosave(_showPath);
+            ShowSafety.DeleteAutosave(path);
             _showPath = path;
             _savedJson = _show.ToJson();
             _settings.LastShowPath = path;
@@ -268,6 +308,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             _settings.LastShowPath = path;
             _settings.Save();
             if (string.IsNullOrEmpty(StatusText) || !StatusText.StartsWith("Advarsel")) StatusText = "Åpnet " + path;
+            OfferRecovery();
         }
         catch (Exception ex)
         {
@@ -285,6 +326,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             return;
         }
         if (!ConfirmDiscard()) { e.Cancel = true; return; }
+        ShowSafety.DeleteAutosave(_showPath);
         _settings.Save();
         _patchWindow?.Close();
         Remote.Dispose();
@@ -365,11 +407,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.S: Save(false); e.Handled = true; return;
                 case Key.O: Open_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
+                case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
             }
             if (!typing)
             {
                 switch (key)
                 {
+                    case Key.Z: Undo(); e.Handled = true; return;
+                    case Key.Y: Redo(); e.Handled = true; return;
                     case Key.D: Duplicate_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                     case Key.Up: MoveSelected(-1); e.Handled = true; return;
                     case Key.Down: MoveSelected(1); e.Handled = true; return;
@@ -379,6 +424,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 }
             }
         }
+
+        if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Z && !typing) { Redo(); e.Handled = true; return; }
 
         if (typing)
         {
@@ -494,7 +541,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (SelectedCue == null) return;
+        if (SelectedCue == null || !IsEditable) return;
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key is Key.Escape) return; // panikk håndteres av vinduet
         if (key is Key.Back or Key.Delete) { SelectedCue.Hotkey = ""; e.Handled = true; return; }
@@ -545,6 +592,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void InsertCues(IList<Cue> newCues, int at)
     {
+        if (!IsEditable) return;
         foreach (var c in newCues)
         {
             if (string.IsNullOrEmpty(c.Number)) c.Number = NextNumber();
@@ -559,6 +607,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void AddCue(string type)
     {
+        if (!IsEditable) return;
         CommitFocusedTextBox();
         var at = InsertIndex();
         var target = SelectedCue;
@@ -612,6 +661,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
+        if (!IsEditable) return;
         var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
         if (selected.Count == 0) return;
         var text = selected.Count == 1 ? $"Slette cue {selected[0].Number} «{selected[0].DisplayName}»?" : $"Slette {selected.Count} cues?";
@@ -627,7 +677,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void MoveSelected(int delta)
     {
-        if (SelectedCue == null) return;
+        if (SelectedCue == null || !IsEditable) return;
         var c = SelectedCue;
         int i = Cues.IndexOf(c), j = i + delta;
         if (j < 0 || j >= Cues.Count) return;
@@ -641,6 +691,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
+        if (!IsEditable) return;
         if (MessageBox.Show(this, "Gi alle cues nye nummer 1, 2, 3 …?\nFade- og stopp-cues oppdateres automatisk.", "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -675,12 +726,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ---------- Dra og slipp ----------
     private void CueGrid_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = IsEditable && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void CueGrid_Drop(object sender, DragEventArgs e)
     {
+        if (!IsEditable) return;
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
         var cues = files.OrderBy(f => f, StringComparer.CurrentCultureIgnoreCase).Select(CreateCueForFile).OfType<Cue>().ToList();
         if (cues.Count == 0) { StatusText = "Ingen støttede filer i det du slapp."; return; }
@@ -781,6 +833,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void CueColor_Click(object sender, RoutedEventArgs e)
     {
+        if (!IsEditable) return;
         if (((FrameworkElement)sender).Tag is not CueColor color) return;
         var targets = CueGrid.SelectedItems.Cast<Cue>().ToList();
         if (targets.Count == 0 && SelectedCue != null) targets.Add(SelectedCue);
@@ -916,6 +969,92 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         LearnText = "";
         if (SelectedCue != null) SelectedCue.MidiTrigger = "";
     }
+
+    // ==================================================================
+    //  Angre / gjør om
+    // ==================================================================
+    private void ScheduleUndo()
+    {
+        if (_restoring) return;
+        _undoTimer.Stop();
+        _undoTimer.Start();
+    }
+
+    /// <summary>Husk showet slik det er nå som ett angre-steg.</summary>
+    private void FlushUndo()
+    {
+        _undoTimer.Stop();
+        if (_history.Record(_show.ToJson())) RaiseUndo();
+    }
+
+    private void Undo()
+    {
+        if (!IsEditable) return;
+        CommitFocusedTextBox();
+        FlushUndo();
+        if (_history.Undo() is { } state) { ReplaceCues(state); StatusText = "Angret."; }
+    }
+
+    private void Redo()
+    {
+        if (!IsEditable) return;
+        CommitFocusedTextBox();
+        FlushUndo();
+        if (_history.Redo() is { } state) { ReplaceCues(state); StatusText = "Gjort om."; }
+    }
+
+    /// <summary>Bytt ut cuene med en lagret tilstand. Showfil, innstillinger og det som spiller røres ikke.</summary>
+    private void ReplaceCues(string json)
+    {
+        var doc = System.Text.Json.JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!;
+        int idx = SelectedCue != null ? Cues.IndexOf(SelectedCue) : 0;
+        _restoring = true;
+        try
+        {
+            while (Cues.Count > 0) Cues.RemoveAt(Cues.Count - 1);
+            foreach (var c in doc.Cues) Cues.Add(c);
+        }
+        finally { _restoring = false; }
+        SelectedCue = Cues.Count == 0 ? null : Cues[Math.Clamp(idx, 0, Cues.Count - 1)];
+        RaiseUndo();
+        RaiseTitle();
+    }
+
+    private void Undo_Click(object sender, RoutedEventArgs e) => Undo();
+    private void Redo_Click(object sender, RoutedEventArgs e) => Redo();
+
+    // ==================================================================
+    //  Autolagring og gjenoppretting
+    // ==================================================================
+    private void Autosave()
+    {
+        if (!IsDirty) return;
+        try { ShowSafety.WriteAutosave(_showPath, _show.ToJson()); }
+        catch (Exception ex) { StatusText = "Autolagring feilet: " + ex.Message; }
+    }
+
+    /// <summary>Tilby å hente tilbake ulagrede endringer etter krasj eller strømbrudd.</summary>
+    private void OfferRecovery()
+    {
+        if (ShowSafety.PendingAutosave(_showPath) is not { } file) return;
+        var when = File.GetLastWriteTime(file).ToString("dd.MM HH:mm");
+        var r = MessageBox.Show(this,
+            $"Det finnes ulagrede endringer i «{(_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn")}» fra {when} " +
+            "(programmet ble ikke avsluttet normalt).\n\nVil du hente dem tilbake?", "Gjenopprett", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (r != MessageBoxResult.Yes) { ShowSafety.DeleteAutosave(_showPath); return; }
+        try
+        {
+            ReplaceCues(File.ReadAllText(file));
+            FlushUndo();
+            StatusText = "Ulagrede endringer er hentet tilbake. Husk å lagre.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Kunne ikke lese autolagringen: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void ShowMode_Click(object sender, RoutedEventArgs e) => IsShowMode = !IsShowMode;
 
     // ==================================================================
     //  Utgang, måler og klokke

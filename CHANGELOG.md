@@ -4,6 +4,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.7.0 – 2026-11-01
+
+### Nytt
+- **Showmodus** (Ctrl+L / ⌘L): låser all redigering under forestillingen. GO, stopp, hurtigtaster og fjernstyring virker som vanlig.
+- **Angre og gjør om** (Ctrl+Z / Ctrl+Y, ⌘Z / ⇧⌘Z) for alle endringer i showet.
+- **Autolagring** hvert 30. sekund, med tilbud om å hente tilbake ulagrede endringer etter krasj eller strømbrudd.
+- **Sikkerhetskopier:** forrige versjon av showet kopieres hver gang du lagrer (de 20 siste beholdes).
+- **Forhåndslytting til hodetelefoner:** velg egen lydenhet eller en utgang i lydpatchen for lyttingen i bølgeformen,
+  så den ikke høres i salen. Bølgeformen advarer når lyttingen går til salen.
+
 ## 0.6.2 – 2026-11-01
 
 ### Endret

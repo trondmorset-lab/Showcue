@@ -366,7 +366,10 @@
                     <Button Style="{StaticResource ToolButton}" Content="Åpne" Click="Open_Click" ToolTip="Ctrl+O" />
                     <Button Style="{StaticResource ToolButton}" Content="Lagre" Click="Save_Click" ToolTip="Ctrl+S" />
                     <Button Style="{StaticResource ToolButton}" Content="Lagre som" Click="SaveAs_Click" />
+                    <Button Style="{StaticResource ToolButton}" Content="↶" Click="Undo_Click" IsEnabled="{Binding CanUndo}" FontSize="15" ToolTip="Angre (Ctrl+Z)" />
+                    <Button Style="{StaticResource ToolButton}" Content="↷" Click="Redo_Click" IsEnabled="{Binding CanRedo}" FontSize="15" ToolTip="Gjør om (Ctrl+Y)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
+                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsEditable}">
                     <TextBlock Text="Legg til:" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="4,0,4,0" FontSize="12" />
                     <Button Style="{StaticResource ToolButton}" Content="♪ Lyd" Tag="audio" Click="AddCue_Click" ToolTip="Ctrl+1" />
                     <Button Style="{StaticResource ToolButton}" Content="▶ Video" Tag="video" Click="AddCue_Click" ToolTip="Ctrl+2" />
@@ -382,8 +385,11 @@
                     <Button Style="{StaticResource ToolButton}" Content="↑" Click="MoveUp_Click" ToolTip="Flytt opp (Ctrl+↑)" />
                     <Button Style="{StaticResource ToolButton}" Content="↓" Click="MoveDown_Click" ToolTip="Flytt ned (Ctrl+↓)" />
                     <Button Style="{StaticResource ToolButton}" Content="Nummerer" Click="Renumber_Click" ToolTip="Gi alle cues fortløpende nummer 1, 2, 3 …" />
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
+                            ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
                     <Button Style="{StaticResource ToolButton}" Content="Lydpatch" Click="Patch_Click" ToolTip="Utganger og kanaler på lydkortet (Dante, ASIO, flerkanals)" />
                     <Button Style="{StaticResource ToolButton}" Content="Utgang" Click="ToggleOutput_Click" ToolTip="Vis/skjul utgangsvinduet (video, bilde, PDF)" />
                     <Button Style="{StaticResource ToolButton}" Content="Innstillinger" Click="Settings_Click" />
@@ -403,7 +409,7 @@
 
             <Grid>
                 <DataGrid x:Name="CueGrid" ItemsSource="{Binding Cues}" SelectedItem="{Binding SelectedCue, Mode=TwoWay}"
-                          AllowDrop="True" Drop="CueGrid_Drop" DragOver="CueGrid_DragOver" MouseDoubleClick="CueGrid_DoubleClick">
+                          AllowDrop="{Binding IsEditable}" Drop="CueGrid_Drop" DragOver="CueGrid_DragOver" MouseDoubleClick="CueGrid_DoubleClick">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Setter Property="BorderThickness" Value="3,0,0,0" />
@@ -532,7 +538,7 @@
                 <Grid>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,12"
                                   Visibility="{Binding HasSelection, Converter={StaticResource BoolVis}}">
-                        <StackPanel>
+                        <StackPanel IsEnabled="{Binding IsEditable}">
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                     <Button Content="▶ Test" Click="TestCue_Click" Margin="0,0,4,0" ToolTip="Kjør denne cuen uten å flytte GO-markøren" />

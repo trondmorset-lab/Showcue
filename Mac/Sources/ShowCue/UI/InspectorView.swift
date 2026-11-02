@@ -10,6 +10,7 @@ struct InspectorView: View {
                 ScrollView {
                     CueInspector(cue: c)
                         .padding(.horizontal, 16).padding(.vertical, 12)
+                        .disabled(model.showMode)
                 }
                 .id(c.id)
             } else {

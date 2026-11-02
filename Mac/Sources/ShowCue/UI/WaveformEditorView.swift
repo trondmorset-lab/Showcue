@@ -70,6 +70,10 @@ struct WaveformEditorView: View {
                 Button("▶ Slutten") { play(from: max(cue.startTime, effectiveEnd - 5)) }.help("Lytt til de siste 5 sekundene før sluttpunktet")
                 Button("■ Stopp") { preview.stop() }.disabled(!previewingThis)
             }.buttonStyle(PanelButtonStyle())
+            if preview.goesToShowOutputs {
+                Text("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.")
+                    .font(.system(size: 11.5)).foregroundColor(theme.wait).fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 6) {
                 Button("Start = markør") { setStart(currentPoint) }.help("Sett startpunktet der markøren (eller lyttingen) er nå")
                 Button("Slutt = markør") { setEnd(currentPoint) }.help("Sett sluttpunktet der markøren (eller lyttingen) er nå")

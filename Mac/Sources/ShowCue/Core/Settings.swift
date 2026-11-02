@@ -59,6 +59,10 @@ struct AppSettings: Codable, Equatable {
     var maxChannels = 64
     var bufferFrames = 256
     var buses: [PatchBus] = PatchBus.defaultPatch(8)
+    /// Egen lydenhet for forhåndslytting i bølgeformen, f.eks. hodetelefonene (CoreAudio-UID). Tom = ingen.
+    var previewDeviceUID = ""
+    /// Første av to utganger i lydpatchen for forhåndslytting. 0 = cuens egne utganger (salen).
+    var previewBus = 0
 
     // Video
     /// -1 = eget vindu, ellers skjermnummer (0 = hovedskjerm).
@@ -95,7 +99,7 @@ struct AppSettings: Codable, Equatable {
     init() {}
 
     enum CodingKeys: String, CodingKey {
-        case audioDeviceUID, maxChannels, bufferFrames, buses, videoScreen, oscInEnabled, oscInPort
+        case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
         case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath
@@ -110,6 +114,8 @@ struct AppSettings: Codable, Equatable {
         bufferFrames = v(.bufferFrames, d.bufferFrames)
         buses = v(.buses, d.buses)
         if buses.isEmpty { buses = PatchBus.defaultPatch(8) }
+        previewDeviceUID = v(.previewDeviceUID, d.previewDeviceUID)
+        previewBus = v(.previewBus, d.previewBus)
         videoScreen = v(.videoScreen, d.videoScreen)
         oscInEnabled = v(.oscInEnabled, d.oscInEnabled)
         oscInPort = v(.oscInPort, d.oscInPort)

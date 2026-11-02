@@ -34,6 +34,11 @@ public sealed class WaveformEditor : UserControl
     private readonly TextBlock _info = new() { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _bigButton;
     private readonly Button _stopButton;
+    private readonly TextBlock _routeWarning = new()
+    {
+        FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4),
+        Text = "⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.",
+    };
     private int _loadId;
 
     public WaveformEditor()
@@ -68,12 +73,14 @@ public sealed class WaveformEditor : UserControl
         };
         border.SetResourceReference(Border.BorderBrushProperty, "Line");
         _info.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        _routeWarning.SetResourceReference(TextBlock.ForegroundProperty, "Wait");
 
         var root = new StackPanel();
         root.Children.Add(_info);
         root.Children.Add(border);
         root.Children.Add(_scroll);
         root.Children.Add(playRow);
+        root.Children.Add(_routeWarning);
         root.Children.Add(editRow);
         Content = root;
         ApplySize();
@@ -199,6 +206,7 @@ public sealed class WaveformEditor : UserControl
     private void OnPreviewChanged()
     {
         _stopButton.IsEnabled = PreviewingThis;
+        _routeWarning.Visibility = Engine?.Preview.GoesToShowOutputs == true ? Visibility.Visible : Visibility.Collapsed;
         if (!PreviewingThis && _canvas.PlayTime != null) { _canvas.PlayTime = null; _canvas.InvalidateVisual(); }
     }
 
