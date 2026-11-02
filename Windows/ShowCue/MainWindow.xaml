@@ -173,6 +173,18 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type m:WebCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Adresse (URL eller fil)" />
+                <TextBox Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter, og vises fullskjerm på utgangen. Lyd fra siden går til Windows standard lydenhet, ikke gjennom lydpatchen." />
+                <TextBlock Style="{StaticResource Label}" Text="Vis i (s, 0 = til stoppet)" />
+                <TextBox Text="{Binding HoldTime}" />
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VisualCommon}" />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type m:PdfCue}">
             <StackPanel>
                 <TextBlock Style="{StaticResource Label}" Text="PDF-fil" />
@@ -561,62 +573,94 @@
         </Border>
 
         <!-- ===================== Verktøylinje ===================== -->
+        <!-- Nedtrekksmenyer: knappen åpner menyen (Menu_Click). Snarveiene vises i menyene. -->
         <Border Grid.Row="1" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="8,5">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Style="{StaticResource ToolButton}" Content="Ny" Click="New_Click" ToolTip="Ctrl+N" />
-                    <Button Style="{StaticResource ToolButton}" Content="Åpne" Click="Open_Click" ToolTip="Ctrl+O" />
-                    <Button Style="{StaticResource ToolButton}" Content="Lagre" Click="Save_Click" ToolTip="Ctrl+S" />
-                    <Button Style="{StaticResource ToolButton}" Content="Lagre som" Click="SaveAs_Click" />
+                    <Button Style="{StaticResource ToolButton}" Content="Fil ▾" Click="Menu_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Nytt show" InputGestureText="Ctrl+N" Click="New_Click" />
+                                <MenuItem Header="Åpne …" InputGestureText="Ctrl+O" Click="Open_Click" />
+                                <MenuItem Header="Lagre" InputGestureText="Ctrl+S" Click="Save_Click" />
+                                <MenuItem Header="Lagre som …" Click="SaveAs_Click" />
+                                <Separator />
+                                <MenuItem Header="Samle show og mediefiler i én mappe …" Click="Collect_Click" />
+                                <MenuItem Header="Finn manglende mediefiler …" Click="Relink_Click" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                     <Button Style="{StaticResource ToolButton}" Content="↶" Click="Undo_Click" IsEnabled="{Binding CanUndo}" FontSize="15" ToolTip="Angre (Ctrl+Z)" />
                     <Button Style="{StaticResource ToolButton}" Content="↷" Click="Redo_Click" IsEnabled="{Binding CanRedo}" FontSize="15" ToolTip="Gjør om (Ctrl+Y)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsEditable}">
-                    <TextBlock Text="Legg til:" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="4,0,4,0" FontSize="12" />
-                    <Button Style="{StaticResource ToolButton}" Content="♪ Lyd" Tag="audio" Click="AddCue_Click" ToolTip="Ctrl+1" />
-                    <Button Style="{StaticResource ToolButton}" Content="▶ Video" Tag="video" Click="AddCue_Click" ToolTip="Ctrl+2" />
-                    <Button Style="{StaticResource ToolButton}" Content="▣ Bilde" Tag="image" Click="AddCue_Click" ToolTip="Ctrl+3" />
-                    <Button Style="{StaticResource ToolButton}" Content="▤ PDF" Tag="pdf" Click="AddCue_Click" ToolTip="Ctrl+4" />
-                    <Button Style="{StaticResource ToolButton}" Content="◢ Fade" Tag="fade" Click="AddCue_Click" ToolTip="Ctrl+5 (fader valgt cue)" />
-                    <Button Style="{StaticResource ToolButton}" Content="■ Stopp" Tag="stop" Click="AddCue_Click" ToolTip="Ctrl+6" />
-                    <Button Style="{StaticResource ToolButton}" Content="⇢ OSC" Tag="osc" Click="AddCue_Click" ToolTip="Ctrl+7" />
-                    <Button Style="{StaticResource ToolButton}" Content="♫ MIDI" Tag="midi" Click="AddCue_Click" ToolTip="Ctrl+8" />
-                    <Button Style="{StaticResource ToolButton}" Content="☰ Liste" Tag="playlist" Click="AddCue_Click" ToolTip="Spilleliste (Ctrl+9)" />
-                    <Button Style="{StaticResource ToolButton}" Content="↪ Gå til" Tag="goto" Click="AddCue_Click" ToolTip="Flytt GO-markøren (Ctrl+0)" />
-                    <Button Style="{StaticResource ToolButton}" Content="✎ Memo" Tag="memo" Click="AddCue_Click" ToolTip="Beskjed til operatøren (Ctrl+Shift+M)" />
-                    <Button Style="{StaticResource ToolButton}" Content="⇄ Nett" Tag="network" Click="AddCue_Click" ToolTip="Send UDP, TCP eller HTTP (Ctrl+Shift+N)" />
-                    <Button Style="{StaticResource ToolButton}" Content="⏱ TC" Tag="timecode" Click="AddCue_Click" ToolTip="Send tidskode (MTC/LTC) (Ctrl+Shift+T)" />
-                    <Button Style="{StaticResource ToolButton}" Content="✺ Lys" Tag="light" Click="AddCue_Click" ToolTip="DMX over Art-Net (Ctrl+Shift+L)" />
-                    <Button Style="{StaticResource ToolButton}" Content="◉ Inn" Tag="input" Click="AddCue_Click" ToolTip="Live-inngang gjennom lydpatchen (Ctrl+Shift+I)" />
-                    <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
-                    <Button Style="{StaticResource ToolButton}" Content="Dupliser" Click="Duplicate_Click" ToolTip="Ctrl+D" />
-                    <Button Style="{StaticResource ToolButton}" Content="Slett" Click="Delete_Click" ToolTip="Delete" />
-                    <Button Style="{StaticResource ToolButton}" Content="↑" Click="MoveUp_Click" ToolTip="Flytt opp (Ctrl+↑)" />
-                    <Button Style="{StaticResource ToolButton}" Content="↓" Click="MoveDown_Click" ToolTip="Flytt ned (Ctrl+↓)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Nummerer" Click="Renumber_Click" ToolTip="Gi alle cues fortløpende nummer 1, 2, 3 …" />
+                        <Button Style="{StaticResource ToolButton}" Content="＋ Media ▾" Click="Menu_Click" ToolTip="Legg til lyd, video, bilde, PDF, nettside …">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="♪  Lyd …" InputGestureText="Ctrl+1" Tag="audio" Click="AddCue_Click" />
+                                    <MenuItem Header="▶  Video …" InputGestureText="Ctrl+2" Tag="video" Click="AddCue_Click" />
+                                    <MenuItem Header="▣  Bilde …" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
+                                    <MenuItem Header="▤  PDF …" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
+                                    <MenuItem Header="◍  Nettside" InputGestureText="Ctrl+Shift+W" Tag="web" Click="AddCue_Click" />
+                                    <Separator />
+                                    <MenuItem Header="☰  Spilleliste …" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
+                                    <MenuItem Header="◉  Live-inngang" InputGestureText="Ctrl+Shift+I" Tag="input" Click="AddCue_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Content="Styring ▾" Click="Menu_Click" ToolTip="Fade, stopp, gå til og memo">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="◢  Fade (valgt cue)" InputGestureText="Ctrl+5" Tag="fade" Click="AddCue_Click" />
+                                    <MenuItem Header="■  Stopp" InputGestureText="Ctrl+6" Tag="stop" Click="AddCue_Click" />
+                                    <MenuItem Header="↪  Gå til" InputGestureText="Ctrl+0" Tag="goto" Click="AddCue_Click" />
+                                    <MenuItem Header="✎  Memo" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Content="Signal ut ▾" Click="Menu_Click" ToolTip="OSC, MIDI, nettverk, tidskode og lys">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="⇢  OSC" InputGestureText="Ctrl+7" Tag="osc" Click="AddCue_Click" />
+                                    <MenuItem Header="♫  MIDI" InputGestureText="Ctrl+8" Tag="midi" Click="AddCue_Click" />
+                                    <MenuItem Header="⇄  Nettverk (UDP/TCP/HTTP)" InputGestureText="Ctrl+Shift+N" Tag="network" Click="AddCue_Click" />
+                                    <MenuItem Header="⏱  Tidskode (MTC/LTC)" InputGestureText="Ctrl+Shift+T" Tag="timecode" Click="AddCue_Click" />
+                                    <MenuItem Header="✺  Lys (DMX/Art-Net)" InputGestureText="Ctrl+Shift+L" Tag="light" Click="AddCue_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Content="Rediger ▾" Click="Menu_Click">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Dupliser" InputGestureText="Ctrl+D" Click="Duplicate_Click" />
+                                    <MenuItem Header="Slett" InputGestureText="Delete" Click="Delete_Click" />
+                                    <MenuItem Header="Flytt opp" InputGestureText="Ctrl+↑" Click="MoveUp_Click" />
+                                    <MenuItem Header="Flytt ned" InputGestureText="Ctrl+↓" Click="MoveDown_Click" />
+                                    <MenuItem Header="Nummerer alle 1, 2, 3 …" Click="Renumber_Click" />
+                                    <Separator />
+                                    <MenuItem Header="Normaliser lydstyrke for valgte lyd-cuer" Click="NormalizeSelected_Click" />
+                                    <MenuItem Header="Normaliser lydstyrke for alle lyd-cuer" Click="NormalizeAll_Click" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button Style="{StaticResource ToolButton}" Content="▦ Cart" Click="Cart_Click" ToolTip="Store knapper for berøringsskjerm (Ctrl+K)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Verktøy ▾" Click="Tools_Click">
+                    <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
+                            ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
+                    <Button Style="{StaticResource ToolButton}" Content="Oppsett ▾" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Finn manglende mediefiler …" Click="Relink_Click" />
-                                <MenuItem Header="Samle show og mediefiler i én mappe …" Click="Collect_Click" />
+                                <MenuItem Header="Lydpatch …" Click="Patch_Click" />
+                                <MenuItem Header="Vis/skjul utgangsvinduet" Click="ToggleOutput_Click" />
+                                <MenuItem Header="Innstillinger …" Click="Settings_Click" />
+                                <MenuItem Header="Bytt tema (mørk → lys → natt)" Click="ThemeToggle_Click" />
                                 <Separator />
-                                <MenuItem Header="Normaliser lydstyrke for valgte lyd-cuer" Click="NormalizeSelected_Click" />
-                                <MenuItem Header="Normaliser lydstyrke for alle lyd-cuer" Click="NormalizeAll_Click" />
+                                <MenuItem Header="Om ShowCue" Click="About_Click" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
-                    <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
-                            ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Lydpatch" Click="Patch_Click" ToolTip="Utganger og kanaler på lydkortet (Dante, ASIO, flerkanals)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Utgang" Click="ToggleOutput_Click" ToolTip="Vis/skjul utgangsvinduet (video, bilde, PDF)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Innstillinger" Click="Settings_Click" />
-                    <Button Style="{StaticResource ToolButton}" Content="Om" Click="About_Click" ToolTip="Versjon, opphavsrett og lisenser" />
-                    <Button Style="{StaticResource ToolButton}" Content="{Binding ThemeGlyph}" Click="ThemeToggle_Click" FontSize="15"
-                            ToolTip="Bytt tema: mørk → lys → natt" />
                 </StackPanel>
             </DockPanel>
         </Border>

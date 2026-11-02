@@ -145,14 +145,16 @@ enum CueError: LocalizedError {
 // MARK: - Visuelt (felles)
 
 class VisualActive: ActiveCue {
-    var layers: LayerPair?
+    var layers: VisualLayers?
     var startedAt: Double = 0
     private var finishAt: Double?
 
-    func makeLayers() throws -> LayerPair { fatalError("overstyres") }
+    func makeLayers() throws -> VisualLayers { fatalError("overstyres") }
 
     override func onBegin() throws {
-        guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
+        if cue.type == .web {
+            guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: "Ugyldig adresse: \(cue.url)"]) }
+        } else if !FileManager.default.fileExists(atPath: cue.filePath) { throw CueError.fileMissing(cue.filePath) }
         if cue.replaceOthers {
             // Krysstoning: de andre fades ut mens denne fades inn.
             for other in engine.active.compactMap({ $0 as? VisualActive }) where other !== self && other.started && !other.done && !other.isStopping {
@@ -205,7 +207,12 @@ class VisualActive: ActiveCue {
 // MARK: - Bilde og PDF
 
 final class StillActive: VisualActive {
-    override func makeLayers() throws -> LayerPair {
+    override func makeLayers() throws -> VisualLayers {
+        if cue.type == .web, let url = cue.webURL {
+            duration = cue.duration
+            let c = cue
+            return engine.output.addWeb(url) { msg in c.error = "Nettside: " + msg }
+        }
         let page = cue.type == .pdf ? cue.page : 0
         var image = MediaCache.shared.cached(path: cue.filePath, page: page)
         if image == nil { image = MediaCache.shared.image(path: cue.filePath, page: page) }
@@ -247,7 +254,7 @@ final class VideoActive: VisualActive {
     private var subs: Set<AnyCancellable> = []
     static let maxDrift = 0.12
 
-    override func makeLayers() throws -> LayerPair {
+    override func makeLayers() throws -> VisualLayers {
         let item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath))
         startTime = max(0, cue.startTime) + startOffset
         endTime = cue.endTime > startTime ? cue.endTime : 0

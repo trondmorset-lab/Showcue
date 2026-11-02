@@ -252,6 +252,34 @@ final class ToolsTests: XCTestCase {
         XCTAssertNotNil(bad)
     }
 
+    // MARK: Nettside
+
+    func testWebCueAddresses() throws {
+        let c = Cue(type: .web)
+        XCTAssertNil(c.webURL)
+        c.url = "time.is"
+        XCTAssertEqual(c.webURL?.absoluteString, "https://time.is")
+        c.url = "https://time.is/Oslo"
+        XCTAssertEqual(c.displayName, "time.is")
+        c.url = "ftp://x.no"
+        XCTAssertNil(c.webURL)
+        c.url = touch(root.appendingPathComponent("web"), "klokke.html")
+        XCTAssertTrue(c.webURL?.isFileURL ?? false)
+
+        let w = Cue(type: .web); w.url = "http://10.0.0.5/score"; w.holdTime = 30; w.fadeIn = 1
+        var doc = ShowDocument(); doc.cues = [w]
+        let data = try doc.jsonData()
+        XCTAssertTrue(String(decoding: data, as: UTF8.self).contains("\"type\" : \"web\""))
+        let b = try JSONDecoder().decode(ShowDocument.self, from: data).cues[0]
+        XCTAssertTrue(b.type == .web && b.url == "http://10.0.0.5/score" && b.holdTime == 30 && b.duration == 1 + 30 + 0.5)
+        XCTAssertTrue(b.isVisual)
+        XCTAssertTrue(MediaTools.mediaPaths([b]).isEmpty)
+
+        // Fra Windows: WebCue har også et tomt FilePath-felt.
+        let win = #"{"FormatVersion":1,"Cues":[{"type":"web","Number":"1","FilePath":"","Url":"https://example.com","HoldTime":0}]}"#
+        XCTAssertEqual(try JSONDecoder().decode(ShowDocument.self, from: Data(win.utf8)).cues[0].url, "https://example.com")
+    }
+
     // MARK: Showfil
 
     func testNewCueTypesRoundTrip() throws {

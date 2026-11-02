@@ -99,7 +99,7 @@ final class CueEngine: ObservableObject {
         switch cue.type {
         case .audio: return AudioActive(cue: cue, engine: self)
         case .video: return VideoActive(cue: cue, engine: self)
-        case .image, .pdf: return StillActive(cue: cue, engine: self)
+        case .image, .pdf, .web: return StillActive(cue: cue, engine: self)
         case .fade: return FadeActive(cue: cue, engine: self)
         case .stop: return StopActive(cue: cue, engine: self)
         case .playlist: return PlaylistActive(cue: cue, engine: self)

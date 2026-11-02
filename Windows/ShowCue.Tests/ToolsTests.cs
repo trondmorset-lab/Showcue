@@ -239,6 +239,27 @@ public class ToolsTests
         Assert.NotNull(await NetworkSender.SendAsync(new NetworkCue { Protocol = NetworkProtocol.Http, Url = "ftp://x" }));
     }
 
+    // ---------------- Nettside ----------------
+
+    [Fact]
+    public void WebCueAddresses()
+    {
+        Assert.Equal("https://time.is/", new WebCue { Url = "time.is" }.ValidUri!.AbsoluteUri);
+        Assert.Equal("time.is", new WebCue { Url = "https://time.is/Oslo" }.DisplayName);
+        Assert.Null(new WebCue { Url = "https://" }.ValidUri);
+        Assert.Null(new WebCue { Url = "ftp://x.no" }.ValidUri);
+        var html = Touch(Path.Combine(Root, "web"), "klokke.html");
+        Assert.True(new WebCue { Url = html }.ValidUri!.IsFile);
+
+        var doc = new ShowDocument();
+        doc.Cues.Add(new WebCue { Url = "http://10.0.0.5/score", HoldTime = 30, FadeIn = 1 });
+        var json = doc.ToJson();
+        Assert.Contains("\"type\": \"web\"", json);
+        var w = Assert.IsType<WebCue>(JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!.Cues[0]);
+        Assert.True(w.Url == "http://10.0.0.5/score" && w.HoldTime == 30 && w.FadeIn == 1 && w.Duration == 1 + 30 + 0.5);
+        Assert.Empty(MediaTools.MediaPaths(doc.Cues)); // ingen fil å lete etter
+    }
+
     // ---------------- Showfil ----------------
 
     [Fact]

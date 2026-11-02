@@ -35,7 +35,7 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
 DVS på Mac er en vanlig CoreAudio-enhet:
 1. Start Dante Virtual Soundcard. Velg antall kanaler i DVS og samplingsfrekvens i Dante Controller.
 2. ShowCue → **Innstillinger → Lyd**: velg «Dante Virtual Soundcard». Alle kanalene åpnes, opptil 64 som standard.
-3. **Lydpatch** (i verktøylinja): kryss av hvilke Dante-kanaler hver utgang skal på. Du kan linjesjekke med **Test** (rosa støy på −18 dBFS).
+3. **Lydpatch** (*Oppsett → Lydpatch*): kryss av hvilke Dante-kanaler hver utgang skal på. Du kan linjesjekke med **Test** (rosa støy på −18 dBFS).
    Rut kanalene videre i Dante Controller.
 
 Det samme gjelder andre kort (RME, MOTU, Focusrite, Behringer X-USB/Wing) og aggregerte enheter laget i Lyd- og MIDI-oppsett.
@@ -71,7 +71,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘P | Pause / fortsett alt |
 | ⇧⌘M, ⇧⌘N | Legg til memo-, nettverks-cue |
 | ⌘K | Cart-vindu |
-| ⌥⌘T, ⇧⌘L, ⇧⌘I | Legg til tidskode-, lys-, inngang-cue |
+| ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |
@@ -87,7 +87,7 @@ Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagrin
 (`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
 i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
 (*Pause, spillelister og loop*), og cart-vinduet, nettverks- og memo-cuer, lydstyrke-normalisering og finn/samle
-mediefiler (menyen *Verktøy*) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
+mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
 live-inngang er beskrevet under *Tidskode, lys og live-inngang* (på Mac velges inngangen blant CoreAudio-enhetene,
 og macOS spør om tilgang til mikrofonen første gang).
 

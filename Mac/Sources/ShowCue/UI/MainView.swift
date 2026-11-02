@@ -178,73 +178,84 @@ struct ToolbarRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Group {
-                Button("Ny") { model.newShow() }
-                Button("Åpne") { model.openDialog() }
+            menu("Fil") {
+                Button("Nytt show") { model.newShow() }
+                Button("Åpne …") { model.openDialog() }
                 Button("Lagre") { model.save(as: false) }
-                Button("Lagre som") { model.save(as: true) }
-                Button("↶") { model.undo() }.disabled(!model.canUndo).help("Angre (⌘Z)")
-                Button("↷") { model.redo() }.disabled(!model.canRedo).help("Gjør om (⇧⌘Z)")
+                Button("Lagre som …") { model.save(as: true) }
+                Divider()
+                Button("Samle show og mediefiler i én mappe …") { model.collectShow() }
+                Button("Finn manglende mediefiler …") { model.relinkMenu() }.disabled(model.showMode)
             }
-            divider
-            Text("Legg til:").font(.system(size: 12)).foregroundColor(theme.muted).padding(.horizontal, 4).fixedSize()
-            Group {
-                Button("♪ Lyd") { model.add(.audio) }.help("⌘1")
-                Button("▶ Video") { model.add(.video) }.help("⌘2")
-                Button("▣ Bilde") { model.add(.image) }.help("⌘3")
-                Button("▤ PDF") { model.add(.pdf) }.help("⌘4")
-                Button("◢ Fade") { model.add(.fade) }.help("⌘5 – fader valgt cue")
-                Button("■ Stopp") { model.add(.stop) }.help("⌘6")
-                Button("⇢ OSC") { model.add(.osc) }.help("⌘7")
-                Button("♫ MIDI") { model.add(.midi) }.help("⌘8")
-                Button("☰ Liste") { model.add(.playlist) }.help("Spilleliste (⌘9)")
-                Button("↪ Gå til") { model.add(.goto) }.help("Flytt GO-markøren (⌘0)")
-            }
-            .disabled(model.showMode)
-            Group {
-                Button("✎ Memo") { model.add(.memo) }.help("Beskjed til operatøren (⇧⌘M)")
-                Button("⇄ Nett") { model.add(.network) }.help("Send UDP, TCP eller HTTP (⇧⌘N)")
-                Button("⏱ TC") { model.add(.timecode) }.help("Send tidskode (MTC/LTC) (⌥⌘T)")
-                Button("✺ Lys") { model.add(.light) }.help("DMX over Art-Net (⇧⌘L)")
-                Button("◉ Inn") { model.add(.input) }.help("Live-inngang gjennom lydpatchen (⇧⌘I)")
-            }
-            .disabled(model.showMode)
+            Button("↶") { model.undo() }.disabled(!model.canUndo).help("Angre (⌘Z)")
+            Button("↷") { model.redo() }.disabled(!model.canRedo).help("Gjør om (⇧⌘Z)")
             divider
             Group {
-                Button("Dupliser") { model.duplicateSelected() }.help("⌘D")
-                Button("Slett") { model.deleteSelected() }.help("⌫")
-                Button("↑") { model.moveSelected(-1) }.help("Flytt opp (⌘↑)")
-                Button("↓") { model.moveSelected(1) }.help("Flytt ned (⌘↓)")
-                Button("Nummerer") { model.renumber() }.help("Gi alle cuer fortløpende nummer")
+                menu("＋ Media") {
+                    Button("♪  Lyd … (⌘1)") { model.add(.audio) }
+                    Button("▶  Video … (⌘2)") { model.add(.video) }
+                    Button("▣  Bilde … (⌘3)") { model.add(.image) }
+                    Button("▤  PDF … (⌘4)") { model.add(.pdf) }
+                    Button("◍  Nettside (⇧⌘W)") { model.add(.web) }
+                    Divider()
+                    Button("☰  Spilleliste … (⌘9)") { model.add(.playlist) }
+                    Button("◉  Live-inngang (⇧⌘I)") { model.add(.input) }
+                }
+                .help("Legg til lyd, video, bilde, PDF, nettside …")
+                menu("Styring") {
+                    Button("◢  Fade – valgt cue (⌘5)") { model.add(.fade) }
+                    Button("■  Stopp (⌘6)") { model.add(.stop) }
+                    Button("↪  Gå til (⌘0)") { model.add(.goto) }
+                    Button("✎  Memo (⇧⌘M)") { model.add(.memo) }
+                }
+                .help("Fade, stopp, gå til og memo")
+                menu("Signal ut") {
+                    Button("⇢  OSC (⌘7)") { model.add(.osc) }
+                    Button("♫  MIDI (⌘8)") { model.add(.midi) }
+                    Button("⇄  Nettverk – UDP/TCP/HTTP (⇧⌘N)") { model.add(.network) }
+                    Button("⏱  Tidskode – MTC/LTC (⌥⌘T)") { model.add(.timecode) }
+                    Button("✺  Lys – DMX/Art-Net (⇧⌘L)") { model.add(.light) }
+                }
+                .help("OSC, MIDI, nettverk, tidskode og lys")
+                menu("Rediger") {
+                    Button("Dupliser (⌘D)") { model.duplicateSelected() }
+                    Button("Slett (⌫)") { model.deleteSelected() }
+                    Button("Flytt opp (⌘↑)") { model.moveSelected(-1) }
+                    Button("Flytt ned (⌘↓)") { model.moveSelected(1) }
+                    Button("Nummerer alle 1, 2, 3 …") { model.renumber() }
+                    Divider()
+                    Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }
+                    Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }
+                }
             }
             .disabled(model.showMode)
             Spacer(minLength: 8)
             Button("▦ Cart") { model.showCart() }.help("Store knapper for berøringsskjerm (⌘K)")
-            Menu("Verktøy") {
-                Button("Finn manglende mediefiler …") { model.relinkMenu() }.disabled(model.showMode)
-                Button("Samle show og mediefiler i én mappe …") { model.collectShow() }
-                Divider()
-                Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }.disabled(model.showMode)
-                Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }.disabled(model.showMode)
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .font(.system(size: 12.5))
-            .padding(.horizontal, 6)
             Button(model.showMode ? "🔓 Lås opp" : "🔒 Showmodus") { model.showMode.toggle() }
                 .help("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)")
-            Button("Lydpatch") { openWindow(id: "patch") }.help("Utganger og kanaler på lydkortet (Dante, flerkanals)")
-            Button("Utgang") { model.output.toggle() }.help("Vis/skjul utgangsvinduet (video, bilde, PDF)")
-            SettingsButton()
-            Button(themeGlyph) { model.settings.theme = model.settings.theme.next }
-                .font(.system(size: 15))
-                .help("Bytt tema: mørk → lys → natt")
+            menu("Oppsett") {
+                Button("Lydpatch …") { openWindow(id: "patch") }
+                Button("Vis/skjul utgangsvinduet (⇧⌘U)") { model.output.toggle() }
+                SettingsButton()
+                Button("Bytt tema \(themeGlyph) (⇧⌘T)") { model.settings.theme = model.settings.theme.next }
+                Divider()
+                Button("Om ShowCue") { AboutPanel.show() }
+            }
         }
         .buttonStyle(ToolButtonStyle())
         .lineLimit(1)
         .padding(.horizontal, 8).padding(.vertical, 5)
         .background(theme.panel)
         .overlay(Rectangle().fill(theme.line).frame(height: 1), alignment: .bottom)
+    }
+
+    /// Nedtrekksmeny i verktøylinja.
+    private func menu<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        Menu(title, content: content)
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .font(.system(size: 12.5))
+            .padding(.horizontal, 6)
     }
 
     private var themeGlyph: String {

@@ -13,9 +13,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.10.1</string>
+    <string>0.11.0</string>
     <key>CFBundleVersion</key>
-    <string>0.10.1</string>
+    <string>0.11.0</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSHumanReadableCopyright</key>
@@ -28,6 +28,14 @@
     <string>public.app-category.music</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>ShowCue bruker det lokale nettverket til OSC (fjernstyring fra Companion/lysbord, OSC-cuer og status til Companion), nettverks-cuer og lys over Art-Net.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Nettside- og nettverks-cuer snakker ofte med utstyr og sider på lokalnettet uten https. -->
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>ShowCue bruker lydinngangen bare når en live-inngang-cue spiller, for å sende mikrofon eller linje inn gjennom lydpatchen.</string>
     <key>CFBundleDocumentTypes</key>

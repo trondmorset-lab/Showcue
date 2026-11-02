@@ -148,6 +148,7 @@ struct CueInspector: View {
         case .timecode: timecodeSection
         case .light: lightSection
         case .input: inputSection
+        case .web: webSection
         }
     }
 
@@ -285,6 +286,17 @@ struct CueInspector: View {
             Toggle("Slipp loop (devamp) i stedet for å stoppe", isOn: $cue.release).padding(.top, 8)
             Hint("Mål-cuen spiller ferdig loopen og fortsetter til slutten av fila.")
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600).disabled(cue.release)
+        }
+    }
+
+    private var webSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Adresse (URL eller fil)"); TextInput($cue.url, mono: true)
+            if cue.webURL == nil { Text("Ugyldig adresse").foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 2) }
+            Hint("F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter og vises fullskjerm på utgangen, over bilder og video. Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.")
+            FieldLabel("Vis i (s, 0 = til stoppet)")
+            NumberInput(value: $cue.holdTime, range: 0...86400)
+            visualCommon
         }
     }
 

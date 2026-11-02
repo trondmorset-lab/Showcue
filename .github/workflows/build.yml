@@ -34,6 +34,26 @@ jobs:
       - name: Tester
         run: dotnet test Windows/ShowCue.Tests/ShowCue.Tests.csproj -c Release --logger "console;verbosity=normal"
 
+      - name: Lisenstekster stemmer med pakkene
+        shell: pwsh
+        run: |
+          # Lisensteksten fra hver NuGet-pakke som følger med programmet, må stå ordrett i THIRD-PARTY-NOTICES.txt.
+          function Norm($t) { ($t -replace '\s+', ' ').Trim() }
+          $notices = Norm (Get-Content THIRD-PARTY-NOTICES.txt -Raw)
+          $ok = $true
+          foreach ($pkg in @('microsoft.web.webview2')) {
+            $dir = Get-ChildItem "$env:USERPROFILE\.nuget\packages\$pkg" -Directory | Sort-Object Name | Select-Object -Last 1
+            $lic = Get-ChildItem $dir.FullName -File | Where-Object { $_.Name -match '^licen[cs]e' } | Select-Object -First 1
+            if (-not $lic) { Write-Host "::warning::Fant ingen lisensfil i $pkg"; continue }
+            $text = Get-Content $lic.FullName -Raw
+            if (-not $notices.Contains((Norm $text))) {
+              Write-Host "::error::THIRD-PARTY-NOTICES.txt mangler lisensen for $pkg ordrett. Riktig tekst:"
+              Write-Host $text
+              $ok = $false
+            }
+          }
+          if (-not $ok) { exit 1 }
+
       - name: Publiser
         working-directory: Windows
         run: dotnet publish ShowCue/ShowCue.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish

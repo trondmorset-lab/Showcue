@@ -190,7 +190,8 @@ public abstract class VisualActive : ActiveCue
 
     protected override void OnBegin()
     {
-        if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException("Fila finnes ikke: " + VCue.FilePath);
+        if (VCue is WebCue w) { if (w.ValidUri == null) throw new InvalidOperationException("Ugyldig adresse: " + w.Url); }
+        else if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException("Fila finnes ikke: " + VCue.FilePath);
         var host = Engine.EnsureOutput();
 
         if (VCue.ReplaceOthers)
@@ -286,6 +287,7 @@ public sealed class StillActive : VisualActive
 
     protected override FrameworkElement CreateElement()
     {
+        if (SCue is WebCue web) { Duration = SCue.Duration; return CreateWeb(web.ValidUri!); }
         _image = new Image { Stretch = ToStretch(SCue.Stretch), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         RenderOptions.SetBitmapScalingMode(_image, BitmapScalingMode.HighQuality);
 
@@ -301,6 +303,32 @@ public sealed class StillActive : VisualActive
         }
         Duration = SCue.Duration;
         return _image;
+    }
+
+    /// <summary>Nettside: WebView2 i komposisjonsmodus, så den kan fades og vises i forhåndsvisningen som et bilde.</summary>
+    private FrameworkElement CreateWeb(Uri uri)
+    {
+        var web = new Microsoft.Web.WebView2.Wpf.WebView2CompositionControl
+        {
+            // Programmappa er ikke skrivbar etter installering: nettleserdata legges i brukerens AppData.
+            CreationProperties = new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties
+            {
+                UserDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ShowCue", "WebView2"),
+            },
+            DefaultBackgroundColor = System.Drawing.Color.Black,
+        };
+        web.CoreWebView2InitializationCompleted += (_, e) =>
+        {
+            if (!e.IsSuccess) { Cue.Error = "Nettside: " + (e.InitializationException?.Message ?? "WebView2 mangler") + " (installer Microsoft Edge WebView2 Runtime)"; return; }
+            web.CoreWebView2.NavigationCompleted += (_, n) => { if (!n.IsSuccess) Cue.Error = $"Nettside: kunne ikke åpne ({n.WebErrorStatus})"; };
+        };
+        web.Source = uri;
+        return web;
+    }
+
+    protected override void OnRemove()
+    {
+        if (Element is IDisposable d) Application.Current.Dispatcher.BeginInvoke(() => d.Dispose());
     }
 
     private async Task LoadPdfAsync(Task<System.Windows.Media.Imaging.BitmapSource> task)

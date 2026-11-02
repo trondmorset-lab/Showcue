@@ -54,7 +54,7 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
 
 - **Utganger** (busser) er logiske, f.eks. «Main L», «Main R», «Monitor», «Opptak». Showfila refererer bare
   til utgangene, så showet kan flyttes til en annen maskin med et annet lydkort – bare patchen må endres.
-- **Lydpatch** (knapp i verktøylinja): én rad per utgang og én kolonne per kanal på lydkortet. Kryss av for
+- **Lydpatch** (*Oppsett → Lydpatch*): én rad per utgang og én kolonne per kanal på lydkortet. Kryss av for
   hvor hver utgang skal ut. En utgang kan gå til flere kanaler. Nivå per utgang i dB.
   **Test** spiller rosa støy (−18 dBFS) på utgangen for linjesjekk, og nivåmålere vises per utgang og per kanal.
   Med ASIO vises kanalnavnene fra driveren (f.eks. Dante-kanalene) når du holder musa over kolonneoverskriften.
@@ -156,7 +156,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+P** | Pause / fortsett alt |
 | **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til memo / nettverks-cue |
 | **Ctrl+K** | Cart-vindu |
-| **Ctrl+Shift+T / L / I** | Legg til tidskode-, lys-, inngang-cue |
+| **Ctrl+Shift+T / L / I / W** | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
@@ -183,6 +183,23 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
   *lineær amplitude* (som en fysisk fader).
 
+## Verktøylinja
+
+| Meny | Innhold |
+|---|---|
+| **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler |
+| **＋ Media** | Lyd, video, bilde, PDF, nettside, spilleliste, live-inngang |
+| **Styring** | Fade, stopp, gå til, memo |
+| **Signal ut** | OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
+| **Rediger** | Dupliser, slett, flytt, nummerer, normaliser lydstyrke |
+| **Oppsett** | Lydpatch, utgangsvinduet, innstillinger, tema, om ShowCue |
+
+Angre/gjør om, **▦ Cart** og **🔒 Showmodus** er egne knapper. Hurtigtastene står i menyene.
+
+**Nettside-cue** (◍): viser en nettside (f.eks. `https://time.is`) eller en lokal .html-fil fullskjerm på utgangen,
+med fade og visningstid som et bilde. Windows bruker Microsoft Edge WebView2, som er innebygd i Windows 10 og 11.
+Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
+
 ## Cart, nettverk, memo og lydstyrke
 
 - **Cart-vindu** (▦ Cart eller Ctrl+K): store knapper for berøringsskjerm. Viser cuer med hurtigtast og cuer merket
@@ -191,7 +208,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
   og `\xHH` i meldingen gir linjeskift, tab og enkeltbytes. Eksempel PJLink-projektor av: TCP, port 4352, `%1POWR 0\r`.
   Feil (f.eks. ingen kontakt) vises på cuen; GO venter aldri på nettverket.
 - **Memo-cue** (✎ Memo): en beskjed til operatøren («Vent på applaus») som vises stort øverst til den lukkes.
-- **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Verktøy → Normaliser lydstyrke*, måler
+- **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Rediger → Normaliser lydstyrke*, måler
   lydstyrken (integrert LUFS etter EBU R128) mellom start og slutt og setter nivået så cuen treffer målet
   (standard −23 LUFS, endres under *Innstillinger → Sikkerhet*).
 
@@ -210,8 +227,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 ## Mediefiler: finn og samle
 
 - Mangler det filer når et show åpnes, tilbyr ShowCue å lete i en mappe du velger (med undermapper), på filnavn.
-  Det samme finnes under *Verktøy → Finn manglende mediefiler*.
-- *Verktøy → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
+  Det samme finnes under *Fil → Finn manglende mediefiler*.
+- *Fil → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
   `Media/`. Kopier mappa til en minnepinne eller en annen maskin (også Mac), så finner showet filene selv.
 
 ## Trygt under forestillingen
@@ -230,7 +247,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 
 ## Utseende
 
-Tre fargetemaer, som byttes med en gang via ☀-knappen i verktøylinja eller *Innstillinger → Utseende*:
+Tre fargetemaer, som byttes med en gang via *Oppsett → Bytt tema* eller *Innstillinger → Utseende*:
 **Mørk** (grafitt), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
 Tittellinja i Windows følger temaet.
 

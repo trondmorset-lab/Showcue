@@ -465,6 +465,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.T: AddCue("timecode"); e.Handled = true; return;
                 case Key.L: AddCue("light"); e.Handled = true; return;
                 case Key.I: AddCue("input"); e.Handled = true; return;
+                case Key.W: AddCue("web"); e.Handled = true; return;
             }
         }
 
@@ -679,6 +680,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
             "memo" => new() { new MemoCue() },
+            "web" => new() { new WebCue() },
             "timecode" => new() { new TimecodeCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
             "light" => new() { new LightCue() },
             "input" => new() { new InputCue { FileChannels = Math.Max(1, AudioInput.ProbeChannels(_settings.InputDeviceId)) } },
@@ -919,7 +921,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _cartWindow.Show();
     }
 
-    private void Tools_Click(object sender, RoutedEventArgs e)
+    private void Menu_Click(object sender, RoutedEventArgs e)
     {
         var b = (Button)sender;
         b.ContextMenu.PlacementTarget = b;
