@@ -21,11 +21,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private static readonly string[] AudioExt = { ".wav", ".mp3", ".aif", ".aiff", ".flac", ".m4a", ".aac", ".wma" };
     private static readonly string[] VideoExt = { ".mp4", ".mov", ".m4v", ".wmv", ".avi", ".mkv" };
     private static readonly string[] ImageExt = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff" };
-    private const string AudioFilter = "Lydfiler|*.wav;*.mp3;*.aif;*.aiff;*.flac;*.m4a;*.aac;*.wma|Alle filer|*.*";
-    private const string VideoFilter = "Videofiler|*.mp4;*.mov;*.m4v;*.wmv;*.avi;*.mkv|Alle filer|*.*";
-    private const string ImageFilter = "Bilder|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff|Alle filer|*.*";
-    private const string PdfFilter = "PDF|*.pdf";
+    private static readonly string[] PdfExt = { ".pdf" };
     private const string ShowFilter = "ShowCue-show|*.showcue|Alle filer|*.*";
+
+    /// <summary>Filter for fildialogen, f.eks. «Lydfiler|*.wav;*.mp3|Alle filer|*.*».</summary>
+    private static string Filter(string name, string[] ext) => $"{name}|{string.Join(";", ext.Select(e => "*" + e))}|Alle filer|*.*";
+
+    private static string FilterFor(object cueOrType) => cueOrType switch
+    {
+        AudioCue or "audio" => Filter("Lydfiler", AudioExt),
+        VideoCue or "video" => Filter("Videofiler", VideoExt),
+        ImageCue or "image" => Filter("Bilder", ImageExt),
+        _ => Filter("PDF", PdfExt),
+    };
 
     private AppSettings _settings;
     private ShowDocument _show = new();
@@ -175,13 +183,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled);
         RaiseTitle();
 
-        var missing = _show.Cues.OfType<IFileCue>().Count(f => !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath));
-        if (missing > 0)
-        {
-            foreach (var c in _show.Cues.Where(c => c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath)))
-                c.Error = "Fila finnes ikke: " + ((IFileCue)c).FilePath;
-            StatusText = $"Advarsel: {missing} mediefil(er) mangler. De er merket med ! i lista.";
-        }
+        var missing = _show.Cues.Where(c => c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath)).ToList();
+        foreach (var c in missing) c.Error = "Fila finnes ikke: " + ((IFileCue)c).FilePath;
+        if (missing.Count > 0) StatusText = $"Advarsel: {missing.Count} mediefil(er) mangler. De er merket med ! i lista.";
     }
 
     private void Cues_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -411,10 +415,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (FireHotkey(key)) e.Handled = true;
     }
 
-    private bool FireHotkey(Key key)
+    private bool FireHotkey(Key key) => KeyName(key) is string name && FireHotkey(name);
+
+    /// <summary>Start (eller stopp, hvis den spiller) cuen med denne hurtigtasten.</summary>
+    private bool FireHotkey(string name)
     {
-        var name = KeyName(key);
-        if (name == null) return false;
         var cue = Cues.FirstOrDefault(c => c.Hotkey == name && !c.Disabled);
         if (cue == null) return false;
         ToggleHotCue(cue);
@@ -467,13 +472,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         return true;
     }
 
-    bool IShowControl.FireHotkey(string key)
-    {
-        var cue = Cues.FirstOrDefault(c => c.Hotkey == key && !c.Disabled);
-        if (cue == null) return false;
-        ToggleHotCue(cue);
-        return true;
-    }
+    bool IShowControl.FireHotkey(string key) => FireHotkey(key);
 
     int IShowControl.FireMidiTrigger(string trigger)
     {
@@ -563,18 +562,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         CommitFocusedTextBox();
         var at = InsertIndex();
         var target = SelectedCue;
-        var list = new List<Cue>();
-        switch (type)
+        List<Cue> list = type switch
         {
-            case "audio": list.AddRange(PickFiles(AudioFilter, true).Select(CreateCueForFile).OfType<Cue>()); if (list.Count == 0) return; break;
-            case "video": list.AddRange(PickFiles(VideoFilter, true).Select(CreateCueForFile).OfType<Cue>()); if (list.Count == 0) return; break;
-            case "image": list.AddRange(PickFiles(ImageFilter, true).Select(CreateCueForFile).OfType<Cue>()); if (list.Count == 0) return; break;
-            case "pdf": list.AddRange(PickFiles(PdfFilter, true).Select(CreateCueForFile).OfType<Cue>()); if (list.Count == 0) return; break;
-            case "fade": list.Add(new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" }); break;
-            case "stop": list.Add(new StopCue()); break;
-            case "osc": list.Add(new OscCue()); break;
-            case "midi": list.Add(new MidiCue { Device = MidiDevices.FirstOrDefault() ?? "" }); break;
-        }
+            "audio" or "video" or "image" or "pdf" => PickFiles(FilterFor(type), true).Select(CreateCueForFile).OfType<Cue>().ToList(),
+            "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
+            "stop" => new() { new StopCue() },
+            "osc" => new() { new OscCue() },
+            _ => new() { new MidiCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
+        };
         InsertCues(list, at);
     }
 
@@ -599,7 +594,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             return v;
         }
         if (ImageExt.Contains(ext)) return new ImageCue { FilePath = path };
-        if (ext == ".pdf") return new PdfCue { FilePath = path };
+        if (PdfExt.Contains(ext)) return new PdfCue { FilePath = path };
         return null;
     }
 
@@ -673,15 +668,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void BrowseFile_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).DataContext is not IFileCue fc) return;
-        var filter = fc switch
-        {
-            AudioCue => AudioFilter,
-            VideoCue => VideoFilter,
-            ImageCue => ImageFilter,
-            PdfCue => PdfFilter,
-            _ => "Alle filer|*.*"
-        };
-        var file = PickFiles(filter, false).FirstOrDefault();
+        var file = PickFiles(FilterFor(fc), false).FirstOrDefault();
         if (file != null) fc.FilePath = file;
     }
 

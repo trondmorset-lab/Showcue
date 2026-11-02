@@ -144,7 +144,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     // OSC
     @Published var host = "127.0.0.1"
-    @Published var port = 53000
+    @Published var port = 8000
     @Published var address = "/"
     @Published var arguments = ""
 
@@ -182,8 +182,6 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     var isFileCue: Bool { [.audio, .video, .image, .pdf].contains(type) }
     var isVisual: Bool { [.video, .image, .pdf].contains(type) }
-    var isStill: Bool { type == .image || type == .pdf }
-    var hasRouting: Bool { type == .audio || type == .video }
     var hasNoAudio: Bool { type == .video && fileChannels == 0 }
 
     var typeName: String {
@@ -368,7 +366,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         target = v(.Target, ""); fadeTime = v(.FadeTime, fadeTime); fadeAudio = v(.FadeAudio, true)
         targetDb = v(.TargetDb, -60.0); fadeVisual = v(.FadeVisual, true); targetOpacity = v(.TargetOpacity, 0.0)
         stopWhenDone = v(.StopWhenDone, true)
-        host = v(.Host, "127.0.0.1"); port = v(.Port, 53000); address = v(.Address, "/"); arguments = v(.Arguments, "")
+        host = v(.Host, "127.0.0.1"); port = v(.Port, 8000); address = v(.Address, "/"); arguments = v(.Arguments, "")
         device = v(.Device, ""); messageType = v(.MessageType, MidiMessageType.noteOn); channel = v(.Channel, 1)
         data1 = v(.Data1, 60); data2 = v(.Data2, 127); mscDeviceId = v(.MscDeviceId, 127)
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")

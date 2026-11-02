@@ -55,8 +55,6 @@ final class PatchMixer {
     // Toppnivå per buss og per kanal (0…1+), faller ca. 20 dB/s. Rått minne: lydtråden skriver, UI leser.
     private let busLevelPtr: UnsafeMutablePointer<Float>
     private let channelLevelPtr: UnsafeMutablePointer<Float>
-    var busLevels: [Float] { (0..<PatchMixer.maxBuses).map { busLevelPtr[$0] } }
-    var channelLevels: [Float] { (0..<deviceChannels).map { channelLevelPtr[$0] } }
     func busLevel(_ i: Int) -> Float { i >= 0 && i < PatchMixer.maxBuses ? busLevelPtr[i] : 0 }
     func channelLevel(_ i: Int) -> Float { i >= 0 && i < deviceChannels ? channelLevelPtr[i] : 0 }
 
@@ -278,7 +276,6 @@ final class Voice: BusSource {
     var passPosition: Double { Double(source.passPosition) / sampleRate }
     var passLength: Double? { source.passLength.map { Double($0) / sampleRate } }
     var isFinished: Bool { lock.locked { finished } }
-    var isRamping: Bool { lock.locked { rampLeft > 0 || stopAfterRamp } }
 
     func setRouting(_ routes: [AudioRoute]) {
         let r = Voice.buildRouting(routes, channels: source.channels)

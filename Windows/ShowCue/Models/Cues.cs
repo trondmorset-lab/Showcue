@@ -111,6 +111,10 @@ public abstract class Cue : ObservableObject
     protected static string FileLabel(string path) =>
         string.IsNullOrWhiteSpace(path) ? "(ingen fil)" : Path.GetFileName(path);
 
+    /// <summary>Filnavnet uten filtype, eller typenavnet hvis ingen fil er valgt.</summary>
+    protected string NameFromFile(string path) =>
+        Path.GetFileNameWithoutExtension(path) is { Length: > 0 } n ? n : TypeName;
+
     public Cue Clone()
     {
         var json = System.Text.Json.JsonSerializer.Serialize<Cue>(this, ShowDocument.JsonOptions);
@@ -164,7 +168,7 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
 
     public override string TypeName => "Lyd";
     public override string TypeIcon => "♪";
-    protected override string DefaultName => Path.GetFileNameWithoutExtension(FilePath) is { Length: > 0 } n ? n : TypeName;
+    protected override string DefaultName => NameFromFile(FilePath);
     public override string Summary => FileLabel(FilePath) + (Loop ? "  ⟲" : "") + (VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "")
         + (Routes != null ? "  → " + RouteSummary : "");
 
@@ -205,7 +209,7 @@ public abstract class VisualCue : Cue, IFileCue
     public bool ReplaceOthers { get => _replaceOthers; set => SetCue(ref _replaceOthers, value); }
     public VisualStretch Stretch { get => _stretch; set => SetCue(ref _stretch, value); }
 
-    protected override string DefaultName => Path.GetFileNameWithoutExtension(FilePath) is { Length: > 0 } n ? n : TypeName;
+    protected override string DefaultName => NameFromFile(FilePath);
 }
 
 public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
@@ -338,7 +342,7 @@ public sealed class StopCue : Cue
 public sealed class OscCue : Cue
 {
     private string _host = "127.0.0.1";
-    private int _port = 53000;
+    private int _port = 8000;
     private string _address = "/";
     private string _arguments = "";
 
