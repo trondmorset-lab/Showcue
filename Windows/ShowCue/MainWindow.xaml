@@ -300,6 +300,97 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type m:TimecodeCue}">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Start (tt:mm:ss:ff)" />
+                        <TextBox Text="{Binding Start}" FontFamily="{StaticResource MonoFont}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Lengde (s, 0 = til stoppet)" />
+                        <TextBox Text="{Binding Length}" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Label}" Text="Bilderate" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.TimecodeRates}" SelectedItem="{Binding Rate}" ItemTemplate="{StaticResource EnumItem}" />
+                <CheckBox IsChecked="{Binding SendMtc}" Content="Send MTC (MIDI Time Code) til:" Margin="0,12,0,4" />
+                <ComboBox ItemsSource="{Binding DataContext.MidiDevices, RelativeSource={RelativeSource AncestorType=Window}}"
+                          SelectedItem="{Binding Device}" IsEnabled="{Binding SendMtc}" />
+                <CheckBox IsChecked="{Binding SendLtc}" Content="Send LTC (lyd) til utgang:" Margin="0,12,0,4" />
+                <Grid IsEnabled="{Binding SendLtc}">
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Utgang i lydpatchen" />
+                        <TextBox Text="{Binding LtcBus}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dBFS)" />
+                        <TextBox Text="{Binding LtcLevelDb}" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Tidskoden styrer lysbord, videoservere og andre programmer i takt med showet. Bruk en egen utgang til LTC (den skal ikke høres i salen). Pause stopper tidskoden." />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:LightCue}">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Art-Net-node (IP eller kringkasting)" />
+                        <TextBox Text="{Binding Host}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Univers" />
+                        <TextBox Text="{Binding Universe}" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Label}" Text="Nivåer (kanal@verdi)" />
+                <TextBox Text="{Binding Levels}" FontFamily="{StaticResource MonoFont}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="F.eks. 1@255 2-4@50% 10@0. Verdi 0–255 eller prosent. Kanaler som ikke nevnes, beholder nivået sitt." />
+                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" />
+                <TextBox Text="{Binding FadeTime}" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Sendes som Art-Net (UDP 6454). 255.255.255.255 eller 2.255.255.255 når alle noder på nettet skal få det. Å stoppe cuen lar lyset stå." />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:InputCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Hint}" Text="Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn, Dante WDM)." />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dB)" />
+                        <TextBox Text="{Binding VolumeDb}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Kanaler fra inngangen" />
+                        <TextBox Text="{Binding FileChannels}" />
+                    </StackPanel>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="Fade inn (s)" />
+                        <TextBox Text="{Binding FadeIn}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="Fade ut (s)" />
+                        <TextBox Text="{Binding FadeOut}" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per inngang → utgang)" Margin="0,14,0,3" />
+                <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="Spiller til cuen stoppes. Pass på tilbakekobling (feedback) hvis mikrofonen står nær høyttalerne. Forsinkelsen er ca. 20–60 ms." />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type m:OscCue}">
             <StackPanel>
                 <Grid>
@@ -494,6 +585,9 @@
                     <Button Style="{StaticResource ToolButton}" Content="↪ Gå til" Tag="goto" Click="AddCue_Click" ToolTip="Flytt GO-markøren (Ctrl+0)" />
                     <Button Style="{StaticResource ToolButton}" Content="✎ Memo" Tag="memo" Click="AddCue_Click" ToolTip="Beskjed til operatøren (Ctrl+Shift+M)" />
                     <Button Style="{StaticResource ToolButton}" Content="⇄ Nett" Tag="network" Click="AddCue_Click" ToolTip="Send UDP, TCP eller HTTP (Ctrl+Shift+N)" />
+                    <Button Style="{StaticResource ToolButton}" Content="⏱ TC" Tag="timecode" Click="AddCue_Click" ToolTip="Send tidskode (MTC/LTC) (Ctrl+Shift+T)" />
+                    <Button Style="{StaticResource ToolButton}" Content="✺ Lys" Tag="light" Click="AddCue_Click" ToolTip="DMX over Art-Net (Ctrl+Shift+L)" />
+                    <Button Style="{StaticResource ToolButton}" Content="◉ Inn" Tag="input" Click="AddCue_Click" ToolTip="Live-inngang gjennom lydpatchen (Ctrl+Shift+I)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <Button Style="{StaticResource ToolButton}" Content="Dupliser" Click="Duplicate_Click" ToolTip="Ctrl+D" />
                     <Button Style="{StaticResource ToolButton}" Content="Slett" Click="Delete_Click" ToolTip="Delete" />
@@ -719,6 +813,10 @@
                             </DockPanel>
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding LearnText}" Foreground="{DynamicResource Wait}"
                                        Visibility="{Binding LearnText, Converter={StaticResource NonEmptyVis}}" />
+                            <TextBlock Style="{StaticResource Label}" Text="Tidskode-trigger (MTC inn, tt:mm:ss:ff)" />
+                            <TextBox Text="{Binding SelectedCue.TimecodeTrigger, Mode=OneWay}" LostFocus="TimecodeTrigger_LostFocus"
+                                     FontFamily="{StaticResource MonoFont}"
+                                     ToolTip="Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen." />
                             <TextBlock Style="{StaticResource Label}" Text="Etterpå" />
                             <ComboBox ItemsSource="{x:Static local:EnumValues.ContinueModes}" SelectedItem="{Binding SelectedCue.ContinueMode}"
                                       ItemTemplate="{StaticResource EnumItem}" />

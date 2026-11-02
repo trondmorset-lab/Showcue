@@ -713,3 +713,138 @@ public sealed class InstantActive : ActiveCue
         if (error != null) n.Error = "Nettverk: " + error;
     }
 }
+
+// ======================================================================
+/// <summary>Tidskode-cue: MTC til en MIDI-utgang og/eller LTC som lyd, fra starttiden.</summary>
+public sealed class TimecodeActive : ActiveCue
+{
+    private TimecodeCue T => (TimecodeCue)Cue;
+    private LtcSource? _ltc;
+    private MtcSender? _mtc;
+    private double _begin;
+
+    public TimecodeActive(TimecodeCue cue, CueEngine engine) : base(cue, engine) { }
+
+    /// <summary>Tidskoden som sendes nå (vises i lista over aktive cuer).</summary>
+    public string Current => Timecode.FromSeconds(T.StartTimecode.ToSeconds(T.Rate) + Elapsed, T.Rate).Format(T.Rate);
+
+    protected override void OnBegin()
+    {
+        if (!T.SendMtc && !T.SendLtc) throw new InvalidOperationException("Velg MTC og/eller LTC");
+        var start = Timecode.FromSeconds(T.StartTimecode.ToSeconds(T.Rate) + StartOffset, T.Rate);
+        if (T.SendLtc)
+        {
+            var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+            _ltc = new LtcSource(T.LtcBus - 1, T.LtcLevelDb, start, T.Rate, mixer.WaveFormat.SampleRate);
+            mixer.Add(_ltc);
+        }
+        if (T.SendMtc)
+        {
+            var device = T.Device;
+            var midi = Engine.Midi;
+            _mtc = new MtcSender(m => midi.SendShort(device, m), b => midi.SendSysex(device, b), start, T.Rate);
+        }
+        _begin = Engine.Now;
+        Duration = T.Length;
+    }
+
+    internal override void Tick()
+    {
+        base.Tick();
+        if (!Started || Done) return;
+        Elapsed = Engine.Now - _begin;
+        OnPropertyChanged(nameof(Current));
+        if (T.Length > 0 && Elapsed >= T.Length) Complete();
+    }
+
+    public override void Pause() { _ltc?.Pause(); _mtc?.Pause(); }
+    public override void Resume() { _ltc?.Resume(); _mtc?.Resume(); }
+    public override void Stop(double fadeSeconds) { base.Stop(fadeSeconds); Complete(); }
+
+    protected override void OnCompleted()
+    {
+        _ltc?.Stop();
+        _mtc?.Dispose();
+    }
+}
+
+/// <summary>Lys-cue: fader DMX-kanaler over Art-Net. Å stoppe cuen lar lyset stå (som på et lysbord).</summary>
+public sealed class LightActive : TimedActive
+{
+    private LightCue L => (LightCue)Cue;
+    public LightActive(LightCue cue, CueEngine engine) : base(cue, engine) { }
+    protected override double Seconds => L.FadeTime;
+
+    protected override void Act()
+    {
+        if (!DmxLevels.TryParse(L.Levels, out var levels, out var error)) throw new FormatException("Nivåer: " + error);
+        if (string.IsNullOrWhiteSpace(L.Host)) throw new InvalidOperationException("Mangler IP-adresse for Art-Net");
+        Engine.Dmx.FadeTo(L.Host, L.Universe, levels, L.FadeTime);
+    }
+}
+
+/// <summary>Live-inngang gjennom lydpatchen (mikrofon, linje inn).</summary>
+public sealed class InputActive : ActiveCue
+{
+    private CuePlayback? _pb;
+    private InputCue I => (InputCue)Cue;
+    private double _begin;
+
+    public InputActive(InputCue cue, CueEngine engine) : base(cue, engine) { }
+
+    protected override void OnBegin()
+    {
+        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+        int rate = mixer.WaveFormat.SampleRate;
+        LiveRing ring;
+        try { ring = Engine.Input.Open(Engine.Settings.InputDeviceId, rate); }
+        catch (Exception ex) { throw new InvalidOperationException("Kunne ikke åpne inngangen: " + ex.Message); }
+        if (I.FileChannels != ring.Channels) I.FileChannels = ring.Channels;
+        var stream = new LiveInputStream(ring, rate, Engine.Input.Close);
+        var pb = _pb = new CuePlayback(I, stream, I, new CuePlayback.Options(I.VolumeDb, 0, 0, false, I.FadeIn, I.FadeOut), rate);
+        pb.Finished += _ => Application.Current.Dispatcher.BeginInvoke(() => { pb.Dispose(); Complete(); });
+        mixer.Add(pb);
+        _begin = Engine.Now;
+        I.PropertyChanged += OnCueChanged;
+    }
+
+    private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => FollowLiveChanges(I, _pb, e.PropertyName);
+
+    internal override void Tick()
+    {
+        base.Tick();
+        if (Started && !Done) Elapsed = Engine.Now - _begin;
+    }
+
+    public override void Stop(double fadeSeconds)
+    {
+        base.Stop(fadeSeconds);
+        if (_pb == null) return;
+        IsStopping = true;
+        _pb.Stop(fadeSeconds);
+        if (fadeSeconds <= 0) Complete();
+    }
+
+    public override void ApplyFade(FadeCue fade)
+    {
+        if (_pb == null) return;
+        if (fade.FadeAudio)
+        {
+            if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; }
+            _pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
+        }
+        else if (fade.StopWhenDone) Stop(0);
+    }
+
+    public override void Pause() => _pb?.Pause();
+    public override void Resume() => _pb?.Resume();
+
+    protected override void OnCompleted()
+    {
+        I.PropertyChanged -= OnCueChanged;
+        if (_pb == null) return;
+        var pb = _pb;
+        Engine.Audio.Mixer?.Remove(pb);
+        _ = Task.Delay(500).ContinueWith(_ => pb.Dispose());
+    }
+}

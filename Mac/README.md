@@ -71,6 +71,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘P | Pause / fortsett alt |
 | ⇧⌘M, ⇧⌘N | Legg til memo-, nettverks-cue |
 | ⌘K | Cart-vindu |
+| ⌥⌘T, ⇧⌘L, ⇧⌘I | Legg til tidskode-, lys-, inngang-cue |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |
@@ -86,7 +87,9 @@ Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagrin
 (`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
 i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
 (*Pause, spillelister og loop*), og cart-vinduet, nettverks- og memo-cuer, lydstyrke-normalisering og finn/samle
-mediefiler (menyen *Verktøy*) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*.
+mediefiler (menyen *Verktøy*) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
+live-inngang er beskrevet under *Tidskode, lys og live-inngang* (på Mac velges inngangen blant CoreAudio-enhetene,
+og macOS spør om tilgang til mikrofonen første gang).
 
 ## Oppbygning
 

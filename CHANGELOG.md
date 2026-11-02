@@ -4,6 +4,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.10.0 – 2026-11-02
+
+### Nytt
+- **Tidskode-cue** (⏱ TC): sender MTC til en MIDI-utgang og/eller LTC som lyd på en utgang i lydpatchen,
+  fra et valgt starttidspunkt (24, 25, 29,97 drop frame eller 30 fps). Pause stopper tidskoden.
+- **Tidskode-trigger:** hver cue kan starte når innkommende MTC passerer et tidspunkt (slå på MTC inn under Innstillinger → MIDI).
+- **Lys-cue** (✺ Lys): fader DMX-kanaler over Art-Net, f.eks. `1@255 2-4@50%`, med fade-tid. Å stoppe cuen lar lyset stå.
+- **Live-inngang** (◉ Inn): mikrofon eller linje inn gjennom lydpatchen, med nivå, fades og routingmatrise.
+  Inngangen velges under Innstillinger → Lyd.
+
 ## 0.9.0 – 2026-11-01
 
 ### Nytt

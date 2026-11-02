@@ -14,6 +14,8 @@ final class MidiSystem {
     /// Kalles på hovedtråden.
     var onTrigger: ((String, Int) -> Void)?
     var onMsc: ((MscCommand) -> Void)?
+    var onTimecode: ((Timecode, TimecodeRate) -> Void)?
+    private let mtc = MtcDecoder()
 
     init() {
         MIDIClientCreateWithBlock("ShowCue" as CFString, &client) { _ in }
@@ -112,8 +114,11 @@ final class MidiSystem {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             for e in events {
-                if case .sysex(let s) = e {
-                    if let m = MscCommand.parse(s) { self.onMsc?(m) }
+                if case .quarterFrame(let q) = e {
+                    if let tc = self.mtc.quarterFrame(q) { self.onTimecode?(tc, self.mtc.rate) }
+                } else if case .sysex(let s) = e {
+                    if let tc = self.mtc.fullFrame(s) { self.onTimecode?(tc, self.mtc.rate) }
+                    else if let m = MscCommand.parse(s) { self.onMsc?(m) }
                 } else if let hit = self.detector.trigger(for: e) {
                     self.onTrigger?(hit.0, hit.1)
                 }

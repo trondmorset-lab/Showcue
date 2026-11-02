@@ -25,6 +25,8 @@ public sealed class CueEngine : IDisposable
     /// <summary>Forhåndslytting i bølgeformredigeringen (går gjennom lydpatchen, men er ikke en del av showet).</summary>
     public AudioPreview Preview { get; }
     public MidiEngine Midi { get; } = new();
+    public DmxOutput Dmx { get; } = new();
+    public AudioInput Input { get; } = new();
     public AppSettings Settings { get; private set; }
     public ObservableCollection<ActiveCue> Active { get; } = new();
     public double Now => _clock.Elapsed.TotalSeconds;
@@ -116,6 +118,9 @@ public sealed class CueEngine : IDisposable
         StillCue c => new StillActive(c, this),
         FadeCue c => new FadeActive(c, this),
         StopCue c => new StopActive(c, this),
+        TimecodeCue c => new TimecodeActive(c, this),
+        LightCue c => new LightActive(c, this),
+        InputCue c => new InputActive(c, this),
         _ => new InstantActive(cue, this),
     };
 
@@ -264,6 +269,8 @@ public sealed class CueEngine : IDisposable
         Audio.Dispose();
         PreviewAudio.Dispose();
         Midi.Dispose();
+        Dmx.Dispose();
+        Input.Dispose();
         if (_output != null) { _output.AllowClose = true; _output.Close(); }
     }
 }

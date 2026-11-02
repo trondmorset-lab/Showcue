@@ -97,6 +97,9 @@ final class AppModel: ObservableObject, ShowControl {
         oscServer.onMessage = { [weak self] m, from in self?.router.handleOsc(m, from: from) }
         midi.onTrigger = { [weak self] t, ch in self?.router.handleMidiTrigger(t, channel: ch) }
         midi.onMsc = { [weak self] m in self?.router.handleMsc(m) }
+        midi.onTimecode = { [weak self] tc, r in self?.router.handleTimecode(tc, rate: r) }
+        router.onTimecodeStatus = { [weak self] _ in self?.applyStatusLine() }
+        engine.dmx.onError = { [weak self] e in DispatchQueue.main.async { self?.statusText = e } }
         newShow(confirm: false)
     }
 
@@ -104,6 +107,7 @@ final class AppModel: ObservableObject, ShowControl {
     func startup() {
         audio.start(settings)
         engine.configurePreview(settings)
+        engine.inputDeviceUID = settings.inputDeviceUID
         output.configure(screen: settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
@@ -229,6 +233,15 @@ final class AppModel: ObservableObject, ShowControl {
     }
     func remoteLog(_ text: String) { statusText = text }
     func refreshFeedback() { feedback?.requestRefresh() }
+
+    func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int {
+        let due = cues.filter { c in
+            guard !c.disabled, let t = Timecode.parse(c.timecodeTrigger) else { return false }
+            return Timecode.crossed(previous: previous, now: frame, target: t.toFrame(rate), rate: rate)
+        }
+        due.forEach { engine.fire($0) }
+        return due.count
+    }
 
     // MARK: - Show-fil
 
@@ -520,6 +533,10 @@ final class AppModel: ObservableObject, ShowControl {
             insert([c])
         case .midi:
             let c = Cue(type: .midi); c.device = MidiSystem.destinations().first ?? ""; insert([c])
+        case .timecode:
+            let c = Cue(type: .timecode); c.device = MidiSystem.destinations().first ?? ""; insert([c])
+        case .input:
+            let c = Cue(type: .input); c.fileChannels = max(1, AudioInput.probeChannels(deviceUID: settings.inputDeviceUID)); insert([c])
         case .playlist:
             let urls = pickFiles(AppModel.audioExt, multiple: true)
             guard !urls.isEmpty else { return }
@@ -797,6 +814,7 @@ final class AppModel: ObservableObject, ShowControl {
             audio.start(settings)
         }
         engine.configurePreview(settings)
+        engine.inputDeviceUID = settings.inputDeviceUID
         output.configure(screen: settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
@@ -837,7 +855,13 @@ final class AppModel: ObservableObject, ShowControl {
         } else {
             feedback = nil
         }
-        remoteStatus = parts.joined(separator: "   ·   ")
+        remoteParts = parts
+        applyStatusLine()
+    }
+
+    private var remoteParts: [String] = []
+    private func applyStatusLine() {
+        remoteStatus = (remoteParts + (router.timecodeStatus.isEmpty ? [] : [router.timecodeStatus])).joined(separator: "   ·   ")
     }
 
     func learnMidi(for c: Cue) {

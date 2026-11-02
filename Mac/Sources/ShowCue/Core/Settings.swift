@@ -88,6 +88,10 @@ struct AppSettings: Codable, Equatable {
     var midiPrevious = ""
     var mscInEnabled = true
     var mscInDeviceId = 127
+    /// Start cuer med tidskode-trigger fra innkommende MTC (på MIDI-inngangen).
+    var mtcInEnabled = false
+    /// Lydenhet for live-inngang-cuer (UID, tom = systemets standard inngang).
+    var inputDeviceUID = ""
 
     // Utseende og sikkerhet
     var theme: AppTheme = .dark
@@ -106,7 +110,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, cartColumns
+        case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, cartColumns, mtcInEnabled, inputDeviceUID
     }
 
     init(from decoder: Decoder) throws {
@@ -141,6 +145,8 @@ struct AppSettings: Codable, Equatable {
         lastShowPath = v(.lastShowPath, d.lastShowPath)
         loudnessTarget = v(.loudnessTarget, d.loudnessTarget)
         cartColumns = v(.cartColumns, d.cartColumns)
+        mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
+        inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
     }
 
     /// Nøkkel for lydoppsettet: bare endringer her krever omstart av lyden.

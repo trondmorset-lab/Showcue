@@ -7,6 +7,12 @@ final class CueEngine: ObservableObject {
     let audio: AudioEngine
     let output: OutputCompositor
     let midi: MidiSystem
+    /// Art-Net-utgang for lys-cuer.
+    let dmx = DmxOutput()
+    /// Opptak for live-inngang-cuer (startes ved første bruk).
+    let input = AudioInput()
+    /// Inngangen live-cuer bruker (fra innstillingene).
+    var inputDeviceUID = ""
     /// Forhåndslytting i bølgeformredigeringen (ikke en del av showet).
     private(set) lazy var preview = AudioPreview(target: { [weak self] in self?.previewTarget() })
     /// Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.
@@ -97,6 +103,9 @@ final class CueEngine: ObservableObject {
         case .fade: return FadeActive(cue: cue, engine: self)
         case .stop: return StopActive(cue: cue, engine: self)
         case .playlist: return PlaylistActive(cue: cue, engine: self)
+        case .timecode: return TimecodeActive(cue: cue, engine: self)
+        case .light: return LightActive(cue: cue, engine: self)
+        case .input: return InputActive(cue: cue, engine: self)
         case .osc, .midi, .goto, .memo, .network: return InstantActive(cue: cue, engine: self)
         }
     }

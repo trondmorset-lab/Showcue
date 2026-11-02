@@ -26,6 +26,8 @@ public interface IShowControl
     void SetPaused(bool? paused);
     /// <summary>Slipp loopen i en cue («devamp»).</summary>
     bool ReleaseCue(string number);
+    /// <summary>Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.</summary>
+    int FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate);
 }
 
 /// <summary>
@@ -56,6 +58,10 @@ public sealed class RemoteControl : IDisposable
 
     public string OscStatus { get; private set; } = "OSC inn: av";
     public string MidiStatus { get; private set; } = "MIDI inn: av";
+    /// <summary>Siste mottatte tidskode (tom = ingen).</summary>
+    public string TimecodeStatus { get; private set; } = "";
+    private long? _lastTcFrame;
+    private TimecodeRate _lastTcRate;
     public event Action? StatusChanged;
 
     public RemoteControl(IShowControl show, Dispatcher ui, AppSettings settings)
@@ -66,6 +72,7 @@ public sealed class RemoteControl : IDisposable
         _osc.MessageReceived += (m, from) => _ui.BeginInvoke(() => HandleOsc(m, from.Address.ToString()));
         _midi.Trigger += (t, ch) => _ui.BeginInvoke(() => HandleMidi(t, ch));
         _midi.Msc += m => _ui.BeginInvoke(() => HandleMsc(m));
+        _midi.TimecodeReceived += (tc, r) => _ui.BeginInvoke(() => HandleTimecode(tc, r));
     }
 
     public void Apply(AppSettings s)
@@ -127,6 +134,22 @@ public sealed class RemoteControl : IDisposable
             what = n == 1 ? "1 cue" : $"{n} cues";
         }
         _show.RemoteLog($"MIDI: {MidiTriggers.Describe(trigger)} → {what}");
+    }
+
+    /// <summary>Innkommende tidskode: start cuer med tidskode-trigger som passeres. Public for testing.</summary>
+    public void HandleTimecode(Timecode tc, TimecodeRate rate)
+    {
+        if (!_settings.MtcInEnabled) return;
+        long frame = tc.ToFrame(rate);
+        if (_lastTcFrame is long prev && _lastTcRate == rate)
+        {
+            int n = _show.FireTimecodeTriggers(prev, frame, rate);
+            if (n > 0) _show.RemoteLog($"MTC {tc.Format(rate)} → {(n == 1 ? "1 cue" : $"{n} cues")}");
+        }
+        _lastTcFrame = frame;
+        _lastTcRate = rate;
+        var text = "MTC inn: " + tc.Format(rate);
+        if (text != TimecodeStatus) { TimecodeStatus = text; StatusChanged?.Invoke(); }
     }
 
     private void HandleMsc(MscCommand m)

@@ -67,6 +67,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     /// <summary>Lydpatchens utganger (ny liste ved hver endring, så routingmatrisen tegnes på nytt).</summary>
     public IReadOnlyList<PatchBus> Buses => _settings.Buses.ToList();
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
+        + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
         + (_settings.OscFeedbackEnabled ? $"   ·   Status ut: {_settings.OscFeedbackHost}:{_settings.OscFeedbackPort}" : "");
     /// <summary>Ikon for temaknappen: viser hvilket tema man bytter til.</summary>
     public string ThemeGlyph => ThemeManager.Current switch { AppTheme.Dark => "☀", AppTheme.Light => "☾", _ => "◐" };
@@ -461,6 +462,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.Z: Redo(); e.Handled = true; return;
                 case Key.M: AddCue("memo"); e.Handled = true; return;
                 case Key.N: AddCue("network"); e.Handled = true; return;
+                case Key.T: AddCue("timecode"); e.Handled = true; return;
+                case Key.L: AddCue("light"); e.Handled = true; return;
+                case Key.I: AddCue("input"); e.Handled = true; return;
             }
         }
 
@@ -576,6 +580,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     bool IShowControl.ReleaseCue(string number) => FindCue(number) is { } c && Engine.Release(c);
 
+    int IShowControl.FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate)
+    {
+        var due = Cues.Where(c => !c.Disabled && Timecode.TryParse(c.TimecodeTrigger, out var t)
+                                  && Timecode.Crossed(previousFrame, frame, t.ToFrame(rate), rate)).ToList();
+        foreach (var c in due) Engine.Fire(c);
+        return due.Count;
+    }
+
     private static string? KeyName(Key k)
     {
         if (k is >= Key.A and <= Key.Z) return k.ToString();
@@ -667,6 +679,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
             "memo" => new() { new MemoCue() },
+            "timecode" => new() { new TimecodeCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
+            "light" => new() { new LightCue() },
+            "input" => new() { new InputCue { FileChannels = Math.Max(1, AudioInput.ProbeChannels(_settings.InputDeviceId)) } },
             "network" => new() { new NetworkCue() },
             _ => new() { new MidiCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
         };
@@ -873,6 +888,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
 
     private void CloseMemo_Click(object sender, RoutedEventArgs e) => MemoText = "";
+
+    private void TimecodeTrigger_LostFocus(object sender, RoutedEventArgs e)
+    {
+        var box = (TextBox)sender;
+        if (SelectedCue == null) return;
+        var text = box.Text.Trim();
+        if (text.Length > 0 && !Timecode.TryParse(text, out _))
+        {
+            StatusText = "Tidskode må skrives tt:mm:ss:ff, f.eks. 01:00:10:00.";
+            box.Text = SelectedCue.TimecodeTrigger;
+            return;
+        }
+        SelectedCue.TimecodeTrigger = text;
+        box.Text = SelectedCue.TimecodeTrigger;
+    }
 
     // ==================================================================
     //  Cart, mediefiler og lydstyrke

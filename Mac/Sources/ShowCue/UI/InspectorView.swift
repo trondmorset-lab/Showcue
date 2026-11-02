@@ -88,6 +88,9 @@ struct CueInspector: View {
                 Button("✕") { model.cancelLearn(); cue.midiTrigger = "" }.buttonStyle(PanelButtonStyle())
             }
             if !model.learnText.isEmpty { Hint(model.learnText).foregroundColor(theme.wait) }
+            FieldLabel("Tidskode-trigger (MTC inn, tt:mm:ss:ff)")
+            TimecodeField(value: $cue.timecodeTrigger, allowEmpty: true)
+                .help("Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen.")
 
             FieldLabel("Etterpå")
             Picker("", selection: $cue.continueMode) {
@@ -142,6 +145,9 @@ struct CueInspector: View {
         case .goto: gotoSection
         case .memo: memoSection
         case .network: networkSection
+        case .timecode: timecodeSection
+        case .light: lightSection
+        case .input: inputSection
         }
     }
 
@@ -279,6 +285,71 @@ struct CueInspector: View {
             Toggle("Slipp loop (devamp) i stedet for å stoppe", isOn: $cue.release).padding(.top, 8)
             Hint("Mål-cuen spiller ferdig loopen og fortsetter til slutten av fila.")
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600).disabled(cue.release)
+        }
+    }
+
+    private var timecodeSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Pair {
+                FieldLabel("Start (tt:mm:ss:ff)"); TimecodeField(value: $cue.tcStart, allowEmpty: false)
+            } _: {
+                FieldLabel("Lengde (s, 0 = til stoppet)"); NumberInput(value: $cue.length, range: 0...86400)
+            }
+            FieldLabel("Bilderate")
+            Picker("", selection: $cue.rate) {
+                ForEach(TimecodeRate.allCases, id: \.self) { Text($0.label).tag($0) }
+            }.labelsHidden()
+            Toggle("Send MTC (MIDI Time Code) til:", isOn: $cue.sendMtc).padding(.top, 10)
+            Picker("", selection: $cue.device) {
+                Text("(første tilgjengelige)").tag("")
+                ForEach(MidiSystem.destinations(), id: \.self) { Text($0).tag($0) }
+                if !cue.device.isEmpty && !MidiSystem.destinations().contains(cue.device) { Text("\(cue.device) (ikke tilkoblet)").tag(cue.device) }
+            }.labelsHidden().disabled(!cue.sendMtc)
+            Toggle("Send LTC (lyd) til utgang:", isOn: $cue.sendLtc).padding(.top, 10)
+            Pair {
+                FieldLabel("Utgang i lydpatchen"); IntInput(value: $cue.ltcBus, range: 1...64)
+            } _: {
+                FieldLabel("Nivå (dBFS)"); NumberInput(value: $cue.ltcLevelDb, range: -40...0)
+            }
+            .disabled(!cue.sendLtc)
+            Hint("Tidskoden styrer lysbord, videoservere og andre programmer i takt med showet. Bruk en egen utgang til LTC (den skal ikke høres i salen). Pause stopper tidskoden.")
+        }
+    }
+
+    private var lightSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 0) { FieldLabel("Art-Net-node (IP eller kringkasting)"); TextInput($cue.host) }
+                VStack(alignment: .leading, spacing: 0) { FieldLabel("Univers"); IntInput(value: $cue.universe, range: 0...32767) }.frame(width: 90)
+            }
+            FieldLabel("Nivåer (kanal@verdi)"); TextInput($cue.levels, mono: true)
+            if !errorText.isEmpty { Text(errorText).foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 2) }
+            Hint("F.eks. 1@255 2-4@50% 10@0. Verdi 0–255 eller prosent. Kanaler som ikke nevnes, beholder nivået sitt.")
+            FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600)
+            Hint("Sendes som Art-Net (UDP 6454). 255.255.255.255 eller 2.255.255.255 når alle noder på nettet skal få det. Å stoppe cuen lar lyset stå.")
+        }
+    }
+
+    private var errorText: String {
+        do { _ = try DmxLevels.parse(cue.levels); return "" } catch { return error.localizedDescription }
+    }
+
+    private var inputSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Hint("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn, Dante).")
+            Pair {
+                FieldLabel("Nivå (dB)"); NumberInput(value: $cue.volumeDb, range: -60...12)
+            } _: {
+                FieldLabel("Kanaler fra inngangen"); IntInput(value: $cue.fileChannels, range: 1...64)
+            }
+            Pair {
+                FieldLabel("Fade inn (s)"); NumberInput(value: $cue.fadeIn, range: 0...600)
+            } _: {
+                FieldLabel("Fade ut (s)"); NumberInput(value: $cue.fadeOut, range: 0...600)
+            }
+            FieldLabel("Utganger (dB per inngang → utgang)").padding(.top, 6)
+            RoutingMatrixView(cue: cue)
+            Hint("Spiller til cuen stoppes. Pass på tilbakekobling (feedback) hvis mikrofonen står nær høyttalerne. Forsinkelsen er ca. 20–60 ms.")
         }
     }
 
@@ -507,5 +578,29 @@ private struct RouteCell: View {
             .onSubmit { onCommit(text); NSApp.keyWindow?.makeFirstResponder(nil) }
             .onChange(of: focused) { f in if !f && text != initial { onCommit(text) } }
             .help(help)
+    }
+}
+
+/// Tekstfelt for tidskode: lagres når du trykker Enter eller går ut av feltet. Ugyldig tekst tilbakestilles.
+struct TimecodeField: View {
+    @EnvironmentObject var model: AppModel
+    @Binding var value: String
+    let allowEmpty: Bool
+    @State private var text = ""
+
+    var body: some View {
+        TextField(allowEmpty ? "tt:mm:ss:ff" : "01:00:00:00", text: $text, onEditingChanged: { editing in if !editing { commit() } })
+            .onSubmit(commit)
+            .styledField(mono: true)
+            .onAppear { text = value }
+            .onChange(of: value) { text = $0 }
+    }
+
+    private func commit() {
+        let t = text.trimmingCharacters(in: .whitespaces)
+        if t.isEmpty && allowEmpty { value = ""; return }
+        if let tc = Timecode.parse(t) { value = tc.description; text = tc.description; return }
+        model.statusText = "Tidskode må skrives tt:mm:ss:ff, f.eks. 01:00:10:00."
+        text = value
     }
 }

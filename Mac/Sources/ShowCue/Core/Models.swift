@@ -4,7 +4,7 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input
 }
 
 /// Hvordan en nettverks-cue sender.
@@ -156,6 +156,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var midiTrigger = ""
     /// Knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.
     @Published var cart = false
+    /// Start cuen når innkommende tidskode (MTC) passerer dette tidspunktet, «tt:mm:ss:ff». Tom = ingen.
+    @Published var timecodeTrigger = ""
 
     // Filer (lyd, video, bilde, PDF)
     @Published var filePath = ""
@@ -220,6 +222,21 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var url = "http://"
     @Published var method = "GET"
 
+    // Tidskode (bruker også device for MIDI-utgang)
+    @Published var tcStart = "01:00:00:00"
+    @Published var rate: TimecodeRate = .fps25
+    @Published var sendMtc = true
+    @Published var sendLtc = false
+    @Published var ltcBus = 1
+    @Published var ltcLevelDb: Double = -12
+    /// Hvor lenge tidskoden går (sekunder). 0 = til cuen stoppes.
+    @Published var length: Double = 0
+
+    // Lys (bruker også host og fadeTime)
+    @Published var universe = 0
+    /// «kanal@verdi», f.eks. «1@255 2-4@50% 10@0».
+    @Published var levels = "1@255"
+
     // MIDI
     @Published var device = ""
     @Published var messageType: MidiMessageType = .noteOn
@@ -250,6 +267,10 @@ final class Cue: ObservableObject, Identifiable, Codable {
             loop = true; fadeOut = 3; fileChannels = 2
         case .network:
             port = 9000
+        case .light:
+            host = "255.255.255.255"; fadeTime = 2
+        case .input:
+            fadeIn = 0.5; fadeOut = 1; fileChannels = 2
         default: break
         }
     }
@@ -274,6 +295,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .goto: return "Gå til"
         case .memo: return "Memo"
         case .network: return "Nettverk"
+        case .timecode: return "Tidskode"
+        case .light: return "Lys"
+        case .input: return "Inngang"
         }
     }
 
@@ -291,6 +315,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .goto: return "↪"
         case .memo: return "✎"
         case .network: return "⇄"
+        case .timecode: return "⏱"
+        case .light: return "✺"
+        case .input: return "◉"
         }
     }
 
@@ -324,6 +351,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .memo: return memoFirstLine.isEmpty ? "Memo" : memoFirstLine
         case .network:
             return networkProtocol == .http ? "HTTP \(method)" : "\(networkProtocol.rawValue.uppercased()) \(host)"
+        case .timecode: return "Tidskode " + tcStart
+        case .light: return "Lys"
+        case .input: return "Live-inngang"
         }
     }
 
@@ -361,6 +391,15 @@ final class Cue: ObservableObject, Identifiable, Codable {
             return (target.isEmpty ? "(mål mangler)" : "→ " + target) + (fire ? "  + GO" : "")
         case .memo:
             return memoFirstLine
+        case .timecode:
+            return "\(tcStart) @ \(rate.label.split(separator: " ")[0]) fps" + (sendMtc ? "  MTC" : "") + (sendLtc ? "  LTC → ut \(ltcBus)" : "")
+        case .light:
+            return "Univers \(universe)  \(DmxLevels.summary(levels))" + (fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+        case .input:
+            var s = "\(fileChannels) kanal(er)"
+            if volumeDb != 0 { s += "  " + Cue.signedDb(volumeDb) + " dB" }
+            if let r = routes { s += "  → " + Cue.routeSummary(r) }
+            return s
         case .network:
             if networkProtocol == .http { return "\(method) \(url)" }
             return "\(networkProtocol.rawValue.uppercased()) \(host):\(port)  \(message)".trimmingCharacters(in: .whitespaces)
@@ -404,6 +443,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .image, .pdf: return holdTime > 0 ? fadeIn + holdTime + fadeOut : 0
         case .fade: return fadeTime
         case .stop: return release ? 0 : fadeTime
+        case .light: return fadeTime
+        case .timecode: return length
         default: return 0
         }
     }
@@ -411,8 +452,11 @@ final class Cue: ObservableObject, Identifiable, Codable {
     var durationText: String { duration > 0 ? TimeFormat.format(duration) : "" }
     var preWaitText: String { preWait > 0 ? TimeFormat.format(preWait) : "" }
     var triggerText: String {
-        [hotkey, MidiTriggers.describe(midiTrigger)].filter { !$0.isEmpty }.joined(separator: " · ")
+        [hotkey, MidiTriggers.describe(midiTrigger), timecodeTrigger.isEmpty ? "" : "TC " + timecodeTrigger]
+            .filter { !$0.isEmpty }.joined(separator: " · ")
     }
+
+    var startTimecode: Timecode { Timecode.parse(tcStart) ?? Timecode(1, 0, 0, 0) }
 
     func effectiveRoutes(fileChannels ch: Int) -> [AudioRoute] { routes ?? AudioRoute.defaults(fileChannels: ch) }
 
@@ -447,6 +491,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
         case Curve, Release, Fire, Files, Shuffle, Crossfade
         case Cart, Loudness, Text, Message, Url, Method
+        case TimecodeTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
         case protocolKey = "Protocol"
     }
 
@@ -486,6 +531,12 @@ final class Cue: ObservableObject, Identifiable, Codable {
         text = v(.Text, ""); networkProtocol = v(.protocolKey, NetworkProtocol.udp); message = v(.Message, "")
         url = v(.Url, "http://"); method = v(.Method, "GET").uppercased()
         if t == .network { port = v(.Port, 9000) }
+        if t == .light { host = v(.Host, "255.255.255.255") }
+        timecodeTrigger = Timecode.normalize(v(.TimecodeTrigger, ""))
+        tcStart = Timecode.parse(v(.Start, "")).map(\.description) ?? "01:00:00:00"
+        rate = v(.Rate, TimecodeRate.fps25); sendMtc = v(.SendMtc, true); sendLtc = v(.SendLtc, false)
+        ltcBus = max(1, v(.LtcBus, 1)); ltcLevelDb = v(.LtcLevelDb, -12.0); length = v(.Length, 0.0)
+        universe = v(.Universe, 0); levels = v(.Levels, "1@255")
     }
 
     func encode(to encoder: Encoder) throws {
@@ -501,6 +552,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(color, forKey: .Color)
         try c.encode(midiTrigger, forKey: .MidiTrigger)
         try c.encode(cart, forKey: .Cart)
+        try c.encode(timecodeTrigger, forKey: .TimecodeTrigger)
         switch type {
         case .audio:
             try c.encode(filePath, forKey: .FilePath)
@@ -557,6 +609,26 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(fadeOut, forKey: .FadeOut)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
+        case .timecode:
+            try c.encode(tcStart, forKey: .Start)
+            try c.encode(rate, forKey: .Rate)
+            try c.encode(sendMtc, forKey: .SendMtc)
+            try c.encode(device, forKey: .Device)
+            try c.encode(sendLtc, forKey: .SendLtc)
+            try c.encode(ltcBus, forKey: .LtcBus)
+            try c.encode(ltcLevelDb, forKey: .LtcLevelDb)
+            try c.encode(length, forKey: .Length)
+        case .light:
+            try c.encode(host, forKey: .Host)
+            try c.encode(universe, forKey: .Universe)
+            try c.encode(levels, forKey: .Levels)
+            try c.encode(fadeTime, forKey: .FadeTime)
+        case .input:
+            try c.encode(fileChannels, forKey: .FileChannels)
+            try c.encode(routes, forKey: .Routes)
+            try c.encode(volumeDb, forKey: .VolumeDb)
+            try c.encode(fadeIn, forKey: .FadeIn)
+            try c.encode(fadeOut, forKey: .FadeOut)
         case .memo:
             try c.encode(text, forKey: .Text)
         case .network:

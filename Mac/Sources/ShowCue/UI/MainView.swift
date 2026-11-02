@@ -204,6 +204,9 @@ struct ToolbarRow: View {
             Group {
                 Button("✎ Memo") { model.add(.memo) }.help("Beskjed til operatøren (⇧⌘M)")
                 Button("⇄ Nett") { model.add(.network) }.help("Send UDP, TCP eller HTTP (⇧⌘N)")
+                Button("⏱ TC") { model.add(.timecode) }.help("Send tidskode (MTC/LTC) (⌥⌘T)")
+                Button("✺ Lys") { model.add(.light) }.help("DMX over Art-Net (⇧⌘L)")
+                Button("◉ Inn") { model.add(.input) }.help("Live-inngang gjennom lydpatchen (⇧⌘I)")
             }
             .disabled(model.showMode)
             divider

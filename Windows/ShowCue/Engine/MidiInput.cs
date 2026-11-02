@@ -1,5 +1,7 @@
 using NAudio.Midi;
 
+using ShowCue.Models;
+
 namespace ShowCue.Engine;
 
 /// <summary>
@@ -18,6 +20,9 @@ public sealed class MidiInput : IDisposable
 
     public event Action<string, int>? Trigger;           // trigger, kanal
     public event Action<MscCommand>? Msc;
+    /// <summary>Innkommende MIDI Time Code (kvartbilder eller fullbilde).</summary>
+    public event Action<Timecode, TimecodeRate>? TimecodeReceived;
+    private readonly MtcDecoder _mtc = new();
 
     public static List<string> GetDevices()
     {
@@ -49,6 +54,11 @@ public sealed class MidiInput : IDisposable
 
     private void OnMessage(object? sender, MidiInMessageEventArgs e)
     {
+        if ((e.RawMessage & 0xFF) == 0xF1)
+        {
+            if (_mtc.QuarterFrame((byte)((e.RawMessage >> 8) & 0x7F)) is Timecode tc) TimecodeReceived?.Invoke(tc, _mtc.Rate);
+            return;
+        }
         var ev = e.MidiEvent;
         if (ev == null) return;
         if (Channel != 0 && ev.Channel != Channel) return;
@@ -73,6 +83,7 @@ public sealed class MidiInput : IDisposable
 
     private void OnSysex(object? sender, MidiInSysexMessageEventArgs e)
     {
+        if (_mtc.FullFrame(e.SysexBytes) is Timecode tc) { TimecodeReceived?.Invoke(tc, _mtc.Rate); return; }
         var m = MscCommand.Parse(e.SysexBytes);
         if (m != null) Msc?.Invoke(m);
     }

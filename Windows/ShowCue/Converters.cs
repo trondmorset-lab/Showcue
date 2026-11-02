@@ -43,6 +43,10 @@ public sealed class EnumTextConverter : IValueConverter
         [NetworkProtocol.Udp] = "UDP",
         [NetworkProtocol.Tcp] = "TCP",
         [NetworkProtocol.Http] = "HTTP-forespørsel",
+        [TimecodeRate.Fps24] = Timecode.Label(TimecodeRate.Fps24),
+        [TimecodeRate.Fps25] = Timecode.Label(TimecodeRate.Fps25),
+        [TimecodeRate.Fps2997Drop] = Timecode.Label(TimecodeRate.Fps2997Drop),
+        [TimecodeRate.Fps30] = Timecode.Label(TimecodeRate.Fps30),
     };
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -112,6 +116,7 @@ public static class EnumValues
     public static Array CueColors { get; } = Enum.GetValues(typeof(CueColor));
     public static Array FadeCurves { get; } = Enum.GetValues(typeof(FadeCurve));
     public static Array NetworkProtocols { get; } = Enum.GetValues(typeof(NetworkProtocol));
+    public static Array TimecodeRates { get; } = Enum.GetValues(typeof(TimecodeRate));
     public static string[] HttpMethods { get; } = { "GET", "POST", "PUT", "DELETE" };
 }
 
