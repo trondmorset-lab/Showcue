@@ -53,6 +53,10 @@ public sealed class WaveformEditor : UserControl
         playRow.Children.Add(MakeButton("▶ Slutten", "Lytt til de siste 5 sekundene før sluttpunktet", () => PlayFrom(Math.Max(Cue?.StartTime ?? 0, _canvas.EffectiveEnd - 5))));
         _stopButton = MakeButton("■ Stopp", "Stopp forhåndslyttingen", () => Engine?.Preview.Stop());
         playRow.Children.Add(_stopButton);
+        playRow.Children.Add(MakeButton("▶ Kjør herfra", "Kjør cuen som i showet (gjennom cuens utganger) fra markøren – nyttig på prøver", () =>
+        {
+            if (Engine != null && Cue is ShowCue.Models.Cue c) Engine.Fire(c, Math.Max(0, _canvas.CursorTime - Cue.StartTime));
+        }));
 
         var editRow = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
         editRow.Children.Add(MakeButton("Start = markør", "Sett startpunktet der markøren (eller lyttingen) er nå", () => SetStart(CurrentPoint())));

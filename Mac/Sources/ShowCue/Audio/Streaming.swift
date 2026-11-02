@@ -218,8 +218,11 @@ final class StreamingSource: PcmSource {
     let ring: SampleRing
     let sampleRate: Double
     let startTime: Double
-    let loop: Bool
-    let passLength: Int?
+    private(set) var loop: Bool
+    /// Rammer per runde (nil = til filslutt). Kan bli lengre når en loop slippes.
+    var passLength: Int? { stateLock.locked { _passLength } }
+    private var _passLength: Int?
+    private let stateLock = UnfairLock()
 
     private let lock = UnfairLock()
     private var rewindRequested = false
@@ -238,8 +241,8 @@ final class StreamingSource: PcmSource {
         let total = decoder.duration
         self.startTime = total > 0 ? min(startTime, max(0, total - 0.01)) : startTime
         let end = endTime > 0 ? (total > 0 ? min(endTime, total) : endTime) : total
-        passLength = end > self.startTime ? Int((end - self.startTime) * sampleRate) : nil
-        self.loop = loop && passLength != nil
+        _passLength = end > self.startTime ? Int((end - self.startTime) * sampleRate) : nil
+        self.loop = loop && _passLength != nil
         ring = SampleRing(channels: decoder.channels, capacityFrames: Int(bufferSeconds * sampleRate))
         scratch = .allocate(capacity: StreamingSource.chunk * max(1, decoder.channels))
         if self.startTime > 0 { decoder.seek(to: self.startTime) }
@@ -251,6 +254,25 @@ final class StreamingSource: PcmSource {
 
     /// Hopp tilbake til start (brukes når en video looper). Utføres av dekodertråden.
     func requestRewind() { lock.locked { rewindRequested = true } }
+
+    var isLooping: Bool { lock.locked { loop } }
+
+    /// Slipp loopen («devamp»): runden som spiller fullføres, så spilles resten av fila til slutt.
+    func releaseLoop() {
+        lock.locked {
+            guard loop, let pl = stateLock.locked({ _passLength }) else { return }
+            loop = false
+            if ring.truncateAtPendingPassStart() {
+                // Dekoderen hadde allerede begynt på neste runde: fortsett fra sluttpunktet i stedet.
+                decoder.seek(to: startTime + Double(pl) / sampleRate)
+                decodedInPass = pl
+            }
+            let total = decoder.duration
+            let toFileEnd = total > startTime ? Int((total - startTime) * sampleRate) : pl
+            stateLock.locked { _passLength = max(pl, toFileEnd) }
+            doneDecoding = false
+        }
+    }
 
     /// Fyller ringbufferen. Kalles fra dekodertråden (og én gang fra hovedtråden før start). Returnerer false når ferdig.
     @discardableResult
@@ -267,7 +289,7 @@ final class StreamingSource: PcmSource {
         var produced = 0
         while ring.freeFrames >= StreamingSource.chunk && produced < minimumFrames {
             var want = StreamingSource.chunk
-            if let pl = passLength { want = min(want, pl - decodedInPass) }
+            if let pl = stateLock.locked({ _passLength }) { want = min(want, pl - decodedInPass) }
             if want <= 0 {
                 if loop { decoder.seek(to: startTime); decodedInPass = 0; ring.markPassStart(); continue }
                 doneDecoding = true; ring.setEnded(); return false

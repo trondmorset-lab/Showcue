@@ -17,6 +17,8 @@ public abstract class ActiveCue : ObservableObject
 
     public Cue Cue { get; }
     public double StartAt { get; set; }
+    /// <summary>Start så mange sekunder inn i cuen (prøver: «spill fra her»).</summary>
+    public double StartOffset { get; set; }
     public bool Started { get; private set; }
     public bool Done { get; private set; }
     /// <summary>Stoppet manuelt eller av stopp-/fade-cue (utløser ikke auto-follow).</summary>
@@ -69,6 +71,13 @@ public abstract class ActiveCue : ObservableObject
     /// <summary>Utfør en fade-cue mot denne cuen.</summary>
     public virtual void ApplyFade(FadeCue fade) { }
 
+    /// <summary>Pause / fortsett (tiden for pre-wait og fader står stille av seg selv, se <see cref="CueEngine.PauseAll"/>).</summary>
+    public virtual void Pause() { }
+    public virtual void Resume() { }
+
+    /// <summary>Slipp loopen («devamp»): spill ferdig og fortsett til slutten. Returnerer false hvis cuen ikke looper.</summary>
+    public virtual bool Release() => false;
+
     protected void Complete()
     {
         if (Done) return;
@@ -99,7 +108,7 @@ public sealed class AudioActive : ActiveCue
     protected override void OnBegin()
     {
         if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException("Lydfila finnes ikke: " + AudioCue.FilePath);
-        _pb = Engine.Audio.Play(AudioCue);
+        _pb = Engine.Audio.Play(AudioCue, StartOffset);
         var pb = _pb;
         // Fila lukkes først når lydtråden har sluppet den.
         pb.Finished += _ => Application.Current.Dispatcher.BeginInvoke(() => { pb.Dispose(); Complete(); });
@@ -135,12 +144,23 @@ public sealed class AudioActive : ActiveCue
         if (fade.FadeAudio)
         {
             if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; }
-            _pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone);
+            _pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
         }
         else if (fade.StopWhenDone)
         {
             Stop(0);
         }
+    }
+
+    public override void Pause() => _pb?.Pause();
+    public override void Resume() => _pb?.Resume();
+
+    public override bool Release()
+    {
+        if (_pb is not { IsLooping: true }) return false;
+        _pb.ReleaseLoop();
+        Duration = 0; // ukjent til fila er ferdig
+        return true;
     }
 
     protected override void OnCompleted()
@@ -195,7 +215,7 @@ public abstract class VisualActive : ActiveCue
         _ => Stretch.Uniform,
     };
 
-    protected void AnimateOpacity(double to, double seconds)
+    protected void AnimateOpacity(double to, double seconds, FadeCurve curve = FadeCurve.Db)
     {
         if (Element == null) return;
         if (seconds <= 0)
@@ -205,6 +225,7 @@ public abstract class VisualActive : ActiveCue
             return;
         }
         var anim = new DoubleAnimation(to, TimeSpan.FromSeconds(seconds)) { FillBehavior = FillBehavior.HoldEnd };
+        if (curve == FadeCurve.SCurve) anim.EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut };
         Element.BeginAnimation(UIElement.OpacityProperty, anim, HandoffBehavior.SnapshotAndReplace);
     }
 
@@ -230,7 +251,7 @@ public abstract class VisualActive : ActiveCue
     public override void ApplyFade(FadeCue fade)
     {
         if (Element == null || Done) return;
-        if (fade.FadeVisual) AnimateOpacity(fade.TargetOpacity / 100.0, fade.FadeTime);
+        if (fade.FadeVisual) AnimateOpacity(fade.TargetOpacity / 100.0, fade.FadeTime, fade.Curve);
         if (fade.StopWhenDone)
         {
             WasStopped = true;
@@ -315,8 +336,13 @@ public sealed class VideoActive : VisualActive
     private MediaElement? _media;
     private CuePlayback? _audio;
     private bool _audioStarted;
+    private bool _released;
     private double _lastResync;
     private VideoCue VidCue => (VideoCue)Cue;
+    /// <summary>Hvor i fila avspillingen starter (startpunkt + eventuell «spill fra her»).</summary>
+    private double Begin => VidCue.StartTime + StartOffset;
+    /// <summary>Sluttpunktet gjelder ikke lenger når loopen er sluppet (da spilles resten av fila).</summary>
+    private double EndPoint => _released ? 0 : VidCue.EndTime;
 
     /// <summary>Største avvik mellom bilde og lyd før bildet justeres (sekunder).</summary>
     private const double MaxDrift = 0.12;
@@ -341,8 +367,8 @@ public sealed class VideoActive : VisualActive
         {
             if (_media.NaturalDuration.HasTimeSpan) VidCue.KnownDuration = _media.NaturalDuration.TimeSpan.TotalSeconds;
             var end = VidCue.EffectiveEnd;
-            Duration = VidCue.Loop || end <= 0 ? 0 : Math.Max(0, end - VidCue.StartTime);
-            if (VidCue.StartTime > 0) _media.Position = TimeSpan.FromSeconds(VidCue.StartTime);
+            Duration = VidCue.Loop || end <= 0 ? 0 : Math.Max(0, end - Begin);
+            if (Begin > 0) _media.Position = TimeSpan.FromSeconds(Begin);
             StartAudio(); // bilde og lyd starter samtidig
         };
         _media.MediaEnded += (_, _) => ReachedEnd();
@@ -370,7 +396,7 @@ public sealed class VideoActive : VisualActive
         }
         if (VidCue.FileChannels != reader.WaveFormat.Channels) VidCue.FileChannels = reader.WaveFormat.Channels;
         // Fade ut håndteres av VideoActive (samme tid for bilde og lyd), derfor FadeOut = 0 her.
-        var o = new CuePlayback.Options(VidCue.VolumeDb, VidCue.StartTime, VidCue.EndTime, VidCue.Loop, VidCue.FadeIn, 0);
+        var o = new CuePlayback.Options(VidCue.VolumeDb, Begin, VidCue.EndTime, VidCue.Loop, VidCue.FadeIn, 0);
         _audio = new CuePlayback(VidCue, reader, VidCue, o, mixer.WaveFormat.SampleRate);
         var pb = _audio;
         pb.Finished += _ => Application.Current.Dispatcher.BeginInvoke(pb.Dispose);
@@ -391,9 +417,9 @@ public sealed class VideoActive : VisualActive
     private void ReachedEnd()
     {
         if (_media == null || Done) return;
-        if (VidCue.Loop && !IsStopping)
+        if (VidCue.Loop && !IsStopping && !_released)
         {
-            _media.Position = TimeSpan.FromSeconds(VidCue.StartTime);
+            _media.Position = TimeSpan.FromSeconds(Begin); // samme sted som lyden looper til
             _media.Play();
             // Lyden looper selv ved sluttpunktet; spol bare tilbake hvis den ikke allerede har gjort det.
             if (_audio != null && _audio.PassPosition > 1.0) _audio.RequestRewind();
@@ -407,10 +433,10 @@ public sealed class VideoActive : VisualActive
         base.Tick();
         if (_media == null || Done) return;
         var pos = _media.Position.TotalSeconds;
-        Elapsed = Math.Max(0, pos - VidCue.StartTime);
+        Elapsed = Math.Max(0, pos - Begin);
 
         // Sluttpunkt før slutten av fila.
-        if (VidCue.EndTime > 0 && pos >= VidCue.EndTime && (VidCue.Loop || !IsStopping))
+        if (EndPoint > 0 && pos >= EndPoint && (VidCue.Loop || !IsStopping))
         {
             ReachedEnd();
             if (Done) return;
@@ -423,7 +449,7 @@ public sealed class VideoActive : VisualActive
             var audioPos = _audio.PassPosition;
             if (audioPos > 0.5 && Math.Abs(audioPos - Elapsed) > MaxDrift && (Duration == 0 || audioPos < Duration - 1))
             {
-                _media.Position = TimeSpan.FromSeconds(VidCue.StartTime + audioPos);
+                _media.Position = TimeSpan.FromSeconds(Begin + audioPos);
                 _lastResync = Engine.Now;
             }
         }
@@ -441,7 +467,19 @@ public sealed class VideoActive : VisualActive
     public override void ApplyFade(FadeCue fade)
     {
         base.ApplyFade(fade);
-        if (fade.FadeAudio) _audio?.FadeTo(fade.TargetDb, fade.FadeTime, false);
+        if (fade.FadeAudio) _audio?.FadeTo(fade.TargetDb, fade.FadeTime, false, fade.Curve);
+    }
+
+    public override void Pause() { _media?.Pause(); _audio?.Pause(); }
+    public override void Resume() { _media?.Play(); _audio?.Resume(); _lastResync = Engine.Now; }
+
+    public override bool Release()
+    {
+        if (!VidCue.Loop || _released || IsStopping) return false;
+        _released = true;
+        _audio?.ReleaseLoop();
+        if (VidCue.KnownDuration > 0) Duration = Math.Max(0, VidCue.KnownDuration - VidCue.StartTime);
+        return true;
     }
 
     protected override void OnRemove()
@@ -506,19 +544,140 @@ public sealed class FadeActive : TimedActive
     }
 }
 
-/// <summary>Stopp-cue: stopper målet (eller alt) med fade.</summary>
+/// <summary>Stopp-cue: stopper målet (eller alt) med fade – eller slipper loopen («devamp»).</summary>
 public sealed class StopActive : TimedActive
 {
     private StopCue S => (StopCue)Cue;
     public StopActive(StopCue cue, CueEngine engine) : base(cue, engine) { }
-    protected override double Seconds => S.FadeTime;
+    protected override double Seconds => S.Release ? 0 : S.FadeTime;
 
     protected override void Act()
     {
         var targets = string.IsNullOrEmpty(S.Target)
             ? Engine.Active.Where(a => a != this && a is not StopActive).ToList()
             : Engine.FindActive(S.Target).ToList();
-        foreach (var t in targets) t.Stop(S.FadeTime);
+        if (!S.Release) { foreach (var t in targets) t.Stop(S.FadeTime); return; }
+        if (!targets.Select(t => t.Release()).ToList().Any(released => released))
+            Cue.Error = string.IsNullOrEmpty(S.Target) ? "Ingen cue looper" : $"Cue {S.Target} looper ikke";
+    }
+}
+
+// ======================================================================
+/// <summary>Spilleliste: spor etter spor (eller tilfeldig), med krysstoning, gjennom lydpatchen.</summary>
+public sealed class PlaylistActive : ActiveCue
+{
+    private static readonly Random Rng = new();
+    private readonly List<CuePlayback> _playing = new();
+    private List<string> _order = new();
+    private int _index = -1;
+    private CuePlayback? _current;
+    private bool _releasing;
+    private double _begin;
+    private PlaylistCue P => (PlaylistCue)Cue;
+
+    public PlaylistActive(PlaylistCue cue, CueEngine engine) : base(cue, engine) { }
+
+    /// <summary>Navnet på sporet som spiller nå.</summary>
+    public string CurrentTrack => _index >= 0 && _index < _order.Count ? Path.GetFileNameWithoutExtension(_order[_index]) : "";
+
+    private List<string> NewOrder()
+    {
+        var files = P.Files.Where(File.Exists).ToList();
+        return P.Shuffle ? files.OrderBy(_ => Rng.Next()).ToList() : files;
+    }
+
+    protected override void OnBegin()
+    {
+        _order = NewOrder();
+        if (_order.Count == 0) throw new FileNotFoundException("Spillelista har ingen filer som finnes.");
+        _begin = Engine.Now;
+        P.PropertyChanged += OnCueChanged;
+        StartNext(0);
+    }
+
+    /// <summary>Start neste spor (med fade inn). False når lista er ferdig.</summary>
+    private bool StartNext(double fadeIn)
+    {
+        if (++_index >= _order.Count)
+        {
+            if (!P.Loop || _releasing) { _current = null; return false; }
+            _order = NewOrder();
+            _index = 0;
+            if (_order.Count == 0) { _current = null; return false; }
+        }
+        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+        var o = new CuePlayback.Options(P.VolumeDb, StartOffset > 0 && _index == 0 ? StartOffset : 0, 0, false, fadeIn, 0);
+        var pb = new CuePlayback(P, new NAudio.Wave.AudioFileReader(_order[_index]), P, o, mixer.WaveFormat.SampleRate);
+        pb.Finished += done => Application.Current.Dispatcher.BeginInvoke(() => { _playing.Remove(done); done.Dispose(); });
+        _playing.Add(pb);
+        _current = pb;
+        mixer.Add(pb);
+        OnPropertyChanged(nameof(CurrentTrack));
+        return true;
+    }
+
+    internal override void Tick()
+    {
+        base.Tick();
+        if (!Started || Done) return;
+        Elapsed = Engine.Now - _begin;
+        if (_playing.All(p => p.IsFinished) && (_current == null || IsStopping)) { Complete(); return; }
+        if (IsStopping || _current is not { } cur) return;
+
+        double left = cur.PassLength - cur.PassPosition;
+        if (!_releasing && P.Crossfade > 0 && cur.PassLength > 0 && left <= P.Crossfade && !cur.IsFinished)
+        {
+            cur.FadeTo(CuePlayback.SilenceDb, Math.Max(0.05, left), true);
+            StartNext(P.Crossfade);
+        }
+        else if (cur.IsFinished)
+        {
+            StartNext(0);
+        }
+    }
+
+    private void OnCueChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        foreach (var pb in _playing) FollowLiveChanges(P, pb, e.PropertyName);
+    }
+
+    public override void Stop(double fadeSeconds)
+    {
+        base.Stop(fadeSeconds);
+        if (!Started || Done) return;
+        IsStopping = true;
+        foreach (var pb in _playing) pb.Stop(fadeSeconds);
+        if (fadeSeconds <= 0) Complete();
+    }
+
+    public override void ApplyFade(FadeCue fade)
+    {
+        if (!fade.FadeAudio) { if (fade.StopWhenDone) Stop(0); return; }
+        if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; }
+        foreach (var pb in _playing) pb.FadeTo(fade.TargetDb, fade.FadeTime, fade.StopWhenDone, fade.Curve);
+    }
+
+    public override void Pause() { foreach (var pb in _playing) pb.Pause(); }
+    public override void Resume() { foreach (var pb in _playing) pb.Resume(); }
+
+    /// <summary>For en spilleliste betyr «slipp»: spill ferdig sporet som går, og stopp.</summary>
+    public override bool Release()
+    {
+        if (_releasing || IsStopping) return false;
+        _releasing = true;
+        return true;
+    }
+
+    protected override void OnCompleted()
+    {
+        P.PropertyChanged -= OnCueChanged;
+        foreach (var pb in _playing.ToList())
+        {
+            pb.Stop(0);
+            Engine.Audio.Mixer?.Remove(pb);
+            _ = Task.Delay(500).ContinueWith(_ => pb.Dispose());
+        }
+        _playing.Clear();
     }
 }
 
@@ -536,6 +695,7 @@ public sealed class InstantActive : ActiveCue
             {
                 case OscCue o: Osc.Send(o.Host, o.Port, o.Address, o.Arguments); break;
                 case MidiCue m: Engine.Midi.Send(m); break;
+                case GotoCue g: Engine.RequestGoto(g.Target, g.Fire); break;
             }
         }
         finally

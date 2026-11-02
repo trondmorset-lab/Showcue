@@ -190,12 +190,17 @@ struct ShowCommands: Commands {
             Button("Ny stopp-cue") { model.add(.stop) }.keyboardShortcut("6")
             Button("Ny OSC-cue") { model.add(.osc) }.keyboardShortcut("7")
             Button("Ny MIDI-cue") { model.add(.midi) }.keyboardShortcut("8")
+            Button("Ny spilleliste …") { model.add(.playlist) }.keyboardShortcut("9")
+            Button("Ny «gå til»-cue") { model.add(.goto) }.keyboardShortcut("0")
             Divider()
             Button("Dupliser") { model.duplicateSelected() }.keyboardShortcut("d")
             Button("Slett") { model.deleteSelected() }.keyboardShortcut(.delete)
             Button("Flytt opp") { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
             Button("Flytt ned") { model.moveSelected(1) }.keyboardShortcut(.downArrow)
             Button("Nummerer alle …") { model.renumber() }
+            Divider()
+            Button("Pause / fortsett alt") { model.togglePause() }.keyboardShortcut("p")
+            Button("Slipp loop (devamp) i valgt cue") { model.releaseSelected() }
             Divider()
             Button("Showmodus (lås/lås opp redigering)") { model.showMode.toggle() }.keyboardShortcut("l")
             Divider()

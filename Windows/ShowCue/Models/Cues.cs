@@ -9,6 +9,8 @@ public enum VisualStretch { Uniform, UniformToFill, Fill, None }
 public enum MidiMessageType { NoteOn, NoteOff, ProgramChange, ControlChange, MscGo }
 /// <summary>Fargemerking av cuer i lista.</summary>
 public enum CueColor { None, Red, Orange, Yellow, Green, Blue, Purple, Gray }
+/// <summary>Formen på en fade: lineær i dB (jevn for øret), S-kurve (myk start og slutt) eller lineær amplitude.</summary>
+public enum FadeCurve { Db, SCurve, Linear }
 
 /// <summary>Cuer med start- og sluttpunkt i en mediefil (lyd og video) – brukes av bølgeform-redigereren.</summary>
 public interface ITrimmable : System.ComponentModel.INotifyPropertyChanged
@@ -297,6 +299,7 @@ public sealed class FadeCue : Cue
     private bool _fadeVisual = true;
     private double _targetOpacity;
     private bool _stopWhenDone = true;
+    private FadeCurve _curve;
 
     /// <summary>Cue-nummeret som skal fades.</summary>
     public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
@@ -307,6 +310,8 @@ public sealed class FadeCue : Cue
     /// <summary>Synlighet 0–100 %.</summary>
     public double TargetOpacity { get => _targetOpacity; set => SetCue(ref _targetOpacity, Math.Clamp(value, 0, 100)); }
     public bool StopWhenDone { get => _stopWhenDone; set => SetCue(ref _stopWhenDone, value); }
+    /// <summary>Formen på lydfaden.</summary>
+    public FadeCurve Curve { get => _curve; set => SetCue(ref _curve, value); }
 
     public override string TypeName => "Fade";
     public override string TypeIcon => "◢";
@@ -327,16 +332,73 @@ public sealed class StopCue : Cue
 {
     private string _target = "";
     private double _fadeTime;
+    private bool _release;
 
     /// <summary>Cue-nummeret som skal stoppes. Tomt = stopp alt.</summary>
     public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
     public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Max(0, value)); }
+    /// <summary>Slipp loopen i stedet for å stoppe («devamp»): runden fullføres og resten av fila spilles.
+    /// For spillelister: spill ferdig sporet som går, og stopp.</summary>
+    public bool Release { get => _release; set => SetCue(ref _release, value); }
 
     public override string TypeName => "Stopp";
     public override string TypeIcon => "■";
-    protected override string DefaultName => string.IsNullOrEmpty(Target) ? "Stopp alt" : $"Stopp cue {Target}";
-    public override string Summary => (string.IsNullOrEmpty(Target) ? "Alle cues" : "→ " + Target) + (FadeTime > 0 ? $"  fade {FadeTime:0.#}s" : "");
-    public override double Duration => FadeTime;
+    protected override string DefaultName => Release ? $"Slipp loop {Target}".TrimEnd() : string.IsNullOrEmpty(Target) ? "Stopp alt" : $"Stopp cue {Target}";
+    public override string Summary => (string.IsNullOrEmpty(Target) ? "Alle cues" : "→ " + Target)
+        + (Release ? "  slipp loop" : FadeTime > 0 ? $"  fade {FadeTime:0.#}s" : "");
+    public override double Duration => Release ? 0 : FadeTime;
+}
+
+/// <summary>Flytter GO-markøren til en annen cue (og kjører den, hvis valgt). For hopp og repetisjoner.</summary>
+public sealed class GotoCue : Cue
+{
+    private string _target = "";
+    private bool _fire;
+
+    public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
+    /// <summary>Kjør mål-cuen også (som GO), ikke bare flytt markøren.</summary>
+    public bool Fire { get => _fire; set => SetCue(ref _fire, value); }
+
+    public override string TypeName => "Gå til";
+    public override string TypeIcon => "↪";
+    protected override string DefaultName => string.IsNullOrEmpty(Target) ? "Gå til" : $"Gå til {Target}";
+    public override string Summary => (string.IsNullOrEmpty(Target) ? "(mål mangler)" : "→ " + Target) + (Fire ? "  + GO" : "");
+}
+
+// ======================================================================
+//  SPILLELISTE
+// ======================================================================
+/// <summary>Flere lydfiler etter hverandre (pausemusikk, innslipp): i rekkefølge eller tilfeldig, med krysstoning.</summary>
+public sealed class PlaylistCue : Cue, IRoutedAudio
+{
+    private List<string> _files = new();
+    private bool _shuffle;
+    private bool _loop = true;
+    private double _crossfade = 2;
+    private double _volumeDb;
+    private double _fadeOut = 3;
+    private int _fileChannels = 2;
+    private List<AudioRoute>? _routes;
+
+    /// <summary>Filene i spillelista. Listen byttes ut i sin helhet ved endring.</summary>
+    public List<string> Files { get => _files; set => SetCue(ref _files, value ?? new()); }
+    public bool Shuffle { get => _shuffle; set => SetCue(ref _shuffle, value); }
+    /// <summary>Start på nytt når lista er ferdig.</summary>
+    public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
+    /// <summary>Krysstoning mellom sporene (sekunder).</summary>
+    public double Crossfade { get => _crossfade; set => SetCue(ref _crossfade, Math.Clamp(value, 0, 30)); }
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
+    /// <summary>Fade ut når spillelista stoppes.</summary>
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+    /// <summary>Antall kanaler i routingmatrisen (det største antallet blant filene).</summary>
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
+
+    public override string TypeName => "Spilleliste";
+    public override string TypeIcon => "☰";
+    public override string Summary => $"{Files.Count} spor" + (Shuffle ? "  tilfeldig" : "") + (Loop ? "  ⟲" : "")
+        + (Crossfade > 0 ? $"  krysstoning {Crossfade:0.#}s" : "");
 }
 
 public sealed class OscCue : Cue

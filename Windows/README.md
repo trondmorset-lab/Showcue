@@ -93,6 +93,8 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 | `/cue/{nr}/stop` | Stopp cue (med cuens fade ut) |
 | `/cue/{nr}/go` eller `/go/{nr}` | Sett markøren til cue og kjør GO |
 | `/hotkey/{tast}` | Som å trykke hurtigtasten, f.eks. `/hotkey/F1` |
+| `/pause`, `/resume`, `/pause/toggle` | Pause / fortsett alt |
+| `/cue/{nr}/devamp` | Slipp loopen i en cue (spiller ferdig og fortsetter til filslutt) |
 
 - Cuenummer kan også sendes som argument: `/cue/start "12"`.
 - Meldinger med argument 0 eller false ignoreres, så knapper som sender «sluppet» ikke trigger to ganger.
@@ -150,6 +152,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **↑ / ↓** | Flytt GO-markøren |
 | **F1–F12, A–Z, 0–9** | Hurtigtaster (start/stopp cuen uten å flytte markøren) |
 | **Ctrl+1 … Ctrl+8** | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
+| **Ctrl+9 / Ctrl+0** | Legg til spilleliste / gå til-cue |
+| **Ctrl+P** | Pause / fortsett alt |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
@@ -163,6 +167,18 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - Hurtigtaster på lyd/bilde/video fungerer som av/på: trykk én gang for å starte, én gang til for å stoppe (med cuens fade ut).
 - F-tastene virker også mens du skriver i et felt; bokstaver og tall gjør det ikke.
 - GO har dobbel-GO-sperre (300 ms) så tasteprell ikke hopper over en cue.
+
+## Pause, spillelister og loop
+
+- **Pause** (knappen ved STOPP ALT eller Ctrl+P): fryser all lyd, video, fader og pre-wait. Trykk igjen, eller GO, for å fortsette.
+- **Spilleliste:** en cue med flere lydfiler som spilles etter hverandre med krysstoning. Velg tilfeldig rekkefølge og
+  om lista skal starte forfra. Fade ut brukes når den stoppes. Fin for innslipp og pause.
+- **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
+- **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
+  runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.
+- **Kjør herfra:** knappen under bølgeformen starter cuen fra den blå markøren, på de vanlige utgangene – nyttig på prøver.
+- **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
+  *lineær amplitude* (som en fysisk fader).
 
 ## Trygt under forestillingen
 
