@@ -30,30 +30,32 @@ Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/ShowCue.ap
 
 Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. Si ja, ellers virker ikke OSC.
 
-## Dante Virtual Soundcard og flerkanals lydkort
+## Flerkanals lydkort og nettverkslyd
 
 DVS på Mac er en vanlig CoreAudio-enhet:
+Eksempel med Dante Virtual Soundcard:
+
 1. Start Dante Virtual Soundcard. Velg antall kanaler i DVS og samplingsfrekvens i Dante Controller.
 2. ShowCue → **Innstillinger → Lyd**: velg «Dante Virtual Soundcard». Alle kanalene åpnes, opptil 64 som standard.
 3. **Lydpatch** (*Oppsett → Lydpatch*): kryss av hvilke Dante-kanaler hver utgang skal på. Du kan linjesjekke med **Test** (rosa støy på −18 dBFS).
    Rut kanalene videre i Dante Controller.
 
-Det samme gjelder andre kort (RME, MOTU, Focusrite, Behringer X-USB/Wing) og aggregerte enheter laget i Lyd- og MIDI-oppsett.
+Det samme gjelder andre flerkanals lydkort og aggregerte enheter laget i Lyd- og MIDI-oppsett.
 Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres automatisk av høy kvalitet.
 
 ## Forskjeller fra Windows-versjonen
 
 | | Mac | Windows |
 |---|---|---|
-| Lyddriver | CoreAudio (alle enheter, også Dante DVS) | WASAPI eller ASIO |
+| Lyddriver | CoreAudio (alle enheter, også nettverkslydkort) | WASAPI eller ASIO |
 | Lydformater | WAV, AIFF, MP3, M4A/AAC, ALAC, FLAC, CAF | WAV, AIFF, MP3, M4A/AAC, FLAC, WMA |
 | Videoformater | MP4, MOV, M4V (H.264, HEVC, ProRes) | MP4, MOV, WMV, AVI, MKV (H.264 tryggest) |
 | Innstillinger | `~/Library/Application Support/ShowCue/` | `%AppData%\ShowCue\` |
 | Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
 | Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
 
-Alt annet er likt: cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status til Companion, temaer og cuefarger.
-Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og Companion-variabler.
+Alt annet er likt: cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
+Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
 
 **Showfiler mellom Mac og Windows:** stiene til mediefilene er forskjellige på de to plattformene. ShowCue leter derfor etter mediefiler
 ved siden av showfila og i en undermappe `Media`, så legg showfil og media i samme mappe når du flytter mellom maskiner.
@@ -95,7 +97,7 @@ og macOS spør om tilgang til mikrofonen første gang).
 
 ```
 Sources/ShowCue/
-  Core/    Modeller (samme JSON som Windows), OSC, status til Companion, fjernstyring,
+  Core/    Modeller (samme JSON som Windows), OSC, status ut, fjernstyring,
            MIDI-tolking, mikser (PatchMixer, Voice, ringbuffer). Testes automatisk.
   Audio/   CoreAudio-utgang (AUHAL), enheter, dekoding i egen tråd (AVAudioFile / AVAssetReader)
   Engine/  Cue-motor, aktive cuer, video/bilde/PDF-utgang, CoreMIDI, app-modell

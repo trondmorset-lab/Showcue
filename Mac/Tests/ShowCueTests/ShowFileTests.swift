@@ -90,7 +90,7 @@ let windowsShowJSON = #"""
       "type": "osc",
       "Host": "192.168.1.50",
       "Port": 8000,
-      "Address": "/eos/cue/1/fire",
+      "Address": "/lys/cue/1/fire",
       "Arguments": "1 \u0022to ord\u0022",
       "Number": "4",
       "Name": "",

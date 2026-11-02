@@ -44,7 +44,7 @@ Lyd- og video-cuer har en bølgeform i inspektøren der start- og sluttpunktet r
 - **⤢ Stort vindu** åpner en stor redigeringsvisning. Slutt helt til slutten av fila lagres som «0 = filslutt».
 - For video starter bildet og lyden på startpunktet, og med loop hopper videoen tilbake til startpunktet.
 
-## Lydpatch og flerkanals lydkort (Dante, ASIO)
+## Lydpatch og flerkanals lydkort
 
 Lyden går i tre ledd:
 
@@ -63,13 +63,13 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
   Endringer i routing og nivå høres med en gang mens cuen spiller.
 
 **Lyd i video («de-embedding»):** lydsporet i videofiler dekodes av Windows (Media Foundation: AAC, PCM, WMA …)
-og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen og ASIO/Dante akkurat som en lyd-cue, med
+og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen akkurat som en lyd-cue, med
 routingmatrise, nivå i dB, fader og fade-cuer. Lyden styrer tiden: hvis bildet glir mer enn 0,12 s
-(f.eks. fordi Dante-klokka og PC-klokka går litt ulikt), justeres bildet. Knappen **«Pakk ut lyd til egen lyd-cue»**
+(f.eks. fordi lydkortets klokke og PC-klokka går litt ulikt), justeres bildet. Knappen **«Pakk ut lyd til egen lyd-cue»**
 lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Da kan lyden redigeres
 for seg (start/slutt, loop) eller byttes ut med en egen miks.
 
-**Dante Virtual Soundcard:**
+**Eksempel – Dante Virtual Soundcard:**
 1. Start DVS i **ASIO-modus** og velg antall kanaler (f.eks. 64×64) og samplingsfrekvens i Dante Controller.
 2. ShowCue → *Innstillinger → Lyd*: velg **ASIO** og driveren «Dante Virtual Soundcard (x64)».
 3. *Lydpatch*: kryss av hvilke Dante-kanaler hver utgang skal på. Rut kanalene videre i Dante Controller.
@@ -105,9 +105,9 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 **Bitfocus Companion / Stream Deck:** bruk modulen «Generic OSC», sett mål-IP til show-PC-en (porten 8000 er allerede modulens standard),
 og send f.eks. `/go` eller `/cue/5/start`.
 
-### Status tilbake til Companion (OSC ut)
+### Status ut over OSC
 
-*Innstillinger → OSC → Status ut*: skriv inn IP-adressen til Companion-maskinen og port **12321**
+*Innstillinger → OSC → Status ut*: skriv inn IP-adressen til mottakeren og porten. For Companion er det port **12321**
 (Companions OSC-port; slå på OSC under *Settings → Protocols* i Companion).
 
 **Format «Companion»** setter egendefinerte variabler. Opprett disse under *Variables → Custom Variables* i Companion
@@ -221,8 +221,8 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
 - **Lys-cue** (✺ Lys): sender DMX over Art-Net (UDP 6454) til en node eller som kringkasting. Nivåer skrives
   `kanal@verdi`, f.eks. `1@255 2-4@50% 10@0`, og fades over valgt tid. Kanaler som ikke nevnes, beholder nivået.
 - **Live-inngang** (◉ Inn): lyden fra inngangen valgt under *Innstillinger → Lyd* (WASAPI: mikrofon, linje inn,
-  Dante WDM) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
-  ASIO-innganger støttes ikke ennå – bruk Dante i WDM-modus.
+  nettverkslydkort i WDM-modus) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
+  ASIO-innganger støttes ikke ennå – bruk nettverkslydkortet i WDM-modus.
 
 ## Mediefiler: finn og samle
 
@@ -257,7 +257,7 @@ Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i lys).
 
 ## Innstillinger
 
-- **Lyd:** WASAPI (vanlige lydkort/USB/Dante WDM) eller **ASIO** (Dante Virtual Soundcard, RME, Focusrite …).
+- **Lyd:** WASAPI (vanlige lydkort, USB og nettverkslydkort i WDM-modus) eller **ASIO** (proffe lydkort og nettverkslydkort).
   Faller automatisk tilbake til Windows standardenhet hvis valgt kort mangler. Se *Lydpatch* over.
 - **OSC inn / MIDI inn:** se *Fjernstyring* over.
 - **Video/bilde/PDF-utgang:** velg skjerm/projektor for fullskjerm, eller «Vindu» for testing på én skjerm.

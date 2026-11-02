@@ -94,7 +94,7 @@ public sealed class MidiInput : IDisposable
         _in = null;
         DeviceName = "";
         if (mi == null) return;
-        // Viktig: fjern sysex-handleren før Dispose, ellers kan midiInReset gå i løkke (kjent NAudio-feil).
+        // Viktig: fjern sysex-handleren før Dispose, ellers kan midiInReset gå i løkke.
         mi.MessageReceived -= OnMessage;
         mi.SysexMessageReceived -= OnSysex;
         try { mi.Stop(); } catch { }

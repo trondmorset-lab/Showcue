@@ -18,10 +18,10 @@ Begge har:
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
 - Hurtigtaster og MIDI-triggere per cue
-- **Lydpatch** for flerkanals lydkort og Dante, med routingmatrise per cue, testtone og nivåmålere
+- **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
 - **Fjernstyring** med OSC inn, MIDI inn og MSC
-- **Status til Companion** over OSC: neste cue, hva som spiller og tid igjen
+- **Status ut over OSC** (f.eks. til Companion): neste cue, hva som spiller og tid igjen
 - **Lys, mørk og nattmodus**, og fargemerking av cuer
 
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,

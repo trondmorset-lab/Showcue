@@ -239,7 +239,7 @@ enum UDP {
         return String(cString: buf)
     }
 
-    /// Maskinens IPv4-adresser (for å vise hva Companion/lysbord skal sende til).
+    /// Maskinens IPv4-adresser (for å vise hvilken adresse kontrollere skal sende til).
     static func localAddresses() -> [String] {
         var result: [String] = []
         var ifap: UnsafeMutablePointer<ifaddrs>?

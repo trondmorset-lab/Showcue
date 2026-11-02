@@ -218,7 +218,7 @@ public sealed class OscServer : IDisposable
 
     public void Dispose() => Stop();
 
-    /// <summary>Maskinens IPv4-adresser, for å vise hva Companion/lysbord skal sende til.</summary>
+    /// <summary>Maskinens IPv4-adresser, for å vise hvilken adresse kontrollere skal sende til.</summary>
     public static List<string> LocalAddresses()
     {
         try

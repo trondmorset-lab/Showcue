@@ -157,7 +157,7 @@
                            Visibility="{Binding HasNoAudio, Converter={StaticResource BoolVis}}" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen (ASIO/Dante) og holdes i synk med bildet. «Alt av» gjør videoen stum." />
+                           Text="Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum." />
                 <Button Content="Pakk ut lyd til egen lyd-cue …" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
                         ToolTip="Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum." />
             </StackPanel>
@@ -373,7 +373,7 @@
 
         <DataTemplate DataType="{x:Type m:InputCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Hint}" Text="Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn, Dante WDM)." />
+                <TextBlock Style="{StaticResource Hint}" Text="Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort)." />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>

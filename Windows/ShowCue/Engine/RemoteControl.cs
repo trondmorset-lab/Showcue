@@ -20,7 +20,7 @@ public interface IShowControl
     /// <summary>Starter cuer som har denne MIDI-triggeren. Returnerer antall.</summary>
     int FireMidiTrigger(string trigger);
     void RemoteLog(string text);
-    /// <summary>Send all status på nytt (Companion ba om det).</summary>
+    /// <summary>Send all status på nytt (mottakeren ba om det).</summary>
     void RefreshFeedback();
     /// <summary>Pause alt (true), fortsett (false) eller veksle (null).</summary>
     void SetPaused(bool? paused);

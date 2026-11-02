@@ -1,7 +1,7 @@
 import Foundation
 import CoreAudio
 
-/// En lydutgang på Macen (innebygde høyttalere, USB-kort, Dante Virtual Soundcard, aggregerte enheter …).
+/// En lydutgang på Macen (innebygde høyttalere, USB-kort, nettverkslydkort, aggregerte enheter …).
 struct AudioDeviceInfo: Identifiable, Hashable {
     let id: AudioDeviceID
     let uid: String
@@ -72,7 +72,7 @@ enum CoreAudioDevices {
     /// Alle enheter med utganger.
     static func outputDevices() -> [AudioDeviceInfo] { allDeviceIDs().map(info).filter { $0.outputChannels > 0 } }
 
-    /// Alle enheter med innganger (mikrofon, linje inn, Dante Virtual Soundcard …): (UID, navn med kanalantall).
+    /// Alle enheter med innganger (mikrofon, linje inn, nettverkslydkort …): (UID, navn med kanalantall).
     static func inputDevices() -> [(uid: String, label: String)] {
         allDeviceIDs().compactMap { id in
             let n = inputChannelCount(id)
@@ -99,7 +99,7 @@ enum CoreAudioDevices {
         return outputDevices().first { $0.uid == uid }
     }
 
-    /// Kanalnavn fra driveren (Dante Virtual Soundcard o.l. kan ha egne navn).
+    /// Kanalnavn fra driveren (nettverkslydkort o.l. kan ha egne navn).
     static func channelNames(_ id: AudioDeviceID, count: Int) -> [String] {
         (0..<count).map { i in
             let n = string(id, kAudioObjectPropertyElementName, kAudioObjectPropertyScopeOutput, AudioObjectPropertyElement(i + 1)) ?? ""

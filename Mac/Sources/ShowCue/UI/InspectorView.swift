@@ -239,7 +239,7 @@ struct CueInspector: View {
             FieldLabel("Lydspor → utganger (dB)").padding(.top, 6)
             if cue.hasNoAudio { Hint("Videoen har ikke noe lydspor.") }
             RoutingMatrixView(cue: cue)
-            Hint("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen (Dante o.l.) og holdes i synk med bildet. «Alt av» gjør videoen stum.")
+            Hint("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.")
             Button("Pakk ut lyd til egen lyd-cue …") { model.extractVideoAudio(cue) }
                 .buttonStyle(PanelButtonStyle()).padding(.top, 10)
                 .help("Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum.")
@@ -348,7 +348,7 @@ struct CueInspector: View {
 
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Hint("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn, Dante).")
+            Hint("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort).")
             Pair {
                 FieldLabel("Nivå (dB)"); NumberInput(value: $cue.volumeDb, range: -60...12)
             } _: {

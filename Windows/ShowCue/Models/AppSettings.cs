@@ -33,7 +33,7 @@ public sealed class AppSettings
     /// <summary>WASAPI-enhetens ID. Tom = Windows standardenhet.</summary>
     public string WasapiDeviceId { get; set; } = "";
     public string AsioDriverName { get; set; } = "";
-    /// <summary>Maks antall ASIO-kanaler som åpnes (Dante Virtual Soundcard har opptil 64).</summary>
+    /// <summary>Maks antall ASIO-kanaler som åpnes (nettverkslydkort kan ha 64 eller flere).</summary>
     public int AsioMaxChannels { get; set; } = 64;
     /// <summary>Ønsket samplingsfrekvens. For WASAPI brukes enhetens egen frekvens.</summary>
     public int SampleRate { get; set; } = 48000;
@@ -43,13 +43,13 @@ public sealed class AppSettings
 
     // ---- OSC inn ----
     public bool OscInEnabled { get; set; } = true;
-    /// <summary>8000 = standardporten Companion-modulen «Generic OSC» sender til.</summary>
+    /// <summary>Standard port for OSC inn (8000, vanlig standard for OSC-kontrollere, f.eks. Companion).</summary>
     public int OscInPort { get; set; } = 8000;
 
-    // ---- OSC-status ut (til Companion o.l.) ----
+    // ---- OSC-status ut (til kontrollpaneler) ----
     public bool OscFeedbackEnabled { get; set; }
     public string OscFeedbackHost { get; set; } = "127.0.0.1";
-    /// <summary>Companion lytter på OSC-port 12321 som standard.</summary>
+    /// <summary>Standard port for status ut (12321, f.eks. Companion).</summary>
     public int OscFeedbackPort { get; set; } = 12321;
     public OscFeedbackFormat OscFeedbackFormat { get; set; } = OscFeedbackFormat.Companion;
 

@@ -15,11 +15,11 @@ public sealed record ShowStatus(
 public sealed record PlayingCue(string Number, string Name, double Elapsed, double Remaining, bool HasDuration, bool PreWaiting);
 
 /// <summary>
-/// Sender status tilbake til Companion (eller annet) over OSC, slik at knapper kan vise
+/// Sender status tilbake til et kontrollpanel over OSC, slik at knapper kan vise
 /// neste cue, hva som spiller og tid igjen. Bare endrede verdier sendes, pluss en full
-/// oppfriskning hvert 5. sekund (i tilfelle Companion er startet på nytt).
+/// oppfriskning hvert 5. sekund (i tilfelle mottakeren er startet på nytt).
 ///
-/// Companion-format:  /custom-variable/sc_next_name/value "Intro"
+/// Variabel-format (f.eks. Companion):  /custom-variable/sc_next_name/value "Intro"
 /// Generisk format:   /showcue/next/name "Intro"   og   /showcue/cue/12/running 1
 /// </summary>
 public sealed class OscFeedback
@@ -42,7 +42,7 @@ public sealed class OscFeedback
     public static OscFeedback ForTarget(string host, int port) =>
         new((addr, args) => { try { Osc.Send(host, port, addr, args); } catch { /* mottaker nede: prøv igjen senere */ } });
 
-    /// <summary>Send alt på nytt ved neste oppdatering (f.eks. når Companion ber om det).</summary>
+    /// <summary>Send alt på nytt ved neste oppdatering (når mottakeren ber om det).</summary>
     public void RequestRefresh() => _forceNext = true;
 
     /// <summary>Verdiene som sendes, som (nøkkel, verdi). Nøklene brukes både som variabelnavn og adresse.</summary>
@@ -103,7 +103,7 @@ public sealed class OscFeedback
     private void Send(string key, object value)
     {
         if (Format == OscFeedbackFormat.Companion)
-            Raw($"/custom-variable/{Prefix}{key}/value", value.ToString() ?? ""); // Companion forventer tekst
+            Raw($"/custom-variable/{Prefix}{key}/value", value.ToString() ?? ""); // variabler sendes som tekst
         else
             Raw("/showcue/" + key.Replace('_', '/'), value);
     }

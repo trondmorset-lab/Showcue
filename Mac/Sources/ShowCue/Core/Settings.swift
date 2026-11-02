@@ -70,7 +70,7 @@ struct AppSettings: Codable, Equatable {
 
     // OSC inn
     var oscInEnabled = true
-    /// 8000 = standardporten Companion-modulen «Generic OSC» sender til.
+    /// Standard port for OSC inn (8000, vanlig standard for OSC-kontrollere, f.eks. Companion).
     var oscInPort = 8000
 
     // OSC ut (status)

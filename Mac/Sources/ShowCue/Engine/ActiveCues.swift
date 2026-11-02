@@ -237,7 +237,7 @@ final class StillActive: VisualActive {
 // MARK: - Video
 
 /// Bildet spilles av AVPlayer (dempet). Lyden pakkes ut og spilles gjennom lydpatchen, og er «master»:
-/// glir bildet mer enn 0,12 s fra lyden (f.eks. fordi Dante-klokka og Mac-klokka går litt ulikt), justeres bildet.
+/// glir bildet mer enn 0,12 s fra lyden (f.eks. fordi lydkortets klokke og Mac-klokka går litt ulikt), justeres bildet.
 final class VideoActive: VisualActive {
     private var player: AVPlayer?
     private var audio: Playback?

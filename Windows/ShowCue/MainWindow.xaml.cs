@@ -1319,7 +1319,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         MeterLScale.ScaleY = _meterL;
         MeterRScale.ScaleY = _meterR;
 
-        // Status til Companion ca. 10 ganger i sekundet (bare endringer sendes).
+        // Status ut over OSC ca. 10 ganger i sekundet (bare endringer sendes).
         if (_feedback != null && ++_feedbackTick % 6 == 0)
         {
             try { _feedback.Update(BuildStatus(), Engine.Now); }

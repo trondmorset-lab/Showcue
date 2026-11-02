@@ -470,7 +470,7 @@ public sealed class VideoActive : VisualActive
             if (Done) return;
         }
 
-        // Lyden er «master». Lydkortet (f.eks. Dante-klokka) og PC-klokka går aldri helt likt,
+        // Lyden er «master». Lydkortets klokke og PC-klokka går aldri helt likt,
         // så bildet justeres hvis det glir mer enn MaxDrift fra lyden.
         if (_audio != null && _audioStarted && !IsStopping && Engine.Now - _lastResync > 2)
         {
