@@ -9,7 +9,7 @@ namespace ShowCue.Models;
 public sealed class ShowDocument
 {
     public int FormatVersion { get; set; } = 1;
-    public string Title { get; set; } = "Nytt show";
+    public string Title { get; set; } = Loc.T("Nytt show");
     public ObservableCollection<Cue> Cues { get; set; } = new();
 
     public static readonly JsonSerializerOptions JsonOptions = new()
@@ -32,7 +32,7 @@ public sealed class ShowDocument
     public static ShowDocument Load(string path)
     {
         var doc = JsonSerializer.Deserialize<ShowDocument>(File.ReadAllText(path), JsonOptions)
-                  ?? throw new InvalidDataException("Tom eller ugyldig showfil.");
+                  ?? throw new InvalidDataException(Loc.T("Tom eller ugyldig showfil."));
         // Medier som er flyttet sammen med showfila finnes ofte ved siden av den, eller i undermappa «Media».
         var dir = Path.GetDirectoryName(path) ?? "";
         string Locate(string file)
@@ -68,9 +68,9 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
     {
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
-        if (root.ValueKind != JsonValueKind.Object) throw new JsonException("Cue må være et objekt");
+        if (root.ValueKind != JsonValueKind.Object) throw new JsonException(Loc.T("Cue må være et objekt"));
         if (!root.TryGetProperty("type", out var t) || t.GetString() is not string name || !Types.TryGetValue(name, out var type))
-            throw new JsonException("Ukjent eller manglende cuetype");
+            throw new JsonException(Loc.T("Ukjent eller manglende cuetype"));
         return (Cue?)root.Deserialize(type, options);
     }
 

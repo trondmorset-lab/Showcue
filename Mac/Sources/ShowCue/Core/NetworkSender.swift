@@ -30,7 +30,7 @@ enum NetworkSender {
                      url: String, method: String, timeout: TimeInterval = 3) async -> String? {
         switch proto {
         case .udp, .tcp:
-            guard let p = NWEndpoint.Port(rawValue: UInt16(clamping: max(1, min(65535, port)))) else { return "Ugyldig port" }
+            guard let p = NWEndpoint.Port(rawValue: UInt16(clamping: max(1, min(65535, port)))) else { return L("Ugyldig port") }
             let conn = NWConnection(host: NWEndpoint.Host(host), port: p, using: proto == .udp ? .udp : .tcp)
             return await withCheckedContinuation { (cont: CheckedContinuation<String?, Never>) in
                 let once = Once(cont)
@@ -49,18 +49,18 @@ enum NetworkSender {
                     }
                 }
                 conn.start(queue: queue)
-                queue.asyncAfter(deadline: .now() + timeout) { once.resume("Tidsavbrudd – fikk ikke kontakt"); conn.cancel() }
+                queue.asyncAfter(deadline: .now() + timeout) { once.resume(L("Tidsavbrudd – fikk ikke kontakt")); conn.cancel() }
             }
         case .http:
             guard let u = URL(string: url), let scheme = u.scheme?.lowercased(), scheme == "http" || scheme == "https", u.host != nil else {
-                return "Ugyldig adresse (må starte med http:// eller https://)"
+                return L("Ugyldig adresse (må starte med http:// eller https://)")
             }
             var req = URLRequest(url: u, timeoutInterval: 5)
             req.httpMethod = method.uppercased()
             if !message.isEmpty {
                 req.httpBody = unescape(message)
                 let body = message.trimmingCharacters(in: .whitespaces)
-                req.setValue((body.hasPrefix("{") || body.hasPrefix("[") ? "application/json" : "text/plain") + "; charset=utf-8",
+                req.setValue((body.hasPrefix("{") || body.hasPrefix("[") ? "application/json" : "text/plain") + L("; charset=utf-8"),
                              forHTTPHeaderField: "Content-Type")
             }
             do {
@@ -69,7 +69,7 @@ enum NetworkSender {
                 return (200..<300).contains(h.statusCode) ? nil
                     : "HTTP \(h.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: h.statusCode).capitalized)"
             } catch {
-                return (error as? URLError)?.code == .timedOut ? "Tidsavbrudd – fikk ikke kontakt" : error.localizedDescription
+                return (error as? URLError)?.code == .timedOut ? L("Tidsavbrudd – fikk ikke kontakt") : error.localizedDescription
             }
         }
     }

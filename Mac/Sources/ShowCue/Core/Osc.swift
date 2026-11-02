@@ -23,7 +23,7 @@ enum OscArg: Equatable, CustomStringConvertible {
         case .int64(let i): return String(i)
         case .double(let d): return Osc.trimmed(d)
         case .char(let c): return String(c)
-        case .blob(let d): return "<\(d.count) byte>"
+        case .blob(let d): return L("<{0} byte>", d.count)
         case .none: return "nil"
         }
     }
@@ -307,7 +307,7 @@ final class OscServer {
     func start(port: Int) throws {
         stop()
         let s = socket(AF_INET, SOCK_DGRAM, 0)
-        guard s >= 0 else { throw NSError(domain: "OSC", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: "Kunne ikke lage socket"]) }
+        guard s >= 0 else { throw NSError(domain: "OSC", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke åpne nettverkstilkoblingen")]) }
         var on: Int32 = 1
         setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, socklen_t(MemoryLayout<Int32>.size))
         var addr = sockaddr_in()
@@ -321,7 +321,7 @@ final class OscServer {
         guard rc == 0 else {
             let err = errno
             close(s)
-            throw NSError(domain: "OSC", code: Int(err), userInfo: [NSLocalizedDescriptionKey: "Port \(port) er opptatt eller utilgjengelig"])
+            throw NSError(domain: "OSC", code: Int(err), userInfo: [NSLocalizedDescriptionKey: L("Port {0} er opptatt eller utilgjengelig", port)])
         }
         fd = s
         self.port = port

@@ -31,6 +31,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'   # global.json i roten låser til .NET 10 SDK
 
+      - name: Alle tekster er oversatt
+        run: python tools/i18n.py
+
       - name: Tester
         run: dotnet test Windows/ShowCue.Tests/ShowCue.Tests.csproj -c Release --logger "console;verbosity=normal"
 

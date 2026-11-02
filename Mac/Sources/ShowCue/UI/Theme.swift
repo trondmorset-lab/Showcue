@@ -38,6 +38,14 @@ struct Theme {
                          go: Color(hex: 0x30B566), goText: Color(hex: 0x08160E), running: Color(hex: 0x34C46F), runningRow: Color(hex: 0x1E3A2A),
                          wait: Color(hex: 0xE8A33D), danger: Color(hex: 0xE5484D), playhead: Color(hex: 0x3D7EF5), playheadRow: Color(hex: 0x223556),
                          rowAlt: Color(hex: 0x26272B), gridLine: Color(hex: 0x2E3035), tints: ti, stripes: st, scheme: .dark)
+        case .gray:
+            let (ti, st) = colors([0xDDBDBF, 0xE0C6B2, 0xDCD3A8, 0xB9D3C1, 0xB9C8DE, 0xCABFDC, 0xC3C5C9],
+                                  [0xC02F34, 0xC4621A, 0xA88612, 0x23914F, 0x2459C4, 0x6F40C8, 0x62656C])
+            return Theme(bg: Color(hex: 0xC4C6CB), panel: Color(hex: 0xD2D4D8), panel2: Color(hex: 0xDCDEE1), panel3: Color(hex: 0xC0C2C7),
+                         line: Color(hex: 0xAEB1B7), text: Color(hex: 0x17181B), muted: Color(hex: 0x45484F), faint: Color(hex: 0x6E727A),
+                         go: Color(hex: 0x23914F), goText: .white, running: Color(hex: 0x1D8048), runningRow: Color(hex: 0xB9D6C2),
+                         wait: Color(hex: 0x93590A), danger: Color(hex: 0xC02F34), playhead: Color(hex: 0x2459C4), playheadRow: Color(hex: 0xB5C6E6),
+                         rowAlt: Color(hex: 0xCDCFD3), gridLine: Color(hex: 0xC0C2C7), tints: ti, stripes: st, scheme: .light)
         case .light:
             let (ti, st) = colors([0xF8D9DA, 0xFBE3CF, 0xF8F0C6, 0xD7F0DF, 0xD7E5FA, 0xE7DDF8, 0xE4E5E8],
                                   [0xD93A3F, 0xE07320, 0xCFA717, 0x2BA65C, 0x2F6FE4, 0x8452E0, 0x7C7F87])

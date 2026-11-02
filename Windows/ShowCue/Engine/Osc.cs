@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using ShowCue.Models;
 
 namespace ShowCue.Engine;
 
@@ -55,7 +56,7 @@ public static class Osc
     public static byte[] Encode(string address, IList<object> args)
     {
         if (string.IsNullOrEmpty(address) || address[0] != '/')
-            throw new ArgumentException("OSC-adresse må starte med /");
+            throw new ArgumentException(Loc.T("OSC-adresse må starte med /"));
         using var ms = new MemoryStream();
         WriteString(ms, address);
         var tags = new StringBuilder(",");

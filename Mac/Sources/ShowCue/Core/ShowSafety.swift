@@ -49,7 +49,7 @@ enum ShowSafety {
     private static let stamp: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd HH.mm.ss"
+        f.dateFormat = L("yyyy-MM-dd HH.mm.ss")
         return f
     }()
 

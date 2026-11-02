@@ -35,7 +35,7 @@ public partial class SettingsWindow : Window
         AsioBox.SelectedItem = asio.Contains(settings.AsioDriverName) ? settings.AsioDriverName : asio.FirstOrDefault();
         AsioChannelsBox.Text = settings.AsioMaxChannels.ToString();
 
-        var previewDevices = new List<KeyValuePair<string, string>> { new("", "Ingen egen enhet") };
+        var previewDevices = new List<KeyValuePair<string, string>> { new("", Loc.T("Ingen egen enhet")) };
         previewDevices.AddRange(AudioEngine.GetWasapiDevices().Where(d => d.Key != ""));
         PreviewDeviceBox.ItemsSource = previewDevices;
         PreviewDeviceBox.SelectedValue = settings.PreviewDeviceId;
@@ -50,7 +50,7 @@ public partial class SettingsWindow : Window
         if (RateBox.SelectedIndex < 0) RateBox.SelectedItem = 48000;
 
         // ---- Video ----
-        var screens = new List<KeyValuePair<int, string>> { new(-1, "Vindu (ikke fullskjerm)") };
+        var screens = new List<KeyValuePair<int, string>> { new(-1, Loc.T("Vindu (ikke fullskjerm)")) };
         screens.AddRange(Monitors.GetAll().Select(m => new KeyValuePair<int, string>(m.Index, m.ToString())));
         ScreenBox.ItemsSource = screens;
         ScreenBox.SelectedValue = settings.VideoScreen;
@@ -61,8 +61,8 @@ public partial class SettingsWindow : Window
         OscPortBox.Text = settings.OscInPort.ToString();
         var ips = OscServer.LocalAddresses();
         OscAddressText.Text = ips.Count == 0
-            ? "Fant ingen nettverksadresser."
-            : "Send til: " + string.Join("  eller  ", ips) + $"  (port {settings.OscInPort}). Fra samme maskin: 127.0.0.1.";
+            ? Loc.T("Fant ingen nettverksadresser.")
+            : Loc.T("Send til: ") + string.Join(Loc.T("  eller  "), ips) + Loc.F("  (port {0}). Fra samme maskin: 127.0.0.1.", settings.OscInPort);
 
         FbEnabledBox.IsChecked = settings.OscFeedbackEnabled;
         FbHostBox.Text = settings.OscFeedbackHost;
@@ -72,6 +72,8 @@ public partial class SettingsWindow : Window
         // ---- Utseende ----
         _originalTheme = settings.Theme;
         ThemeBox.SelectedItem = settings.Theme;
+        foreach (var (code, name) in Loc.Languages) LanguageBox.Items.Add(new ComboBoxItem { Content = name, Tag = code });
+        LanguageBox.SelectedItem = LanguageBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == settings.Language) ?? LanguageBox.Items[0];
         Choices(ZoomBox, UiZoom.Steps.Select(z => (UiZoom.Percent(z), z)), settings.Zoom);
         Choices(ListScaleBox, UiZoom.ListSizes, settings.ListTextScale);
 
@@ -79,18 +81,18 @@ public partial class SettingsWindow : Window
         var midiIns = new List<string> { "" };
         midiIns.AddRange(MidiInput.GetDevices());
         if (!string.IsNullOrEmpty(settings.MidiInDevice) && !midiIns.Contains(settings.MidiInDevice)) midiIns.Add(settings.MidiInDevice);
-        MidiInBox.ItemsSource = midiIns.Select(n => n == "" ? "(av)" : n).ToList();
+        MidiInBox.ItemsSource = midiIns.Select(n => n == "" ? Loc.T("(av)") : n).ToList();
         MidiInBox.SelectedIndex = Math.Max(0, midiIns.IndexOf(settings.MidiInDevice));
 
-        var channels = new List<KeyValuePair<int, string>> { new(0, "Alle kanaler") };
-        channels.AddRange(Enumerable.Range(1, 16).Select(i => new KeyValuePair<int, string>(i, $"Kanal {i}")));
+        var channels = new List<KeyValuePair<int, string>> { new(0, Loc.T("Alle kanaler")) };
+        channels.AddRange(Enumerable.Range(1, 16).Select(i => new KeyValuePair<int, string>(i, Loc.F("Kanal {0}", i))));
         MidiChannelBox.ItemsSource = channels;
         MidiChannelBox.SelectedValue = settings.MidiInChannel;
 
         _midiMap["GO"] = settings.MidiGo;
-        _midiMap["Stopp alt"] = settings.MidiStopAll;
-        _midiMap["Neste"] = settings.MidiNext;
-        _midiMap["Forrige"] = settings.MidiPrevious;
+        _midiMap[Loc.T("Stopp alt")] = settings.MidiStopAll;
+        _midiMap[Loc.T("Neste")] = settings.MidiNext;
+        _midiMap[Loc.T("Forrige")] = settings.MidiPrevious;
         BuildMidiMap();
 
         MscBox.IsChecked = settings.MscInEnabled;
@@ -119,8 +121,8 @@ public partial class SettingsWindow : Window
             var label = new TextBlock { Text = key, VerticalAlignment = VerticalAlignment.Center };
             label.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
             var box = new TextBox { IsReadOnly = true, Margin = new Thickness(0, 3, 0, 3), Text = Describe(_midiMap[key]) };
-            var learn = new Button { Content = "Lær", Margin = new Thickness(6, 3, 0, 3) };
-            var clear = new Button { Content = "✕", Margin = new Thickness(4, 3, 0, 3), ToolTip = "Fjern" };
+            var learn = new Button { Content = Loc.T("Lær"), Margin = new Thickness(6, 3, 0, 3) };
+            var clear = new Button { Content = "✕", Margin = new Thickness(4, 3, 0, 3), ToolTip = Loc.T("Fjern") };
             string k = key;
             learn.Click += (_, _) => Learn(k);
             clear.Click += (_, _) => { _remote?.CancelLearn(); _midiMap[k] = ""; box.Text = Describe(""); };
@@ -135,18 +137,18 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private static string Describe(string t) => string.IsNullOrEmpty(t) ? "(ingen)" : MidiTriggers.Describe(t);
+    private static string Describe(string t) => string.IsNullOrEmpty(t) ? Loc.T("(ingen)") : MidiTriggers.Describe(t);
 
     private void Learn(string key)
     {
         if (_remote == null || !_remote.MidiOpen)
         {
-            MessageBox.Show(this, "Ingen MIDI-inngang er aktiv ennå. Velg inngang, trykk OK, og åpne innstillingene igjen for å bruke «Lær».",
+            MessageBox.Show(this, Loc.T("Ingen MIDI-inngang er aktiv ennå. Velg inngang, trykk OK, og åpne innstillingene igjen for å bruke «Lær»."),
                 "MIDI", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var box = _midiBoxes[key];
-        box.Text = "Venter på MIDI …";
+        box.Text = Loc.T("Venter på MIDI …");
         _remote.BeginLearn(t =>
         {
             _midiMap[key] = t;
@@ -193,16 +195,17 @@ public partial class SettingsWindow : Window
         if (int.TryParse(FbPortBox.Text, out var fp) && fp is > 0 and < 65536) Result.OscFeedbackPort = fp;
         Result.OscFeedbackFormat = FbFormatBox.SelectedItem is OscFeedbackFormat ff ? ff : OscFeedbackFormat.Companion;
         Result.Theme = ThemeBox.SelectedItem is AppTheme th ? th : AppTheme.Dark;
+        if (LanguageBox.SelectedItem is ComboBoxItem { Tag: string lang }) Result.Language = lang;
         if (ZoomBox.SelectedItem is ComboBoxItem { Tag: double z }) Result.Zoom = z;
         if (ListScaleBox.SelectedItem is ComboBoxItem { Tag: double ls }) Result.ListTextScale = ls;
 
         var midiName = MidiInBox.SelectedItem as string ?? "";
-        Result.MidiInDevice = midiName == "(av)" ? "" : midiName;
+        Result.MidiInDevice = midiName == Loc.T("(av)") ? "" : midiName;
         Result.MidiInChannel = MidiChannelBox.SelectedValue is int ch ? ch : 0;
         Result.MidiGo = _midiMap["GO"];
-        Result.MidiStopAll = _midiMap["Stopp alt"];
-        Result.MidiNext = _midiMap["Neste"];
-        Result.MidiPrevious = _midiMap["Forrige"];
+        Result.MidiStopAll = _midiMap[Loc.T("Stopp alt")];
+        Result.MidiNext = _midiMap[Loc.T("Neste")];
+        Result.MidiPrevious = _midiMap[Loc.T("Forrige")];
         Result.MscInEnabled = MscBox.IsChecked == true;
         Result.MtcInEnabled = MtcInBox.IsChecked == true;
         Result.InputDeviceId = InputDeviceBox.SelectedValue as string ?? "";
@@ -214,8 +217,8 @@ public partial class SettingsWindow : Window
 
         if (Result.AudioDriver == AudioDriverType.Asio && string.IsNullOrEmpty(Result.AsioDriverName))
         {
-            MessageBox.Show(this, "Fant ingen ASIO-drivere på denne maskinen. Installer lydkortets ASIO-driver (f.eks. et nettverkslydkort i ASIO-modus), eller velg WASAPI.",
-                "Innstillinger", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Loc.T("Fant ingen ASIO-drivere på denne maskinen. Installer lydkortets ASIO-driver (f.eks. et nettverkslydkort i ASIO-modus), eller velg WASAPI."),
+                Loc.T("Innstillinger"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         _ok = true;

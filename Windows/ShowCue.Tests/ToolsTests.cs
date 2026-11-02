@@ -297,4 +297,23 @@ public class ToolsTests
         Assert.Equal(1.0, UiZoom.ClampList(0.5));
         Assert.Equal("125 %", UiZoom.Percent(1.25));
     }
+
+    [Theory]
+    [InlineData("", "nb", "nb")]
+    [InlineData("", "nn", "nb")]
+    [InlineData("", "sv", "en")]
+    [InlineData("en", "nb", "en")]
+    [InlineData("nb", "en", "nb")]
+    public void LanguageFollowsSettingThenSystem(string setting, string system, string expected) =>
+        Assert.Equal(expected, Loc.Resolve(setting, system));
+
+    [Fact]
+    public void EnglishTableIsBundled()
+    {
+        using var stream = typeof(Loc).Assembly.GetManifestResourceStream("en.json");
+        Assert.NotNull(stream);
+        var table = Loc.ReadTable(stream!);
+        Assert.Equal("Save", table["Lagre"]);
+        Assert.All(table, kv => Assert.False(string.IsNullOrEmpty(kv.Value), kv.Key));
+    }
 }

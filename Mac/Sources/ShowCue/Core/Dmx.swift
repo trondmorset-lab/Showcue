@@ -11,21 +11,21 @@ enum DmxLevels {
         var levels: [Int: UInt8] = [:]
         for raw in text.split(whereSeparator: { " ,;\n\r\t".contains($0) }).map(String.init) {
             let at = raw.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "@" || $0 == "=" }).map(String.init)
-            guard at.count == 2 else { throw ParseError.invalid("«\(raw)»: skriv kanal@verdi, f.eks. 1@255 eller 1-4@50%") }
+            guard at.count == 2 else { throw ParseError.invalid(L("«{0}»: skriv kanal@verdi, f.eks. 1@255 eller 1-4@50%", raw)) }
             let range = at[0].split(separator: "-", omittingEmptySubsequences: false).map(String.init)
             guard range.count <= 2, let from = Int(range[0]), let to = Int(range[range.count - 1]),
-                  from >= 1, to <= 512, to >= from else { throw ParseError.invalid("«\(raw)»: kanal må være 1–512") }
+                  from >= 1, to <= 512, to >= from else { throw ParseError.invalid(L("«{0}»: kanal må være 1–512", raw)) }
             var v = at[1].trimmingCharacters(in: .whitespaces)
             let value: Double
             if v.hasSuffix("%") {
                 v.removeLast()
                 guard let pct = Double(v.replacingOccurrences(of: ",", with: ".")), pct >= 0, pct <= 100 else {
-                    throw ParseError.invalid("«\(raw)»: prosent må være 0–100")
+                    throw ParseError.invalid(L("«{0}»: prosent må være 0–100", raw))
                 }
                 value = pct * 255 / 100
             } else {
                 guard let d = Double(v.replacingOccurrences(of: ",", with: ".")), d >= 0, d <= 255 else {
-                    throw ParseError.invalid("«\(raw)»: verdi må være 0–255")
+                    throw ParseError.invalid(L("«{0}»: verdi må være 0–255", raw))
                 }
                 value = d
             }
@@ -36,7 +36,7 @@ enum DmxLevels {
 
     static func summary(_ text: String) -> String {
         guard let l = try? parse(text), !l.isEmpty else { return "" }
-        return l.count == 1 ? "kanal \(l.keys.first!)" : "\(l.count) kanaler"
+        return l.count == 1 ? L("kanal {0}", l.keys.first!) : L("{0} kanaler", l.count)
     }
 }
 

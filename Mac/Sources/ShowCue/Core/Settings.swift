@@ -1,17 +1,19 @@
 import Foundation
 
 enum AppTheme: String, Codable, CaseIterable {
-    case dark = "Dark", light = "Light", night = "Night"
+    case dark = "Dark", gray = "Gray", light = "Light", night = "Night"
     var label: String {
         switch self {
-        case .dark: return "Mørk"
-        case .light: return "Lys"
-        case .night: return "Nattmodus (ekstra dempet)"
+        case .dark: return L("Mørk")
+        case .gray: return L("Grå (dempet lys)")
+        case .light: return L("Lys")
+        case .night: return L("Nattmodus (ekstra dempet)")
         }
     }
     var next: AppTheme {
         switch self {
-        case .dark: return .light
+        case .dark: return .gray
+        case .gray: return .light
         case .light: return .night
         case .night: return .dark
         }
@@ -20,7 +22,7 @@ enum AppTheme: String, Codable, CaseIterable {
 
 enum OscFeedbackFormat: String, Codable, CaseIterable {
     case companion = "Companion", generic = "Generic"
-    var label: String { self == .companion ? "Companion (Custom Variables)" : "Generisk (/showcue/…)" }
+    var label: String { self == .companion ? L("Companion (Custom Variables)") : L("Generisk (/showcue/…)") }
 }
 
 /// En logisk utgang i lydpatchen.
@@ -39,14 +41,14 @@ struct PatchBus: Codable, Hashable, Identifiable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        name = (try? c.decode(String.self, forKey: .name)) ?? "Utgang"
+        name = (try? c.decode(String.self, forKey: .name)) ?? L("Utgang")
         gainDb = (try? c.decode(Double.self, forKey: .gainDb)) ?? 0
         channels = (try? c.decode([Int].self, forKey: .channels)) ?? []
     }
 
     static func defaultPatch(_ count: Int) -> [PatchBus] {
         (1...count).map { i in
-            PatchBus(name: i == 1 ? "Main L" : i == 2 ? "Main R" : "Utgang \(i)", channels: [i])
+            PatchBus(name: i == 1 ? "Main L" : i == 2 ? "Main R" : L("Utgang {0}", i), channels: [i])
         }
     }
 }
@@ -95,6 +97,8 @@ struct AppSettings: Codable, Equatable {
 
     // Utseende og sikkerhet
     var theme: AppTheme = .dark
+    /// Språk i brukerflaten: «nb», «en» eller tom (systemets språk). Tar effekt ved neste oppstart.
+    var language = ""
     /// Størrelse på hele hovedvinduet (1 = vanlig), se `UIZoom`.
     var zoom = 1.0
     /// Ekstra tekststørrelse i cuelista, i tillegg til zoom (1 = vanlig).
@@ -114,7 +118,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, inputDeviceUID
+        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, inputDeviceUID
     }
 
     init(from decoder: Decoder) throws {
@@ -144,6 +148,7 @@ struct AppSettings: Codable, Equatable {
         mscInEnabled = v(.mscInEnabled, d.mscInEnabled)
         mscInDeviceId = v(.mscInDeviceId, d.mscInDeviceId)
         theme = v(.theme, d.theme)
+        language = v(.language, d.language)
         zoom = UIZoom.clamp(v(.zoom, d.zoom))
         listTextScale = UIZoom.clampList(v(.listTextScale, d.listTextScale))
         panicFadeTime = v(.panicFadeTime, d.panicFadeTime)
@@ -177,7 +182,7 @@ struct AppSettings: Codable, Equatable {
             e.outputFormatting = [.prettyPrinted]
             try e.encode(self).write(to: AppSettings.fileURL, options: .atomic)
         } catch {
-            NSLog("ShowCue: kunne ikke lagre innstillinger: \(error)")
+            NSLog(L("ShowCue: kunne ikke lagre innstillinger: {0}", error))
         }
     }
 }
@@ -185,7 +190,7 @@ struct AppSettings: Codable, Equatable {
 /// Trinn for zoom av hovedvinduet og tekststørrelse i cuelista.
 enum UIZoom {
     static let steps: [Double] = [0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0]
-    static let listSizes: [(label: String, scale: Double)] = [("Vanlig", 1.0), ("Stor", 1.25), ("Ekstra stor", 1.5)]
+    static let listSizes: [(label: String, scale: Double)] = [(L("Vanlig"), 1.0), (L("Stor"), 1.25), (L("Ekstra stor"), 1.5)]
 
     static func clamp(_ z: Double) -> Double { z.isFinite ? min(steps.last!, max(steps.first!, z)) : 1 }
     static func clampList(_ s: Double) -> Double { s.isFinite ? min(2, max(1, s)) : 1 }

@@ -12,18 +12,18 @@ struct PatchView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(audio.isRunning ? audio.status : "Lydutgangen er ikke startet. Velg lydkort under Innstillinger.")
+            Text(audio.isRunning ? audio.status : L("Lydutgangen er ikke startet. Velg lydkort under Innstillinger."))
                 .foregroundColor(audio.isRunning ? theme.text : theme.danger)
                 .padding(.bottom, 6)
-            Text("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. «Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot Dante/PA. Patchen lagres på denne maskinen, ikke i showfila.")
+            Text(L("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. «Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot PA. Patchen lagres på denne maskinen, ikke i showfila."))
                 .uiFont(11.5).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
-                Button("+ Utgang") {
+                Button(L("+ Utgang")) {
                     let n = model.settings.buses.count + 1
-                    model.settings.buses.append(PatchBus(name: "Utgang \(n)", channels: n <= audio.deviceChannels ? [n] : []))
+                    model.settings.buses.append(PatchBus(name: L("Utgang {0}", n), channels: n <= audio.deviceChannels ? [n] : []))
                     model.applyPatch()
                 }
-                Button("− Fjern siste") {
+                Button(L("− Fjern siste")) {
                     guard model.settings.buses.count > 1 else { return }
                     audio.setTestTone(bus: model.settings.buses.count - 1, on: false)
                     model.settings.buses.removeLast()
@@ -33,11 +33,11 @@ struct PatchView: View {
                     for i in model.settings.buses.indices { model.settings.buses[i].channels = i < audio.deviceChannels ? [i + 1] : [] }
                     model.applyPatch()
                 }
-                Button("Nullstill krysspunkter") {
+                Button(L("Nullstill krysspunkter")) {
                     for i in model.settings.buses.indices { model.settings.buses[i].channels = [] }
                     model.applyPatch()
                 }
-                Button("Stopp testtoner") { audio.stopAllTestTones() }
+                Button(L("Stopp testtoner")) { audio.stopAllTestTones() }
             }
             .buttonStyle(PanelButtonStyle())
             .padding(.vertical, 10)
@@ -61,10 +61,10 @@ struct PatchView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 0) {
                 header("#").frame(width: 34, alignment: .leading)
-                header("UTGANG").frame(width: 170, alignment: .leading)
-                header("NIVÅ dB").frame(width: 64, alignment: .leading)
-                header("TEST").frame(width: 56, alignment: .leading)
-                header("NIVÅ").frame(width: 80, alignment: .leading)
+                header(L("UTGANG")).frame(width: 170, alignment: .leading)
+                header(L("NIVÅ dB")).frame(width: 64, alignment: .leading)
+                header(L("TEST")).frame(width: 56, alignment: .leading)
+                header(L("NIVÅ")).frame(width: 80, alignment: .leading)
             }
             .frame(height: 44, alignment: .bottom)
             ForEach(model.settings.buses.indices, id: \.self) { i in
@@ -77,7 +77,7 @@ struct PatchView: View {
                                                set: { v in if i < model.settings.buses.count { model.settings.buses[i].gainDb = v; model.applyPatch() } }),
                                 range: -60...12)
                         .padding(.trailing, 6).frame(width: 64)
-                    Button("Test") { audio.setTestTone(bus: i, on: !audio.testTones.contains(i)) }
+                    Button(L("Test")) { audio.setTestTone(bus: i, on: !audio.testTones.contains(i)) }
                         .buttonStyle(PanelButtonStyle(fill: audio.testTones.contains(i) ? Color(hex: 0xE3A33A) : nil,
                                                       foreground: audio.testTones.contains(i) ? Color(hex: 0x1A1200) : nil))
                         .padding(.trailing, 6).frame(width: 56)
@@ -85,7 +85,7 @@ struct PatchView: View {
                 }
                 .frame(height: rowH)
             }
-            Text("Kanalnivå på lydkortet").uiFont(11.5).foregroundColor(theme.muted)
+            Text(L("Kanalnivå på lydkortet")).uiFont(11.5).foregroundColor(theme.muted)
                 .padding(.leading, 34).frame(height: rowH)
         }
     }
@@ -98,7 +98,7 @@ struct PatchView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 0) {
                 ForEach(0..<D, id: \.self) { c in
-                    header("\(c + 1)").frame(width: colW).help(c < names.count ? "Kanal \(c + 1): \(names[c])" : "Kanal \(c + 1)")
+                    header("\(c + 1)").frame(width: colW).help(c < names.count ? L("Kanal {0}: {1}", c + 1, names[c]) : L("Kanal {0}", c + 1))
                 }
             }
             .frame(height: 44, alignment: .bottom)
@@ -119,7 +119,7 @@ struct PatchView: View {
                             .frame(width: colW, height: rowH)
                             .background(i % 2 == 1 ? theme.panel2 : Color.clear)
                             .overlay(Rectangle().fill((c + 1) % 8 == 0 ? theme.line : .clear).frame(width: 1), alignment: .trailing)
-                            .help("\(model.settings.buses[safe: i]?.name ?? "") → kanal \(c + 1)" + (c < names.count ? " (\(names[c]))" : ""))
+                            .help(L("{0} → kanal {1}", model.settings.buses[safe: i]?.name ?? "", c + 1) + (c < names.count ? " (\(names[c]))" : ""))
                     }
                 }
             }

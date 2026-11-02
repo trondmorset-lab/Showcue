@@ -3,6 +3,7 @@ using System.Windows.Media.Imaging;
 using Windows.Data.Pdf;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using ShowCue.Models;
 
 namespace ShowCue.Engine;
 
@@ -46,7 +47,7 @@ public static class MediaCache
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path));
         var doc = await PdfDocument.LoadFromFileAsync(file);
         if (page < 1 || page > doc.PageCount)
-            throw new ArgumentOutOfRangeException(nameof(page), $"PDF-en har {doc.PageCount} sider.");
+            throw new ArgumentOutOfRangeException(nameof(page), Loc.F("PDF-en har {0} sider.", doc.PageCount));
         using var pdfPage = doc.GetPage((uint)(page - 1));
         using var stream = new InMemoryRandomAccessStream();
         await pdfPage.RenderToStreamAsync(stream, new PdfPageRenderOptions

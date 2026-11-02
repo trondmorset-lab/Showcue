@@ -20,20 +20,20 @@ private struct PanelContent: View {
         let cols = max(2, min(8, model.settings.buttonPanelColumns))
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Text("Trykk på en knapp for å starte cuen, og trykk igjen for å stoppe den. GO-markøren flyttes ikke – fint for jingler, lydeffekter og berøringsskjerm.")
+                Text(L("Trykk på en knapp for å starte cuen, og trykk igjen for å stoppe den. GO-markøren flyttes ikke – fint for jingler, lydeffekter og berøringsskjerm."))
                     .foregroundColor(theme.muted).uiFont(12.5)
                 Spacer()
-                Text("Kolonner").foregroundColor(theme.muted).uiFont(12.5)
+                Text(L("Kolonner")).foregroundColor(theme.muted).uiFont(12.5)
                 Stepper("\(cols)", value: Binding(get: { cols }, set: { model.settings.buttonPanelColumns = $0; model.settings.save() }), in: 2...8)
                     .frame(width: 80)
-                Button(model.engine.isPaused ? "▶ Fortsett" : "⏸ Pause", action: model.togglePause).buttonStyle(PanelButtonStyle())
-                Button("STOPP ALT", action: model.panic).buttonStyle(PanelButtonStyle(fill: theme.danger, foreground: .white))
+                Button(model.engine.isPaused ? L("▶ Fortsett") : L("⏸ Pause"), action: model.togglePause).buttonStyle(PanelButtonStyle())
+                Button(L("STOPP ALT"), action: model.panic).buttonStyle(PanelButtonStyle(fill: theme.danger, foreground: .white))
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .background(theme.panel)
             Rectangle().fill(theme.line).frame(height: 1)
             if tiles.isEmpty {
-                Text("Ingen knapper ennå. Velg en cue, og kryss av for «Vis i knappepanelet» i panelet til høyre (cuer med hurtigtast kommer også hit).")
+                Text(L("Ingen knapper ennå. Velg en cue, og kryss av for «Vis i knappepanelet» i panelet til høyre (cuer med hurtigtast kommer også hit)."))
                     .foregroundColor(theme.faint).multilineTextAlignment(.center).padding(40)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {

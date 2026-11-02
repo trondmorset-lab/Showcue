@@ -123,13 +123,13 @@ final class DmxOutput {
         }
         lock.unlock()
         for (host, resolved, packet) in out {
-            guard fd >= 0, var addr = resolved else { onError?("Art-Net: ugyldig adresse \(host)"); continue }
+            guard fd >= 0, var addr = resolved else { onError?(L("Art-Net: ugyldig adresse {0}", host)); continue }
             let sent = packet.withUnsafeBytes { buf in
                 withUnsafePointer(to: &addr) { p in
                     p.withMemoryRebound(to: sockaddr.self, capacity: 1) { sendto(fd, buf.baseAddress, buf.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
                 }
             }
-            if sent < 0 { onError?("Art-Net til \(host): \(String(cString: strerror(errno)))") }
+            if sent < 0 { onError?(L("Art-Net til {0}: {1}", host, String(cString: strerror(errno)))) }
         }
     }
 }

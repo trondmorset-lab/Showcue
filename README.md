@@ -2,6 +2,8 @@
 
 # ShowCue
 
+*[English](README.en.md)*
+
 Showavvikling for Windows og Mac.
 
 Cue-basert avspillingsprogram for konsert, event og teater.
@@ -24,7 +26,8 @@ Begge har:
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
 - **Fjernstyring** med OSC inn, MIDI inn og MSC
 - **Status ut over OSC** (f.eks. til Companion): neste cue, hva som spiller og tid igjen
-- **Lys, mørk og nattmodus**, **zoom** og større tekst i cuelista, og fargemerking av cuer
+- **Mørkt, grått, lyst og nattmodus**, **zoom** og større tekst i cuelista, og fargemerking av cuer
+- **Norsk og engelsk** brukerflate (velges under *Innstillinger → Utseende*)
 
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,
 eller i en undermappe `Media`.

@@ -12,10 +12,10 @@ enum TimecodeRate: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .fps24: return "24 fps (film)"
-        case .fps25: return "25 fps (PAL/Europa)"
-        case .fps2997Drop: return "29,97 fps drop frame (NTSC)"
-        case .fps30: return "30 fps"
+        case .fps24: return L("24 fps (film)")
+        case .fps25: return L("25 fps (PAL/Europa)")
+        case .fps2997Drop: return L("29,97 fps drop frame (NTSC)")
+        case .fps30: return L("30 fps")
         }
     }
 

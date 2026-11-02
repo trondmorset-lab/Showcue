@@ -36,7 +36,7 @@
         <!-- Felles: filvelger -->
         <DataTemplate x:Key="FilePicker">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Bla" Margin="6,0,0,0" Click="BrowseFile_Click" />
+                <Button DockPanel.Dock="Right" Content="{local:T 'Bla'}" Margin="6,0,0,0" Click="BrowseFile_Click" />
                 <TextBox Text="{Binding FilePath, UpdateSourceTrigger=LostFocus}" ToolTip="{Binding FilePath}" />
             </DockPanel>
         </DataTemplate>
@@ -44,60 +44,60 @@
         <!-- ===================== Inspector-maler ===================== -->
         <DataTemplate DataType="{x:Type m:AudioCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Lydfil" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lydfil'}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FilePicker}" />
-                <TextBlock Style="{StaticResource Hint}" Text="{Binding FileDuration, StringFormat='Filens lengde: {0:0.0} s'}" />
+                <TextBlock Style="{StaticResource Hint}" Text="{Binding FileDurationText}" />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dB)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nivå (dB)'}" />
                         <TextBox Text="{Binding VolumeDb}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Loop" />
-                        <CheckBox IsChecked="{Binding Loop}" Content="Gjenta til stoppet" Margin="0,5,0,0" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Loop'}" />
+                        <CheckBox IsChecked="{Binding Loop}" Content="{local:T 'Gjenta til stoppet'}" Margin="0,5,0,0" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Start og slutt" Margin="0,14,0,3" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Start og slutt'}" Margin="0,14,0,3" />
                 <local:WaveformEditor Cue="{Binding}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Dra den grønne (start) og røde (slutt) markøren. Klikk for å flytte den blå markøren, dobbeltklikk for å lytte derfra. Musehjul zoomer, Shift+hjul ruller. Lyttingen går gjennom lydpatchen." />
+                           Text="{local:T 'Dra den grønne (start) og røde (slutt) markøren. Klikk for å flytte den blå markøren, dobbeltklikk for å lytte derfra. Musehjul zoomer, Shift+hjul ruller. Lyttingen går gjennom lydpatchen.'}" />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Start (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Start (s)'}" />
                         <TextBox Text="{Binding StartTime}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Slutt (s, 0 = filslutt)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Slutt (s, 0 = filslutt)'}" />
                         <TextBox Text="{Binding EndTime}" />
                     </StackPanel>
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Fade inn (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade inn (s)'}" />
                         <TextBox Text="{Binding FadeIn}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Fade ut (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade ut (s)'}" />
                         <TextBox Text="{Binding FadeOut}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Hint}" Text="Fade ut brukes ved stopp og automatisk mot slutten av fila." />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Fade ut brukes ved stopp og automatisk mot slutten av fila.'}" />
 
-                <TextBlock Style="{StaticResource Label}" Text="Lydstyrke" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lydstyrke'}" />
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="Normaliser" Click="Normalize_Click" Margin="6,0,0,0"
-                            ToolTip="Mål lydstyrken mellom start og slutt og sett nivået så cuen treffer målet under Innstillinger (standard −23 LUFS)" />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Loudness, StringFormat='{}{0:0.0} LUFS (målt)', TargetNullValue='Ikke målt'}"
+                    <Button DockPanel.Dock="Right" Content="{local:T 'Normaliser'}" Click="Normalize_Click" Margin="6,0,0,0"
+                            ToolTip="{local:T 'Mål lydstyrken mellom start og slutt og sett nivået så cuen treffer målet under Innstillinger (standard −23 LUFS)'}" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding LoudnessText}"
                                Foreground="{DynamicResource Muted}" />
                 </DockPanel>
 
-                <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per filkanal → utgang)" Margin="0,14,0,3" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Utganger (dB per filkanal → utgang)'}" Margin="0,14,0,3" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Skriv nivå i dB (0 = fullt), tomt = av. Dobbeltklikk en rute for å slå av/på. Endringer høres med en gang hvis cuen spiller. Utgangene settes opp under Lydpatch." />
+                           Text="{local:T 'Skriv nivå i dB (0 = fullt), tomt = av. Dobbeltklikk en rute for å slå av/på. Endringer høres med en gang hvis cuen spiller. Utgangene settes opp under Lydpatch.'}" />
             </StackPanel>
         </DataTemplate>
 
@@ -106,69 +106,69 @@
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Fade inn (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade inn (s)'}" />
                         <TextBox Text="{Binding FadeIn}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Fade ut (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade ut (s)'}" />
                         <TextBox Text="{Binding FadeOut}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Skalering" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Skalering'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.Stretches}" SelectedItem="{Binding Stretch}" ItemTemplate="{StaticResource EnumItem}" />
-                <CheckBox IsChecked="{Binding ReplaceOthers}" Content="Erstatt andre bilder/videoer (krysstoning)" />
+                <CheckBox IsChecked="{Binding ReplaceOthers}" Content="{local:T 'Erstatt andre bilder/videoer (krysstoning)'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:VideoCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Videofil" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Videofil'}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FilePicker}" />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Lydnivå (dB)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lydnivå (dB)'}" />
                         <TextBox Text="{Binding VolumeDb}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Loop" />
-                        <CheckBox IsChecked="{Binding Loop}" Content="Gjenta til stoppet" Margin="0,5,0,0" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Loop'}" />
+                        <CheckBox IsChecked="{Binding Loop}" Content="{local:T 'Gjenta til stoppet'}" Margin="0,5,0,0" />
                     </StackPanel>
                 </Grid>
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VisualCommon}" />
 
-                <TextBlock Style="{StaticResource Label}" Text="Start og slutt" Margin="0,14,0,3" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Start og slutt'}" Margin="0,14,0,3" />
                 <local:WaveformEditor Cue="{Binding}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Dra den grønne (start) og røde (slutt) markøren. Klikk for å flytte den blå markøren, dobbeltklikk for å lytte derfra. Musehjul zoomer, Shift+hjul ruller. Lyttingen spiller lydsporet gjennom lydpatchen. Med loop hopper videoen tilbake til start ved sluttpunktet." />
+                           Text="{local:T 'Dra den grønne (start) og røde (slutt) markøren. Klikk for å flytte den blå markøren, dobbeltklikk for å lytte derfra. Musehjul zoomer, Shift+hjul ruller. Lyttingen spiller lydsporet gjennom lydpatchen. Med loop hopper videoen tilbake til start ved sluttpunktet.'}" />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Start (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Start (s)'}" />
                         <TextBox Text="{Binding StartTime}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Slutt (s, 0 = filslutt)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Slutt (s, 0 = filslutt)'}" />
                         <TextBox Text="{Binding EndTime}" />
                     </StackPanel>
                 </Grid>
 
-                <TextBlock Style="{StaticResource Label}" Text="Lydspor → utganger (dB)" Margin="0,14,0,3" />
-                <TextBlock Style="{StaticResource Hint}" Text="Videoen har ikke noe lydspor." Margin="0,0,0,4"
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lydspor → utganger (dB)'}" Margin="0,14,0,3" />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Videoen har ikke noe lydspor.'}" Margin="0,0,0,4"
                            Visibility="{Binding HasNoAudio, Converter={StaticResource BoolVis}}" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum." />
-                <Button Content="Pakk ut lyd til egen lyd-cue" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
-                        ToolTip="Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum." />
+                           Text="{local:T 'Lyden i videoen pakkes ut og spilles av ShowCues lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.'}" />
+                <Button Content="{local:T 'Pakk ut lyd til egen lyd-cue'}" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
+                        ToolTip="{local:T 'Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum.'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:ImageCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Bildefil" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Bildefil'}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FilePicker}" />
-                <TextBlock Style="{StaticResource Label}" Text="Vis i (s, 0 = til stoppet)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Vis i (s, 0 = til stoppet)'}" />
                 <TextBox Text="{Binding HoldTime}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VisualCommon}" />
             </StackPanel>
@@ -176,11 +176,11 @@
 
         <DataTemplate DataType="{x:Type m:WebCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Adresse (URL eller fil)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Adresse (URL eller fil)'}" />
                 <TextBox Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter, og vises fullskjerm på utgangen. Lyd fra siden går til Windows standard lydenhet, ikke gjennom lydpatchen." />
-                <TextBlock Style="{StaticResource Label}" Text="Vis i (s, 0 = til stoppet)" />
+                           Text="{local:T 'F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter, og vises fullskjerm på utgangen. Lyd fra siden går til Windows standard lydenhet, ikke gjennom lydpatchen.'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Vis i (s, 0 = til stoppet)'}" />
                 <TextBox Text="{Binding HoldTime}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VisualCommon}" />
             </StackPanel>
@@ -188,15 +188,15 @@
 
         <DataTemplate DataType="{x:Type m:PdfCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="PDF-fil" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'PDF-fil'}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FilePicker}" />
-                <TextBlock Style="{StaticResource Label}" Text="Side" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Side'}" />
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="+ Cue for neste side" Margin="6,0,0,0" Click="PdfNextPage_Click"
-                            ToolTip="Lager en ny PDF-cue for neste side rett under denne" />
+                    <Button DockPanel.Dock="Right" Content="{local:T '+ Cue for neste side'}" Margin="6,0,0,0" Click="PdfNextPage_Click"
+                            ToolTip="{local:T 'Lager en ny PDF-cue for neste side rett under denne'}" />
                     <TextBox Text="{Binding Page}" />
                 </DockPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Vis i (s, 0 = til stoppet)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Vis i (s, 0 = til stoppet)'}" />
                 <TextBox Text="{Binding HoldTime}" />
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VisualCommon}" />
             </StackPanel>
@@ -204,112 +204,112 @@
 
         <DataTemplate DataType="{x:Type m:FadeCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Mål-cue (nummer)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Mål-cue (nummer)'}" />
                 <TextBox Text="{Binding Target}" />
-                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade-tid (s)'}" />
                 <TextBox Text="{Binding FadeTime}" />
-                <CheckBox IsChecked="{Binding FadeAudio}" Content="Fade lyd til nivå:" />
+                <CheckBox IsChecked="{Binding FadeAudio}" Content="{local:T 'Fade lyd til nivå:'}" />
                 <TextBox Text="{Binding TargetDb}" Margin="22,4,0,0" IsEnabled="{Binding FadeAudio}" />
-                <TextBlock Style="{StaticResource Hint}" Margin="22,4,0,0" Text="dB. −60 eller lavere = stille." />
-                <CheckBox IsChecked="{Binding FadeVisual}" Content="Fade bilde/video til synlighet (%):" />
+                <TextBlock Style="{StaticResource Hint}" Margin="22,4,0,0" Text="{local:T 'dB. −60 eller lavere = stille.'}" />
+                <CheckBox IsChecked="{Binding FadeVisual}" Content="{local:T 'Fade bilde/video til synlighet (%):'}" />
                 <TextBox Text="{Binding TargetOpacity}" Margin="22,4,0,0" IsEnabled="{Binding FadeVisual}" />
-                <CheckBox IsChecked="{Binding StopWhenDone}" Content="Stopp mål-cuen når faden er ferdig" />
-                <TextBlock Style="{StaticResource Label}" Text="Kurve" />
+                <CheckBox IsChecked="{Binding StopWhenDone}" Content="{local:T 'Stopp mål-cuen når faden er ferdig'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Kurve'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.FadeCurves}" SelectedItem="{Binding Curve}" ItemTemplate="{StaticResource EnumItem}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:StopCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Mål-cue (nummer, tomt = alle)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Mål-cue (nummer, tomt = alle)'}" />
                 <TextBox Text="{Binding Target}" />
-                <CheckBox IsChecked="{Binding Release}" Content="Slipp loop i stedet for å stoppe (devamp)" Margin="0,10,0,0" />
+                <CheckBox IsChecked="{Binding Release}" Content="{local:T 'Slipp loop i stedet for å stoppe (devamp)'}" Margin="0,10,0,0" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Loopen spiller ferdig runden og fortsetter så til slutten av fila (forbi sluttpunktet). En spilleliste spiller ferdig sporet og stopper. Auto-follow virker når cuen er ferdig." />
-                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" IsEnabled="{Binding Release, Converter={StaticResource Not}}" />
+                           Text="{local:T 'Loopen spiller ferdig runden og fortsetter så til slutten av fila (forbi sluttpunktet). En spilleliste spiller ferdig sporet og stopper. Auto-follow virker når cuen er ferdig.'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade-tid (s)'}" IsEnabled="{Binding Release, Converter={StaticResource Not}}" />
                 <TextBox Text="{Binding FadeTime}" IsEnabled="{Binding Release, Converter={StaticResource Not}}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:GotoCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Gå til cue (nummer)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Gå til cue (nummer)'}" />
                 <TextBox Text="{Binding Target}" />
-                <CheckBox IsChecked="{Binding Fire}" Content="Kjør cuen også (GO), ikke bare flytt markøren" Margin="0,10,0,0" />
-                <TextBlock Style="{StaticResource Hint}" Text="Flytter GO-markøren, f.eks. for å hoppe tilbake og gjenta en scene, eller hoppe over en del." />
+                <CheckBox IsChecked="{Binding Fire}" Content="{local:T 'Kjør cuen også (GO), ikke bare flytt markøren'}" Margin="0,10,0,0" />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Flytter GO-markøren, f.eks. for å hoppe tilbake og gjenta en scene, eller hoppe over en del.'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:PlaylistCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Spor (spilles ovenfra og ned)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Spor (spilles ovenfra og ned)'}" />
                 <ListBox x:Name="PlaylistBox" ItemsSource="{Binding Files}" Height="160">
                     <ListBox.ItemTemplate>
                         <DataTemplate><TextBlock Text="{Binding Converter={StaticResource FileName}}" ToolTip="{Binding}" /></DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <WrapPanel Margin="0,6,0,0">
-                    <Button Content="+ Legg til filer" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
-                    <Button Content="Fjern" Margin="0,0,6,0" Click="PlaylistRemove_Click" Tag="{Binding ElementName=PlaylistBox}" />
+                    <Button Content="{local:T '+ Legg til filer'}" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
+                    <Button Content="{local:T 'Fjern'}" Margin="0,0,6,0" Click="PlaylistRemove_Click" Tag="{Binding ElementName=PlaylistBox}" />
                     <Button Content="↑" Margin="0,0,6,0" Click="PlaylistUp_Click" Tag="{Binding ElementName=PlaylistBox}" />
                     <Button Content="↓" Click="PlaylistDown_Click" Tag="{Binding ElementName=PlaylistBox}" />
                 </WrapPanel>
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dB)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nivå (dB)'}" />
                         <TextBox Text="{Binding VolumeDb}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Krysstoning (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Krysstoning (s)'}" />
                         <TextBox Text="{Binding Crossfade}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Fade ut ved stopp (s)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade ut ved stopp (s)'}" />
                 <TextBox Text="{Binding FadeOut}" />
-                <CheckBox IsChecked="{Binding Shuffle}" Content="Tilfeldig rekkefølge" Margin="0,10,0,0" />
-                <CheckBox IsChecked="{Binding Loop}" Content="Start på nytt når lista er ferdig" />
-                <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per kanal → utgang)" Margin="0,14,0,3" />
+                <CheckBox IsChecked="{Binding Shuffle}" Content="{local:T 'Tilfeldig rekkefølge'}" Margin="0,10,0,0" />
+                <CheckBox IsChecked="{Binding Loop}" Content="{local:T 'Start på nytt når lista er ferdig'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Utganger (dB per kanal → utgang)'}" Margin="0,14,0,3" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
-                <TextBlock Style="{StaticResource Hint}" Text="Routingen gjelder alle sporene. En stopp-cue med «slipp loop» lar sporet som går spille ferdig og stopper så." />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Routingen gjelder alle sporene. En stopp-cue med «slipp loop» lar sporet som går spille ferdig og stopper så.'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:MemoCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Beskjed til operatøren" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Beskjed til operatøren'}" />
                 <TextBox Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalScrollBarVisibility="Auto" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Vises stort øverst i vinduet når cuen kjøres (f.eks. «Vent på applaus»), til du lukker den. Gjør ellers ingenting." />
+                           Text="{local:T 'Vises stort øverst i vinduet når cuen kjøres (f.eks. «Vent på applaus»), til du lukker den. Gjør ellers ingenting.'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:NetworkCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Sendes som" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Sendes som'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.NetworkProtocols}" SelectedItem="{Binding Protocol}" ItemTemplate="{StaticResource EnumItem}" />
                 <Grid Visibility="{Binding Protocol, Converter={StaticResource NotEqVis}, ConverterParameter=Http}">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="IP-adresse / vertsnavn" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'IP-adresse / vertsnavn'}" />
                         <TextBox Text="{Binding Host}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Port" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Port'}" />
                         <TextBox Text="{Binding Port}" />
                     </StackPanel>
                 </Grid>
                 <StackPanel Visibility="{Binding Protocol, Converter={StaticResource EqVis}, ConverterParameter=Http}">
-                    <TextBlock Style="{StaticResource Label}" Text="Metode" />
+                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Metode'}" />
                     <ComboBox ItemsSource="{x:Static local:EnumValues.HttpMethods}" SelectedItem="{Binding Method}" />
-                    <TextBlock Style="{StaticResource Label}" Text="Adresse (URL)" />
+                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Adresse (URL)'}" />
                     <TextBox Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" />
                 </StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="Melding / innhold" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Melding / innhold'}" />
                 <TextBox Text="{Binding Message}" FontFamily="{StaticResource MonoFont}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="\r \n og \t gir linjeskift og tab, \xHH gir en byte (f.eks. \x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med { eller [)." />
-                <TextBlock Style="{StaticResource Hint}" Text="Eksempel PJLink-projektor av: TCP port 4352, melding %1POWR 0\r" />
+                           Text="{local:T '\\r \\n og \\t gir linjeskift og tab, \\xHH gir en byte (f.eks. \\x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med \{ eller [).'}" />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Eksempel PJLink-projektor av: TCP port 4352, melding %1POWR 0\\r'}" />
             </StackPanel>
         </DataTemplate>
 
@@ -318,33 +318,33 @@
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Start (tt:mm:ss:ff)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Start (tt:mm:ss:ff)'}" />
                         <TextBox Text="{Binding Start}" FontFamily="{StaticResource MonoFont}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Lengde (s, 0 = til stoppet)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lengde (s, 0 = til stoppet)'}" />
                         <TextBox Text="{Binding Length}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Bilderate" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Bilderate'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.TimecodeRates}" SelectedItem="{Binding Rate}" ItemTemplate="{StaticResource EnumItem}" />
-                <CheckBox IsChecked="{Binding SendMtc}" Content="Send MTC (MIDI Time Code) til:" Margin="0,12,0,4" />
+                <CheckBox IsChecked="{Binding SendMtc}" Content="{local:T 'Send MTC (MIDI Time Code) til:'}" Margin="0,12,0,4" />
                 <ComboBox ItemsSource="{Binding DataContext.MidiDevices, RelativeSource={RelativeSource AncestorType=Window}}"
                           SelectedItem="{Binding Device}" IsEnabled="{Binding SendMtc}" />
-                <CheckBox IsChecked="{Binding SendLtc}" Content="Send LTC (lyd) til utgang:" Margin="0,12,0,4" />
+                <CheckBox IsChecked="{Binding SendLtc}" Content="{local:T 'Send LTC (lyd) til utgang:'}" Margin="0,12,0,4" />
                 <Grid IsEnabled="{Binding SendLtc}">
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Utgang i lydpatchen" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Utgang i lydpatchen'}" />
                         <TextBox Text="{Binding LtcBus}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dBFS)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nivå (dBFS)'}" />
                         <TextBox Text="{Binding LtcLevelDb}" />
                     </StackPanel>
                 </Grid>
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Tidskoden styrer lysbord, videoservere og andre programmer i takt med showet. Bruk en egen utgang til LTC (den skal ikke høres i salen). Pause stopper tidskoden." />
+                           Text="{local:T 'Tidskoden styrer lysbord, videoservere og andre programmer i takt med showet. Bruk en egen utgang til LTC (den skal ikke høres i salen). Pause stopper tidskoden.'}" />
             </StackPanel>
         </DataTemplate>
 
@@ -353,54 +353,54 @@
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Art-Net-node (IP eller kringkasting)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Art-Net-node (IP eller kringkasting)'}" />
                         <TextBox Text="{Binding Host}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Univers" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Univers'}" />
                         <TextBox Text="{Binding Universe}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Nivåer (kanal@verdi)" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nivåer (kanal@verdi)'}" />
                 <TextBox Text="{Binding Levels}" FontFamily="{StaticResource MonoFont}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="F.eks. 1@255 2-4@50% 10@0. Verdi 0–255 eller prosent. Kanaler som ikke nevnes, beholder nivået sitt." />
-                <TextBlock Style="{StaticResource Label}" Text="Fade-tid (s)" />
+                           Text="{local:T 'F.eks. 1@255 2-4@50% 10@0. Verdi 0–255 eller prosent. Kanaler som ikke nevnes, beholder nivået sitt.'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade-tid (s)'}" />
                 <TextBox Text="{Binding FadeTime}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Sendes som Art-Net (UDP 6454). 255.255.255.255 eller 2.255.255.255 når alle noder på nettet skal få det. Å stoppe cuen lar lyset stå." />
+                           Text="{local:T 'Sendes som Art-Net (UDP 6454). 255.255.255.255 eller 2.255.255.255 når alle noder på nettet skal få det. Å stoppe cuen lar lyset stå.'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:InputCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Hint}" Text="Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort)." />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort).'}" />
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Nivå (dB)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nivå (dB)'}" />
                         <TextBox Text="{Binding VolumeDb}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Kanaler fra inngangen" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Kanaler fra inngangen'}" />
                         <TextBox Text="{Binding FileChannels}" />
                     </StackPanel>
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="Fade inn (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade inn (s)'}" />
                         <TextBox Text="{Binding FadeIn}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Fade ut (s)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Fade ut (s)'}" />
                         <TextBox Text="{Binding FadeOut}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Utganger (dB per inngang → utgang)" Margin="0,14,0,3" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Utganger (dB per inngang → utgang)'}" Margin="0,14,0,3" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Spiller til cuen stoppes. Pass på tilbakekobling (feedback) hvis mikrofonen står nær høyttalerne. Forsinkelsen er ca. 20–60 ms." />
+                           Text="{local:T 'Spiller til cuen stoppes. Pass på tilbakekobling (feedback) hvis mikrofonen står nær høyttalerne. Forsinkelsen er ca. 20–60 ms.'}" />
             </StackPanel>
         </DataTemplate>
 
@@ -409,57 +409,57 @@
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Label}" Text="IP-adresse / vertsnavn" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'IP-adresse / vertsnavn'}" />
                         <TextBox Text="{Binding Host}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource Label}" Text="Port" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Port'}" />
                         <TextBox Text="{Binding Port}" />
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Label}" Text="Adresse" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Adresse'}" />
                 <TextBox Text="{Binding Address}" FontFamily="{StaticResource MonoFont}" />
-                <TextBlock Style="{StaticResource Label}" Text="Argumenter" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Argumenter'}" />
                 <TextBox Text="{Binding Arguments}" FontFamily="{StaticResource MonoFont}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="Skill med mellomrom. 1 = heltall, 0.5 = desimaltall, true/false, ellers tekst. Bruk &quot;anførselstegn&quot; for tekst med mellomrom." />
-                <TextBlock Style="{StaticResource Hint}" Text="Eksempel X32: adresse /ch/01/mix/fader  argument 0.75" />
+                           Text="{local:T 'Skill med mellomrom. 1 = heltall, 0.5 = desimaltall, true/false, ellers tekst. Bruk &quot;anførselstegn&quot; for tekst med mellomrom.'}" />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Eksempel X32: adresse /ch/01/mix/fader  argument 0.75'}" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type m:MidiCue}">
             <StackPanel>
-                <TextBlock Style="{StaticResource Label}" Text="MIDI-utgang" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'MIDI-utgang'}" />
                 <ComboBox ItemsSource="{Binding DataContext.MidiDevices, RelativeSource={RelativeSource AncestorType=Window}}"
                           SelectedItem="{Binding Device}" />
-                <TextBlock Style="{StaticResource Hint}" Text="Tom = første tilgjengelige utgang." />
-                <TextBlock Style="{StaticResource Label}" Text="Meldingstype" />
+                <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Tom = første tilgjengelige utgang.'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Meldingstype'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.MidiTypes}" SelectedItem="{Binding MessageType}" ItemTemplate="{StaticResource EnumItem}" />
                 <StackPanel Visibility="{Binding MessageType, Converter={StaticResource NotEqVis}, ConverterParameter=MscGo}">
-                    <TextBlock Style="{StaticResource Label}" Text="Kanal (1–16)" />
+                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Kanal (1–16)'}" />
                     <TextBox Text="{Binding Channel}" />
-                    <TextBlock Style="{StaticResource Label}" Text="Note / program / controller (0–127)" />
+                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Note / program / controller (0–127)'}" />
                     <TextBox Text="{Binding Data1}" />
                     <StackPanel Visibility="{Binding MessageType, Converter={StaticResource EqVis}, ConverterParameter=NoteOn|ControlChange}">
-                        <TextBlock Style="{StaticResource Label}" Text="Velocity / verdi (0–127)" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Velocity / verdi (0–127)'}" />
                         <TextBox Text="{Binding Data2}" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Visibility="{Binding MessageType, Converter={StaticResource EqVis}, ConverterParameter=MscGo}">
-                    <TextBlock Style="{StaticResource Label}" Text="MSC cue-nummer" />
+                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'MSC cue-nummer'}" />
                     <TextBox Text="{Binding MscCueNumber}" />
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Style="{StaticResource Label}" Text="Device ID (127 = alle)" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Device ID (127 = alle)'}" />
                             <TextBox Text="{Binding MscDeviceId}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Style="{StaticResource Label}" Text="Command format" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Command format'}" />
                             <TextBox Text="{Binding MscCommandFormat}" />
                         </StackPanel>
                     </Grid>
-                    <TextBlock Style="{StaticResource Hint}" Text="Command format 1 = lys (general), 16 = lyd." />
+                    <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Command format 1 = lys (general), 16 = lyd.'}" />
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
@@ -486,7 +486,7 @@
                         <TextBlock Text="{Binding ElapsedText}" FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right" />
                         <TextBlock Text="{Binding RemainingText}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Wait}" HorizontalAlignment="Right" />
                     </StackPanel>
-                    <Button Grid.Column="3" Content="■" Padding="10,4" Click="StopActive_Click" ToolTip="Stopp (med cuens fade ut)" />
+                    <Button Grid.Column="3" Content="■" Padding="10,4" Click="StopActive_Click" ToolTip="{local:T 'Stopp (med cuens fade ut)'}" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -514,18 +514,18 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Button Style="{StaticResource GoButton}" Content="GO" Height="92" Click="Go_Click" ToolTip="Mellomrom" />
+                <Button Style="{StaticResource GoButton}" Content="{local:T 'GO'}" Height="92" Click="Go_Click" ToolTip="{local:T 'Mellomrom'}" />
 
                 <Border Grid.Column="1" Margin="18,0" Panel.ZIndex="1" Background="{DynamicResource Panel3}" BorderBrush="{DynamicResource Wait}"
                         BorderThickness="2" CornerRadius="6" Padding="14,8" Visibility="{Binding MemoText, Converter={StaticResource NonEmptyVis}}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="✕" VerticalAlignment="Top" Padding="10,4" Click="CloseMemo_Click" ToolTip="Lukk beskjeden" />
-                        <TextBlock DockPanel.Dock="Top" Text="BESKJED" Style="{StaticResource SectionHeader}" Foreground="{DynamicResource Wait}" />
+                        <Button DockPanel.Dock="Right" Content="✕" VerticalAlignment="Top" Padding="10,4" Click="CloseMemo_Click" ToolTip="{local:T 'Lukk beskjeden'}" />
+                        <TextBlock DockPanel.Dock="Top" Text="{local:T 'BESKJED'}" Style="{StaticResource SectionHeader}" Foreground="{DynamicResource Wait}" />
                         <TextBlock Text="{Binding MemoText}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                     </DockPanel>
                 </Border>
                 <StackPanel Grid.Column="1" Margin="18,0" VerticalAlignment="Center">
-                    <TextBlock Text="NESTE CUE" Style="{StaticResource SectionHeader}" Margin="0,0,0,2" />
+                    <TextBlock Text="{local:T 'NESTE CUE'}" Style="{StaticResource SectionHeader}" Margin="0,0,0,2" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding SelectedCue.Number}" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource Playhead}"
                                    FontFamily="{StaticResource MonoFont}" Margin="0,0,14,0" />
@@ -541,7 +541,7 @@
                         <TextBlock Text="{Binding ActiveCountText}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" FontSize="12" />
                     </StackPanel>
                     <!-- Nivåmåler -->
-                    <Grid Width="26" Height="84" Margin="0,0,18,0" ToolTip="Utgangsnivå (−60 til 0 dBFS)">
+                    <Grid Width="26" Height="84" Margin="0,0,18,0" ToolTip="{local:T 'Utgangsnivå (−60 til 0 dBFS)'}">
                         <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="3" /><ColumnDefinition /></Grid.ColumnDefinitions>
                         <Border Background="{DynamicResource Panel3}" CornerRadius="2" />
                         <Border Grid.Column="2" Background="{DynamicResource Panel3}" CornerRadius="2" />
@@ -559,17 +559,17 @@
                             <Border.RenderTransform><ScaleTransform x:Name="MeterRScale" ScaleY="0" /></Border.RenderTransform>
                         </Border>
                     </Grid>
-                    <Button Width="92" Height="92" Margin="0,0,10,0" Click="Pause_Click" ToolTip="Pause / fortsett alt (Ctrl+P). GO fortsetter også.">
+                    <Button Width="92" Height="92" Margin="0,0,10,0" Click="Pause_Click" ToolTip="{local:T 'Pause / fortsett alt (Ctrl+P). GO fortsetter også.'}">
                         <StackPanel>
                             <TextBlock Text="{Binding PauseGlyph}" FontSize="22" HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding PauseText}" FontSize="12" HorizontalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource DangerButton}" Width="130" Height="92" Click="Panic_Click"
-                            ToolTip="Esc: stopp alt med kort fade. Trykk to ganger for umiddelbar stopp.">
+                            ToolTip="{local:T 'Esc: stopp alt med kort fade. Trykk to ganger for umiddelbar stopp.'}">
                         <StackPanel>
-                            <TextBlock Text="STOPP ALT" FontSize="17" HorizontalAlignment="Center" />
-                            <TextBlock Text="Esc" FontSize="11" Opacity="0.8" HorizontalAlignment="Center" />
+                            <TextBlock Text="{local:T 'STOPP ALT'}" FontSize="17" HorizontalAlignment="Center" />
+                            <TextBlock Text="{local:T 'Esc'}" FontSize="11" Opacity="0.8" HorizontalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -581,92 +581,92 @@
         <Border Grid.Row="1" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="8,5">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Style="{StaticResource ToolButton}" Content="Fil ▾" Click="Menu_Click">
+                    <Button Style="{StaticResource ToolButton}" Content="{local:T 'Fil ▾'}" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Nytt show" InputGestureText="Ctrl+N" Click="New_Click" />
-                                <MenuItem Header="Åpne" InputGestureText="Ctrl+O" Click="Open_Click" />
-                                <MenuItem Header="Lagre" InputGestureText="Ctrl+S" Click="Save_Click" />
-                                <MenuItem Header="Lagre som" Click="SaveAs_Click" />
+                                <MenuItem Header="{local:T 'Nytt show'}" InputGestureText="Ctrl+N" Click="New_Click" />
+                                <MenuItem Header="{local:T 'Åpne'}" InputGestureText="Ctrl+O" Click="Open_Click" />
+                                <MenuItem Header="{local:T 'Lagre'}" InputGestureText="Ctrl+S" Click="Save_Click" />
+                                <MenuItem Header="{local:T 'Lagre som'}" Click="SaveAs_Click" />
                                 <Separator />
-                                <MenuItem Header="Samle show og mediefiler i én mappe" Click="Collect_Click" />
-                                <MenuItem Header="Finn manglende mediefiler" Click="Relink_Click" />
+                                <MenuItem Header="{local:T 'Samle show og mediefiler i én mappe'}" Click="Collect_Click" />
+                                <MenuItem Header="{local:T 'Finn manglende mediefiler'}" Click="Relink_Click" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
-                    <Button Style="{StaticResource ToolButton}" Content="↶" Click="Undo_Click" IsEnabled="{Binding CanUndo}" FontSize="15" ToolTip="Angre (Ctrl+Z)" />
-                    <Button Style="{StaticResource ToolButton}" Content="↷" Click="Redo_Click" IsEnabled="{Binding CanRedo}" FontSize="15" ToolTip="Gjør om (Ctrl+Y)" />
+                    <Button Style="{StaticResource ToolButton}" Content="↶" Click="Undo_Click" IsEnabled="{Binding CanUndo}" FontSize="15" ToolTip="{local:T 'Angre (Ctrl+Z)'}" />
+                    <Button Style="{StaticResource ToolButton}" Content="↷" Click="Redo_Click" IsEnabled="{Binding CanRedo}" FontSize="15" ToolTip="{local:T 'Gjør om (Ctrl+Y)'}" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsEditable}">
-                        <Button Style="{StaticResource ToolButton}" Content="＋ Media ▾" Click="Menu_Click" ToolTip="Legg til lyd, video, bilde, PDF, nettside og mer">
+                        <Button Style="{StaticResource ToolButton}" Content="{local:T '＋ Media ▾'}" Click="Menu_Click" ToolTip="{local:T 'Legg til lyd, video, bilde, PDF, nettside og mer'}">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="♪  Lyd" InputGestureText="Ctrl+1" Tag="audio" Click="AddCue_Click" />
-                                    <MenuItem Header="▶  Video" InputGestureText="Ctrl+2" Tag="video" Click="AddCue_Click" />
-                                    <MenuItem Header="▣  Bilde" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
-                                    <MenuItem Header="▤  PDF" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
-                                    <MenuItem Header="◍  Nettside" InputGestureText="Ctrl+Shift+W" Tag="web" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '♪  Lyd'}" InputGestureText="Ctrl+1" Tag="audio" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '▶  Video'}" InputGestureText="Ctrl+2" Tag="video" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '▣  Bilde'}" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '▤  PDF'}" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '◍  Nettside'}" InputGestureText="Ctrl+Shift+W" Tag="web" Click="AddCue_Click" />
                                     <Separator />
-                                    <MenuItem Header="☰  Spilleliste" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
-                                    <MenuItem Header="◉  Live-inngang" InputGestureText="Ctrl+Shift+I" Tag="input" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '☰  Spilleliste'}" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '◉  Live-inngang'}" InputGestureText="Ctrl+Shift+I" Tag="input" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Style="{StaticResource ToolButton}" Content="Styring ▾" Click="Menu_Click" ToolTip="Fade, stopp, gå til og beskjed">
+                        <Button Style="{StaticResource ToolButton}" Content="{local:T 'Styring ▾'}" Click="Menu_Click" ToolTip="{local:T 'Fade, stopp, gå til og beskjed'}">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="◢  Fade (valgt cue)" InputGestureText="Ctrl+5" Tag="fade" Click="AddCue_Click" />
-                                    <MenuItem Header="■  Stopp" InputGestureText="Ctrl+6" Tag="stop" Click="AddCue_Click" />
-                                    <MenuItem Header="↪  Gå til" InputGestureText="Ctrl+0" Tag="goto" Click="AddCue_Click" />
-                                    <MenuItem Header="✎  Beskjed" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '◢  Fade (valgt cue)'}" InputGestureText="Ctrl+5" Tag="fade" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '■  Stopp'}" InputGestureText="Ctrl+6" Tag="stop" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '↪  Gå til'}" InputGestureText="Ctrl+0" Tag="goto" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '✎  Beskjed'}" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Style="{StaticResource ToolButton}" Content="Utstyr ▾" Click="Menu_Click" ToolTip="Styr annet utstyr: lys, miksere, videoservere og andre programmer (OSC, MIDI, nettverk, tidskode, DMX)">
+                        <Button Style="{StaticResource ToolButton}" Content="{local:T 'Utstyr ▾'}" Click="Menu_Click" ToolTip="{local:T 'Styr annet utstyr: lys, miksere, videoservere og andre programmer (OSC, MIDI, nettverk, tidskode, DMX)'}">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="⇢  OSC" InputGestureText="Ctrl+7" Tag="osc" Click="AddCue_Click" />
-                                    <MenuItem Header="♫  MIDI" InputGestureText="Ctrl+8" Tag="midi" Click="AddCue_Click" />
-                                    <MenuItem Header="⇄  Nettverk (UDP/TCP/HTTP)" InputGestureText="Ctrl+Shift+N" Tag="network" Click="AddCue_Click" />
-                                    <MenuItem Header="⏱  Tidskode (MTC/LTC)" InputGestureText="Ctrl+Shift+T" Tag="timecode" Click="AddCue_Click" />
-                                    <MenuItem Header="✺  Lys (DMX/Art-Net)" InputGestureText="Ctrl+Shift+L" Tag="light" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '⇢  OSC'}" InputGestureText="Ctrl+7" Tag="osc" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '♫  MIDI'}" InputGestureText="Ctrl+8" Tag="midi" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '⇄  Nettverk (UDP/TCP/HTTP)'}" InputGestureText="Ctrl+Shift+N" Tag="network" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '⏱  Tidskode (MTC/LTC)'}" InputGestureText="Ctrl+Shift+T" Tag="timecode" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '✺  Lys (DMX/Art-Net)'}" InputGestureText="Ctrl+Shift+L" Tag="light" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Style="{StaticResource ToolButton}" Content="Rediger ▾" Click="Menu_Click">
+                        <Button Style="{StaticResource ToolButton}" Content="{local:T 'Rediger ▾'}" Click="Menu_Click">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Dupliser" InputGestureText="Ctrl+D" Click="Duplicate_Click" />
-                                    <MenuItem Header="Slett" InputGestureText="Delete" Click="Delete_Click" />
-                                    <MenuItem Header="Flytt opp" InputGestureText="Ctrl+↑" Click="MoveUp_Click" />
-                                    <MenuItem Header="Flytt ned" InputGestureText="Ctrl+↓" Click="MoveDown_Click" />
-                                    <MenuItem Header="Nummerer alle (1, 2, 3)" Click="Renumber_Click" />
+                                    <MenuItem Header="{local:T 'Dupliser'}" InputGestureText="Ctrl+D" Click="Duplicate_Click" />
+                                    <MenuItem Header="{local:T 'Slett'}" InputGestureText="Delete" Click="Delete_Click" />
+                                    <MenuItem Header="{local:T 'Flytt opp'}" InputGestureText="Ctrl+↑" Click="MoveUp_Click" />
+                                    <MenuItem Header="{local:T 'Flytt ned'}" InputGestureText="Ctrl+↓" Click="MoveDown_Click" />
+                                    <MenuItem Header="{local:T 'Nummerer alle (1, 2, 3)'}" Click="Renumber_Click" />
                                     <Separator />
-                                    <MenuItem Header="Normaliser lydstyrke for valgte lyd-cuer" Click="NormalizeSelected_Click" />
-                                    <MenuItem Header="Normaliser lydstyrke for alle lyd-cuer" Click="NormalizeAll_Click" />
+                                    <MenuItem Header="{local:T 'Normaliser lydstyrke for valgte lyd-cuer'}" Click="NormalizeSelected_Click" />
+                                    <MenuItem Header="{local:T 'Normaliser lydstyrke for alle lyd-cuer'}" Click="NormalizeAll_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <Button Style="{StaticResource ToolButton}" Content="▦ Knappepanel" Click="ButtonPanel_Click" ToolTip="Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (Ctrl+K)" />
+                    <Button Style="{StaticResource ToolButton}" Content="{local:T '▦ Knappepanel'}" Click="ButtonPanel_Click" ToolTip="{local:T 'Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (Ctrl+K)'}" />
                     <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
-                            ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
-                    <Button Style="{StaticResource ToolButton}" Content="Oppsett ▾" Click="Menu_Click">
+                            ToolTip="{local:T 'Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)'}" />
+                    <Button Style="{StaticResource ToolButton}" Content="{local:T 'Oppsett ▾'}" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Lydpatch" Click="Patch_Click" />
-                                <MenuItem Header="Vis/skjul utgangsvinduet" Click="ToggleOutput_Click" />
-                                <MenuItem Header="Innstillinger" Click="Settings_Click" />
-                                <MenuItem Header="Bytt tema (mørk → lys → natt)" Click="ThemeToggle_Click" />
+                                <MenuItem Header="{local:T 'Lydpatch'}" Click="Patch_Click" />
+                                <MenuItem Header="{local:T 'Vis/skjul utgangsvinduet'}" Click="ToggleOutput_Click" />
+                                <MenuItem Header="{local:T 'Innstillinger'}" Click="Settings_Click" />
+                                <MenuItem Header="{local:T 'Bytt tema (mørk → grå → lys → natt)'}" Click="ThemeToggle_Click" />
                                 <Separator />
-                                <MenuItem Header="Zoom inn" InputGestureText="Ctrl++" Tag="1" Click="Zoom_Click" />
-                                <MenuItem Header="Zoom ut" InputGestureText="Ctrl+−" Tag="-1" Click="Zoom_Click" />
-                                <MenuItem Header="Vanlig størrelse (100 %)" Tag="0" Click="Zoom_Click" />
-                                <MenuItem x:Name="ListScaleMenu" Header="Tekst i cuelista" SubmenuOpened="ListScaleMenu_Opened" />
+                                <MenuItem Header="{local:T 'Zoom inn'}" InputGestureText="Ctrl++" Tag="1" Click="Zoom_Click" />
+                                <MenuItem Header="{local:T 'Zoom ut'}" InputGestureText="Ctrl+−" Tag="-1" Click="Zoom_Click" />
+                                <MenuItem Header="{local:T 'Vanlig størrelse (100 %)'}" Tag="0" Click="Zoom_Click" />
+                                <MenuItem x:Name="ListScaleMenu" Header="{local:T 'Tekst i cuelista'}" SubmenuOpened="ListScaleMenu_Opened" />
                                 <Separator />
-                                <MenuItem Header="Om ShowCue" Click="About_Click" />
+                                <MenuItem Header="{local:T 'Om ShowCue'}" Click="About_Click" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
@@ -747,12 +747,12 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="NR" Binding="{Binding Number}" Width="60">
+                        <DataGridTextColumn Header="{local:T 'NR'}" Binding="{Binding Number}" Width="60">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock"><Setter Property="FontFamily" Value="{StaticResource MonoFont}" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="TYPE" Width="66">
+                        <DataGridTemplateColumn Header="{local:T 'TYPE'}" Width="66">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
@@ -762,7 +762,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="NAVN" Width="2*">
+                        <DataGridTemplateColumn Header="{local:T 'NAVN'}" Width="2*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -773,17 +773,17 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="MÅL / FIL" Binding="{Binding Summary}" Width="2*">
+                        <DataGridTextColumn Header="{local:T 'MÅL / FIL'}" Binding="{Binding Summary}" Width="2*">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Muted}" /><Setter Property="TextTrimming" Value="CharacterEllipsis" /></Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="PRE-WAIT" Binding="{Binding PreWaitText}" Width="76">
+                        <DataGridTextColumn Header="{local:T 'PRE-WAIT'}" Binding="{Binding PreWaitText}" Width="76">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock"><Setter Property="FontFamily" Value="{StaticResource MonoFont}" /><Setter Property="Foreground" Value="{DynamicResource Wait}" /></Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="LENGDE" Binding="{Binding DurationText}" Width="76">
+                        <DataGridTextColumn Header="{local:T 'LENGDE'}" Binding="{Binding DurationText}" Width="76">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock"><Setter Property="FontFamily" Value="{StaticResource MonoFont}" /></Style>
                             </DataGridTextColumn.ElementStyle>
@@ -793,7 +793,7 @@
                                 <Style TargetType="TextBlock"><Setter Property="FontSize" Value="16" /><Setter Property="Foreground" Value="{DynamicResource Playhead}" /></Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="TRIGGER" Binding="{Binding TriggerText}" Width="96">
+                        <DataGridTextColumn Header="{local:T 'TRIGGER'}" Binding="{Binding TriggerText}" Width="96">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock"><Setter Property="FontFamily" Value="{StaticResource MonoFont}" /><Setter Property="Foreground" Value="{DynamicResource Wait}" /></Style>
                             </DataGridTextColumn.ElementStyle>
@@ -804,8 +804,8 @@
                 <!-- Tom liste -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
                             Visibility="{Binding IsEmpty, Converter={StaticResource BoolVis}}">
-                    <TextBlock Text="Dra lyd-, video-, bilde- eller PDF-filer hit" FontSize="18" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="eller bruk «Legg til» i verktøylinja" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                    <TextBlock Text="{local:T 'Dra lyd-, video-, bilde- eller PDF-filer hit'}" FontSize="18" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{local:T 'eller bruk «＋ Media» i verktøylinja'}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                 </StackPanel>
             </Grid>
 
@@ -819,9 +819,9 @@
                         <StackPanel IsEnabled="{Binding IsEditable}">
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                    <Button Content="▶ Test" Click="TestCue_Click" Margin="0,0,4,0" ToolTip="Kjør denne cuen uten å flytte GO-markøren" />
-                                    <Button Content="⤼" Click="ReleaseSelected_Click" Margin="0,0,4,0" ToolTip="Slipp loopen (devamp): spill ferdig og fortsett til slutten" />
-                                    <Button Content="■" Click="StopSelected_Click" ToolTip="Stopp denne cuen" />
+                                    <Button Content="{local:T '▶ Test'}" Click="TestCue_Click" Margin="0,0,4,0" ToolTip="{local:T 'Kjør denne cuen uten å flytte GO-markøren'}" />
+                                    <Button Content="⤼" Click="ReleaseSelected_Click" Margin="0,0,4,0" ToolTip="{local:T 'Slipp loopen (devamp): spill ferdig og fortsett til slutten'}" />
+                                    <Button Content="■" Click="StopSelected_Click" ToolTip="{local:T 'Stopp denne cuen'}" />
                                 </StackPanel>
                                 <TextBlock VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold">
                                     <Run Text="{Binding SelectedCue.TypeIcon, Mode=OneWay}" />
@@ -834,11 +834,11 @@
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="80" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock Style="{StaticResource Label}" Text="Nummer" />
+                                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Nummer'}" />
                                     <TextBox Text="{Binding SelectedCue.Number}" FontFamily="{StaticResource MonoFont}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Label}" Text="Navn" />
+                                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Navn'}" />
                                     <TextBox Text="{Binding SelectedCue.Name}" />
                                 </StackPanel>
                             </Grid>
@@ -846,41 +846,41 @@
                             <ContentControl Content="{Binding SelectedCue}" Focusable="False" />
 
                             <Rectangle Height="1" Fill="{DynamicResource Line}" Margin="0,16,0,4" />
-                            <TextBlock Text="AVSPILLING" Style="{StaticResource SectionHeader}" Margin="0,8,0,0" />
+                            <TextBlock Text="{local:T 'AVSPILLING'}" Style="{StaticResource SectionHeader}" Margin="0,8,0,0" />
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock Style="{StaticResource Label}" Text="Pre-wait (s)" />
+                                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Pre-wait (s)'}" />
                                     <TextBox Text="{Binding SelectedCue.PreWait}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Label}" Text="Hurtigtast" />
+                                    <TextBlock Style="{StaticResource Label}" Text="{local:T 'Hurtigtast'}" />
                                     <TextBox x:Name="HotkeyBox" Text="{Binding SelectedCue.Hotkey, Mode=OneWay}" IsReadOnly="True"
                                              PreviewKeyDown="HotkeyBox_PreviewKeyDown" FontFamily="{StaticResource MonoFont}"
-                                             ToolTip="Klikk her og trykk en tast (F1–F12, A–Z, 0–9). Backspace fjerner." />
+                                             ToolTip="{local:T 'Klikk her og trykk en tast (F1–F12, A–Z, 0–9). Backspace fjerner.'}" />
                                 </StackPanel>
                             </Grid>
-                            <TextBlock Style="{StaticResource Label}" Text="MIDI-trigger" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'MIDI-trigger'}" />
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Content="✕" Margin="4,0,0,0" Click="MidiClear_Click" ToolTip="Fjern MIDI-trigger" />
-                                <Button DockPanel.Dock="Right" Content="Lær" Margin="6,0,0,0" Click="MidiLearn_Click"
-                                        ToolTip="Klikk, og trykk så en tast/knapp på MIDI-kontrolleren" />
+                                <Button DockPanel.Dock="Right" Content="✕" Margin="4,0,0,0" Click="MidiClear_Click" ToolTip="{local:T 'Fjern MIDI-trigger'}" />
+                                <Button DockPanel.Dock="Right" Content="{local:T 'Lær'}" Margin="6,0,0,0" Click="MidiLearn_Click"
+                                        ToolTip="{local:T 'Klikk, og trykk så en tast/knapp på MIDI-kontrolleren'}" />
                                 <TextBox Text="{Binding SelectedCue.MidiTrigger, Mode=OneWay, Converter={StaticResource MidiText}}" IsReadOnly="True"
                                          FontFamily="{StaticResource MonoFont}" />
                             </DockPanel>
                             <TextBlock Style="{StaticResource Hint}" Text="{Binding LearnText}" Foreground="{DynamicResource Wait}"
                                        Visibility="{Binding LearnText, Converter={StaticResource NonEmptyVis}}" />
-                            <TextBlock Style="{StaticResource Label}" Text="Tidskode-trigger (MTC inn, tt:mm:ss:ff)" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Tidskode-trigger (MTC inn, tt:mm:ss:ff)'}" />
                             <TextBox Text="{Binding SelectedCue.TimecodeTrigger, Mode=OneWay}" LostFocus="TimecodeTrigger_LostFocus"
                                      FontFamily="{StaticResource MonoFont}"
-                                     ToolTip="Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen." />
-                            <TextBlock Style="{StaticResource Label}" Text="Etterpå" />
+                                     ToolTip="{local:T 'Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen.'}" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Etterpå'}" />
                             <ComboBox ItemsSource="{x:Static local:EnumValues.ContinueModes}" SelectedItem="{Binding SelectedCue.ContinueMode}"
                                       ItemTemplate="{StaticResource EnumItem}" />
-                            <CheckBox IsChecked="{Binding SelectedCue.Disabled}" Content="Deaktivert (hoppes over av GO)" />
-                            <CheckBox IsChecked="{Binding SelectedCue.InButtonPanel}" Content="Vis i knappepanelet"
-                                      ToolTip="Cuer med hurtigtast vises der uansett" />
-                            <TextBlock Style="{StaticResource Label}" Text="Farge" />
+                            <CheckBox IsChecked="{Binding SelectedCue.Disabled}" Content="{local:T 'Deaktivert (hoppes over av GO)'}" />
+                            <CheckBox IsChecked="{Binding SelectedCue.InButtonPanel}" Content="{local:T 'Vis i knappepanelet'}"
+                                      ToolTip="{local:T 'Cuer med hurtigtast vises der uansett'}" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Farge'}" />
                             <ItemsControl ItemsSource="{x:Static local:EnumValues.CueColors}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
@@ -898,11 +898,11 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Style="{StaticResource Label}" Text="Notater (vises ved NESTE CUE)" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Notater (vises ved NESTE CUE)'}" />
                             <TextBox Text="{Binding SelectedCue.Notes}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
                         </StackPanel>
                     </ScrollViewer>
-                    <TextBlock Text="Ingen cue valgt" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    <TextBlock Text="{local:T 'Ingen cue valgt'}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="{Binding NoSelection, Converter={StaticResource BoolVis}}" />
                 </Grid>
             </Border>
@@ -922,12 +922,12 @@
 
             <Border Background="{DynamicResource Panel}" Padding="12,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="AKTIVE CUES" Style="{StaticResource SectionHeader}" />
+                    <TextBlock DockPanel.Dock="Top" Text="{local:T 'AKTIVE CUER'}" Style="{StaticResource SectionHeader}" />
                     <Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding Engine.Active}" ItemTemplate="{StaticResource ActiveTemplate}" />
                         </ScrollViewer>
-                        <TextBlock Text="Ingenting spiller" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <TextBlock Text="{local:T 'Ingenting spiller'}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Visibility="{Binding NothingActive, Converter={StaticResource BoolVis}}" />
                     </Grid>
                 </DockPanel>
@@ -935,7 +935,7 @@
 
             <Border Grid.Column="2" Background="{DynamicResource Panel}" Padding="12,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="HURTIGTASTER" Style="{StaticResource SectionHeader}" />
+                    <TextBlock DockPanel.Dock="Top" Text="{local:T 'HURTIGTASTER'}" Style="{StaticResource SectionHeader}" />
                     <Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding HotkeyCues}">
@@ -968,14 +968,14 @@
                         </ScrollViewer>
                         <TextBlock Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
                                    Visibility="{Binding NoHotkeys, Converter={StaticResource BoolVis}}"
-                                   Text="Gi en cue en hurtigtast i panelet til høyre, så dukker den opp her. Hurtigtaster starter cuen uten å flytte GO-markøren." />
+                                   Text="{local:T 'Gi en cue en hurtigtast i panelet til høyre, så dukker den opp her. Hurtigtaster starter cuen uten å flytte GO-markøren.'}" />
                     </Grid>
                 </DockPanel>
             </Border>
 
             <Border Grid.Column="4" Background="{DynamicResource Panel}" Padding="12,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="UTGANG" Style="{StaticResource SectionHeader}" />
+                    <TextBlock DockPanel.Dock="Top" Text="{local:T 'UTGANG'}" Style="{StaticResource SectionHeader}" />
                     <Border Width="300" Height="169" Background="Black" CornerRadius="3" VerticalAlignment="Top">
                         <Rectangle x:Name="PreviewRect" />
                     </Border>
@@ -987,7 +987,7 @@
         <Border Grid.Row="5" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="12,4">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Right" Text="{Binding RemoteStatus}" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="16,0,0,0"
-                           ToolTip="Mellomrom = GO · Esc = stopp alt · ↑↓ = flytt markør · dra filer inn i lista" />
+                           ToolTip="{local:T 'Mellomrom = GO · Esc = stopp alt · ↑↓ = flytt markør · dra filer inn i lista'}" />
                 <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource Muted}" FontSize="11.5" TextTrimming="CharacterEllipsis" />
             </DockPanel>
         </Border>

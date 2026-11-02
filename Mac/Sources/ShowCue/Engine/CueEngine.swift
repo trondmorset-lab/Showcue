@@ -116,7 +116,7 @@ final class CueEngine: ObservableObject {
             try a.begin()
         } catch {
             a.cue.error = error.localizedDescription
-            onLog?("Cue \(a.cue.number): \(error.localizedDescription)")
+            onLog?(L("Cue {0}: {1}", a.cue.number, error.localizedDescription))
             if !a.done { a.stop(fade: 0) }
             if !a.done { forceRemove(a) }
         }

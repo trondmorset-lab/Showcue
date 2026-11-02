@@ -1,5 +1,6 @@
 using System.IO;
 using NAudio.Wave;
+using ShowCue.Models;
 
 namespace ShowCue.Engine;
 
@@ -43,7 +44,7 @@ public static class VideoAudio
         wavPath ??= UniquePath(Path.ChangeExtension(videoPath, null) + " (lyd).wav");
         return Task.Run(() =>
         {
-            using var reader = Open(videoPath) ?? throw new InvalidOperationException("Videoen har ikke noe lydspor.");
+            using var reader = Open(videoPath) ?? throw new InvalidOperationException(Loc.T("Videoen har ikke noe lydspor."));
             var tmp = wavPath + ".part";
             try
             {

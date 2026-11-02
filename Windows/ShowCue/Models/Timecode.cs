@@ -16,10 +16,10 @@ public readonly record struct Timecode(int Hours, int Minutes, int Seconds, int 
 
     public static string Label(TimecodeRate r) => r switch
     {
-        TimecodeRate.Fps24 => "24 fps (film)",
-        TimecodeRate.Fps25 => "25 fps (PAL/Europa)",
-        TimecodeRate.Fps2997Drop => "29,97 fps drop frame (NTSC)",
-        _ => "30 fps",
+        TimecodeRate.Fps24 => Loc.T("24 fps (film)"),
+        TimecodeRate.Fps25 => Loc.T("25 fps (PAL/Europa)"),
+        TimecodeRate.Fps2997Drop => Loc.T("29,97 fps drop frame (NTSC)"),
+        _ => Loc.T("30 fps"),
     };
 
     /// <summary>Bildenummer fra 00:00:00:00 (tar hensyn til drop frame).</summary>

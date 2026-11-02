@@ -64,7 +64,7 @@ public static class NetworkSender
                 default:
                 {
                     if (!Uri.TryCreate(cue.Url, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
-                        return "Ugyldig adresse (må starte med http:// eller https://)";
+                        return Loc.T("Ugyldig adresse (må starte med http:// eller https://)");
                     using var req = new HttpRequestMessage(new HttpMethod(cue.Method), uri);
                     if (cue.Message.Length > 0)
                     {
@@ -78,7 +78,7 @@ public static class NetworkSender
                 }
             }
         }
-        catch (OperationCanceledException) { return "Tidsavbrudd – fikk ikke kontakt"; }
+        catch (OperationCanceledException) { return Loc.T("Tidsavbrudd – fikk ikke kontakt"); }
         catch (Exception ex) { return ex.Message; }
     }
 }

@@ -41,7 +41,7 @@ public sealed class MidiInput : IDisposable
         Channel = channel;
         if (string.IsNullOrEmpty(deviceName)) return;
         int idx = GetDevices().IndexOf(deviceName);
-        if (idx < 0) throw new InvalidOperationException($"MIDI-inngangen «{deviceName}» finnes ikke.");
+        if (idx < 0) throw new InvalidOperationException(Loc.F("MIDI-inngangen «{0}» finnes ikke.", deviceName));
         var mi = new MidiIn(idx);
         mi.MessageReceived += OnMessage;
         mi.SysexMessageReceived += OnSysex;

@@ -36,7 +36,7 @@ public abstract class ActiveCue : ObservableObject
 
     public string ElapsedText => !Started ? "-" + TimeFormat.Format(Math.Max(0, StartAt - Engine.Now)) : TimeFormat.Format(Elapsed);
     public string RemainingText => Started && Duration > 0 ? "-" + TimeFormat.Format(Math.Max(0, Duration - Elapsed)) : (Started ? "∞" : "");
-    public string StateText => !Started ? "Pre-wait" : IsStopping ? "Fader ut" : "Spiller";
+    public string StateText => !Started ? Loc.T("Pre-wait") : IsStopping ? Loc.T("Fader ut") : Loc.T("Spiller");
 
     private void RaiseTime()
     {
@@ -165,7 +165,7 @@ public sealed class AudioActive : PlaybackActive
 
     protected override CuePlayback Start()
     {
-        if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException("Lydfila finnes ikke: " + AudioCue.FilePath);
+        if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException(Loc.T("Lydfila finnes ikke: ") + AudioCue.FilePath);
         var pb = Engine.Audio.Play(AudioCue, StartOffset);
         Duration = AudioCue.Loop ? 0 : pb.PassLength;
         if (AudioCue.FileDuration <= 0 && pb.PassLength > 0 && AudioCue.EndTime <= 0)
@@ -203,8 +203,8 @@ public abstract class VisualActive : ActiveCue
 
     protected override void OnBegin()
     {
-        if (VCue is WebCue w) { if (w.ValidUri == null) throw new InvalidOperationException("Ugyldig adresse: " + w.Url); }
-        else if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException("Fila finnes ikke: " + VCue.FilePath);
+        if (VCue is WebCue w) { if (w.ValidUri == null) throw new InvalidOperationException(Loc.T("Ugyldig adresse: ") + w.Url); }
+        else if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException(Loc.T("Fila finnes ikke: ") + VCue.FilePath);
         var host = Engine.EnsureOutput();
 
         if (VCue.ReplaceOthers)
@@ -332,8 +332,8 @@ public sealed class StillActive : VisualActive
         };
         web.CoreWebView2InitializationCompleted += (_, e) =>
         {
-            if (!e.IsSuccess) { Cue.Error = "Nettside: " + (e.InitializationException?.Message ?? "WebView2 mangler") + " (installer Microsoft Edge WebView2 Runtime)"; return; }
-            web.CoreWebView2.NavigationCompleted += (_, n) => { if (!n.IsSuccess) Cue.Error = $"Nettside: kunne ikke åpne ({n.WebErrorStatus})"; };
+            if (!e.IsSuccess) { Cue.Error = Loc.T("Nettside: ") + (e.InitializationException?.Message ?? Loc.T("WebView2 mangler")) + Loc.T(" (installer Microsoft Edge WebView2 Runtime)"); return; }
+            web.CoreWebView2.NavigationCompleted += (_, n) => { if (!n.IsSuccess) Cue.Error = Loc.F("Nettside: kunne ikke åpne ({0})", n.WebErrorStatus); };
         };
         web.Source = uri;
         return web;
@@ -353,7 +353,7 @@ public sealed class StillActive : VisualActive
         }
         catch (Exception ex)
         {
-            Cue.Error = "PDF: " + ex.Message;
+            Cue.Error = Loc.T("PDF: ") + ex.Message;
             Stop(0);
         }
     }
@@ -415,7 +415,7 @@ public sealed class VideoActive : VisualActive
         _media.MediaEnded += (_, _) => ReachedEnd();
         _media.MediaFailed += (_, e) =>
         {
-            Cue.Error = "Video: " + e.ErrorException?.Message;
+            Cue.Error = Loc.T("Video: ") + e.ErrorException?.Message;
             Finish();
         };
         _media.Source = new Uri(VidCue.FilePath);
@@ -580,7 +580,7 @@ public sealed class FadeActive : TimedActive
     protected override void Act()
     {
         var targets = Engine.FindActive(F.Target).ToList();
-        if (targets.Count == 0) Cue.Error = string.IsNullOrEmpty(F.Target) ? "Mangler mål-cue" : $"Cue {F.Target} kjører ikke";
+        if (targets.Count == 0) Cue.Error = string.IsNullOrEmpty(F.Target) ? Loc.T("Mangler mål-cue") : Loc.F("Cue {0} kjører ikke", F.Target);
         foreach (var t in targets) t.ApplyFade(F);
     }
 }
@@ -599,7 +599,7 @@ public sealed class StopActive : TimedActive
             : Engine.FindActive(S.Target).ToList();
         if (!S.Release) { foreach (var t in targets) t.Stop(S.FadeTime); return; }
         if (!targets.Select(t => t.Release()).ToList().Any(released => released))
-            Cue.Error = string.IsNullOrEmpty(S.Target) ? "Ingen cue looper" : $"Cue {S.Target} looper ikke";
+            Cue.Error = string.IsNullOrEmpty(S.Target) ? Loc.T("Ingen cue looper") : Loc.F("Cue {0} looper ikke", S.Target);
     }
 }
 
@@ -627,7 +627,7 @@ public sealed class PlaylistActive : ActiveCue
     protected override void OnBegin()
     {
         _order = NewOrder();
-        if (_order.Count == 0) throw new FileNotFoundException("Spillelista har ingen filer som finnes.");
+        if (_order.Count == 0) throw new FileNotFoundException(Loc.T("Spillelista har ingen filer som finnes."));
         _begin = Engine.Now;
         P.PropertyChanged += OnCueChanged;
         StartNext(0);
@@ -643,7 +643,7 @@ public sealed class PlaylistActive : ActiveCue
             _index = 0;
             if (_order.Count == 0) { _current = null; return false; }
         }
-        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
         var o = new CuePlayback.Options(P.VolumeDb, StartOffset > 0 && _index == 0 ? StartOffset : 0, 0, false, fadeIn, 0);
         var pb = new CuePlayback(P, new NAudio.Wave.AudioFileReader(_order[_index]), P, o, mixer.WaveFormat.SampleRate);
         pb.Finished += done => Application.Current.Dispatcher.BeginInvoke(() => { _playing.Remove(done); done.Dispose(); });
@@ -747,7 +747,7 @@ public sealed class InstantActive : ActiveCue
     private static async void SendNetwork(NetworkCue n)
     {
         var error = await NetworkSender.SendAsync(n);
-        if (error != null) n.Error = "Nettverk: " + error;
+        if (error != null) n.Error = Loc.T("Nettverk: ") + error;
     }
 }
 
@@ -764,11 +764,11 @@ public sealed class TimecodeActive : ActiveCue
 
     protected override void OnBegin()
     {
-        if (!T.SendMtc && !T.SendLtc) throw new InvalidOperationException("Velg MTC og/eller LTC");
+        if (!T.SendMtc && !T.SendLtc) throw new InvalidOperationException(Loc.T("Velg MTC og/eller LTC"));
         var start = Timecode.FromSeconds(T.StartTimecode.ToSeconds(T.Rate) + StartOffset, T.Rate);
         if (T.SendLtc)
         {
-            var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+            var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
             _ltc = new LtcSource(T.LtcBus - 1, T.LtcLevelDb, start, T.Rate, mixer.WaveFormat.SampleRate);
             mixer.Add(_ltc);
         }
@@ -810,8 +810,8 @@ public sealed class LightActive : TimedActive
 
     protected override void Act()
     {
-        if (!DmxLevels.TryParse(L.Levels, out var levels, out var error)) throw new FormatException("Nivåer: " + error);
-        if (string.IsNullOrWhiteSpace(L.Host)) throw new InvalidOperationException("Mangler IP-adresse for Art-Net");
+        if (!DmxLevels.TryParse(L.Levels, out var levels, out var error)) throw new FormatException(Loc.T("Nivåer: ") + error);
+        if (string.IsNullOrWhiteSpace(L.Host)) throw new InvalidOperationException(Loc.T("Mangler IP-adresse for Art-Net"));
         Engine.Dmx.FadeTo(L.Host, L.Universe, levels, L.FadeTime);
     }
 }
@@ -826,11 +826,11 @@ public sealed class InputActive : PlaybackActive
 
     protected override CuePlayback Start()
     {
-        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+        var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
         int rate = mixer.WaveFormat.SampleRate;
         LiveRing ring;
         try { ring = Engine.Input.Open(Engine.Settings.InputDeviceId, rate); }
-        catch (Exception ex) { throw new InvalidOperationException("Kunne ikke åpne inngangen: " + ex.Message); }
+        catch (Exception ex) { throw new InvalidOperationException(Loc.T("Kunne ikke åpne inngangen: ") + ex.Message); }
         var stream = new LiveInputStream(ring, rate, Engine.Input.Close);
         var pb = new CuePlayback(I, stream, I, new CuePlayback.Options(I.VolumeDb, 0, 0, false, I.FadeIn, I.FadeOut), rate);
         mixer.Add(pb);
