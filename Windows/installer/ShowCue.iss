@@ -33,6 +33,7 @@ WizardStyle=modern
 ChangesAssociations=yes
 CloseApplications=yes
 UninstallDisplayIcon={app}\ShowCue.exe
+SetupIconFile=..\ShowCue\Assets\ShowCue.ico
 UninstallDisplayName=ShowCue {#AppVersion}
 LicenseFile=..\..\LICENSE
 

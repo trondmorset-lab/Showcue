@@ -16,6 +16,7 @@
     <Copyright>Copyright (C) 2026 Trond Morset. GNU GPL v3.</Copyright>
     <Description>Cue-basert avspillingsprogram for lyd, video, bilder, PDF, OSC og MIDI</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ShowCue.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,11 @@
     <!-- Lisensene følger med i selve programmet (vises under «Om ShowCue»). -->
     <EmbeddedResource Include="../../THIRD-PARTY-NOTICES.txt" LogicalName="ThirdPartyNotices.txt" />
     <EmbeddedResource Include="../../LICENSE" LogicalName="License.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\ShowCue.ico" />
+    <Resource Include="Assets\logo-256.png" />
   </ItemGroup>
 
 </Project>

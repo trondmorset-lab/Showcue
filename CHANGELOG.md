@@ -4,6 +4,11 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.11.1 – 2026-11-02
+
+### Nytt
+- **Ny logo** (selburose med GO-symbol): programikon på Windows og Mac, i installasjonsprogrammet og under «Om ShowCue».
+
 ## 0.11.0 – 2026-11-02
 
 ### Nytt

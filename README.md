@@ -1,3 +1,5 @@
+<img src="assets/showcue-logo.svg" width="128" alt="ShowCue">
+
 # ShowCue
 
 Showavvikling for Windows og Mac.
