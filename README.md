@@ -66,4 +66,7 @@ ShowCue er fri programvare: du kan distribuere og endre den under vilkårene i G
 versjon 3 (GPL-3.0), slik den er utgitt av Free Software Foundation. Se `LICENSE` for hele teksten.
 Programmet leveres uten noen form for garanti.
 
-ShowCue for Windows bruker [NAudio](https://github.com/naudio/NAudio) (MIT-lisens).
+Komponenter fra andre og lisensene deres står i `THIRD-PARTY-NOTICES.txt`: [NAudio](https://github.com/naudio/NAudio)
+og .NET-kjøretiden (begge MIT-lisens, i Windows-versjonen), og merknaden for Art-Net™. Fila følger med i
+installasjonsprogrammet, i Mac-appen og i hver utgivelse, og vises under *Om ShowCue* i programmet.
+Lyd- og videokodeker leveres av operativsystemet; ShowCue har ingen egne.

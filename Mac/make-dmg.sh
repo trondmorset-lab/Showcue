@@ -14,6 +14,7 @@ mkdir -p "$STAGE"
 ditto "$APP" "$STAGE/ShowCue.app"
 ln -s /Applications "$STAGE/Programmer"
 cp ../LICENSE "$STAGE/LICENSE.txt"
+cp ../THIRD-PARTY-NOTICES.txt "$STAGE/THIRD-PARTY-NOTICES.txt"
 cat > "$STAGE/Les meg.txt" <<EOF
 ShowCue $VERSION for Mac
 

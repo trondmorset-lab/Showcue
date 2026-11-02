@@ -889,6 +889,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void CloseMemo_Click(object sender, RoutedEventArgs e) => MemoText = "";
 
+    private void About_Click(object sender, RoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+
     private void TimecodeTrigger_LostFocus(object sender, RoutedEventArgs e)
     {
         var box = (TextBox)sender;

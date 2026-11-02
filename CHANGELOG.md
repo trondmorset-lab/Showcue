@@ -4,6 +4,14 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.10.1 – 2026-11-02
+
+### Nytt
+- **Om ShowCue** (knappen «Om» på Windows, ShowCue-menyen på Mac): versjon, opphavsrett, at programmet leveres uten
+  garanti, og lisensene.
+- `THIRD-PARTY-NOTICES.txt` med lisensene for komponenter fra andre (NAudio, .NET) og merknaden for Art-Net.
+  Følger med i installasjonsprogrammet, i Mac-appen og diskbildet, og i hver utgivelse.
+
 ## 0.10.0 – 2026-11-02
 
 ### Nytt

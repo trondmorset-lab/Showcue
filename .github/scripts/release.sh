@@ -19,6 +19,7 @@ NOTES=$(awk -v v="$VERSION" '
 
 FILES_TEXT="Windows: ShowCue-Setup.exe (installasjonsprogram) eller ShowCue.exe (kjøres uten installering).
 Mac: ShowCue-Mac.dmg (dra appen til Programmer) eller ShowCue-Mac.zip.
+Lisenser for ShowCue og komponentene som følger med: THIRD-PARTY-NOTICES.txt.
 
 Filene er bygget og testet av GitHub Actions. Opprinnelsen kan kontrolleres med
 \`gh attestation verify <fil> -R $GITHUB_REPOSITORY\`."

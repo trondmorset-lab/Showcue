@@ -18,6 +18,8 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/ShowCue" "$APP/Contents/MacOS/ShowCue"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp ../LICENSE "$APP/Contents/Resources/LICENSE.txt"
+cp ../THIRD-PARTY-NOTICES.txt "$APP/Contents/Resources/THIRD-PARTY-NOTICES.txt"
 # Versjon fra VERSION i roten av repoet (felles for Windows og Mac).
 VERSION=$(tr -d '[:space:]' < ../VERSION)
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
