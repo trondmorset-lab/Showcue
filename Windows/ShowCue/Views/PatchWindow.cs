@@ -45,6 +45,7 @@ public sealed class PatchWindow : Window
         SetResourceReference(BackgroundProperty, "Panel");
         SetResourceReference(ForegroundProperty, "Text");
         ThemeManager.Register(this);
+        Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/ShowCue.ico"));
         FontFamily = (FontFamily)Application.Current.FindResource("UiFont");
         ShowInTaskbar = false;
 

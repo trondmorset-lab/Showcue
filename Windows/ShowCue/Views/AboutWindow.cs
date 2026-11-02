@@ -31,7 +31,13 @@ public sealed class AboutWindow : Window
         SetResourceReference(ForegroundProperty, "Text");
         ThemeManager.Register(this);
 
+        Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/ShowCue.ico"));
         var head = new StackPanel { Margin = new Thickness(18, 16, 18, 8) };
+        head.Children.Add(new Image
+        {
+            Source = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/logo-256.png")),
+            Width = 96, Height = 96, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 10),
+        });
         head.Children.Add(new TextBlock { Text = "ShowCue " + MainWindow.AppVersion, FontSize = 22, FontWeight = FontWeights.SemiBold });
         head.Children.Add(new TextBlock { Text = "Showavvikling for lyd, video, bilde, lys og tidskode.", Margin = new Thickness(0, 2, 0, 10) });
         head.Children.Add(new TextBlock { Text = Copyright });
