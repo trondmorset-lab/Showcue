@@ -117,6 +117,7 @@ final class LoudnessMeter {
 
     /// Nivået (dB) som gir målet, begrenset til cuens område −60…+12 dB.
     static func gain(for measured: Double, target: Double) -> Double {
-        (min(12, max(-60, target - measured)) * 10).rounded() / 10
+        guard measured.isFinite, target.isFinite else { return 0 }
+        return (min(12, max(-60, target - measured)) * 10).rounded() / 10
     }
 }

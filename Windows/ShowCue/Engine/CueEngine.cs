@@ -204,7 +204,7 @@ public sealed class CueEngine : IDisposable
         if (IsPaused) return;
         IsPaused = true;
         _clock.Stop();
-        foreach (var a in Active.Where(a => a.Started && !a.Done)) a.Pause();
+        foreach (var a in Active.Where(a => a.Started && !a.Done).ToList()) a.Pause();
         PauseChanged?.Invoke();
     }
 
@@ -213,7 +213,7 @@ public sealed class CueEngine : IDisposable
         if (!IsPaused) return;
         IsPaused = false;
         _clock.Start();
-        foreach (var a in Active.Where(a => a.Started && !a.Done)) a.Resume();
+        foreach (var a in Active.Where(a => a.Started && !a.Done).ToList()) a.Resume();
         PauseChanged?.Invoke();
     }
 

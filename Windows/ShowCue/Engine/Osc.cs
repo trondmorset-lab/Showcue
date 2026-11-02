@@ -90,6 +90,7 @@ public static class Osc
 
     private static void DecodeInto(byte[] d, int start, int length, List<OscMessage> result, int depth)
     {
+        length = Math.Min(length, d.Length - start); // aldri les utenfor bufferen, uansett hva pakken påstår
         if (length < 4 || depth > 8) return;
         int end = start + length;
         if (d[start] == (byte)'#')
@@ -124,7 +125,7 @@ public static class Osc
                     case 'h': args.Add(((long)ReadInt(d, ref pos) << 32) | (uint)ReadInt(d, ref pos)); break;
                     case 'd': args.Add(BitConverter.Int64BitsToDouble(((long)ReadInt(d, ref pos) << 32) | (uint)ReadInt(d, ref pos))); break;
                     case 's': case 'S': args.Add(ReadString(d, ref pos, end)); break;
-                    case 'b': { int n = ReadInt(d, ref pos); pos += (n + 3) & ~3; args.Add(Array.Empty<byte>()); break; }
+                    case 'b': { int n = ReadInt(d, ref pos); pos += n >= 0 ? (n + 3) & ~3 : end + 1; args.Add(Array.Empty<byte>()); break; }
                     case 'T': args.Add(true); break;
                     case 'F': args.Add(false); break;
                     case 'N': case 'I': break;
@@ -150,6 +151,7 @@ public static class Osc
     private static string ReadString(byte[] d, ref int p, int end)
     {
         int s = p;
+        if (s >= end) { p = end + 4; return ""; } // strengen mangler: markér at vi er forbi slutten
         while (p < end && d[p] != 0) p++;
         var str = Encoding.UTF8.GetString(d, s, p - s);
         p = s + ((p - s) / 4 + 1) * 4; // hopp over null og padding

@@ -238,11 +238,13 @@ final class StreamingSource: PcmSource {
     init(decoder: FrameDecoder, sampleRate: Double, startTime: Double, endTime: Double, loop: Bool, bufferSeconds: Double = 2) {
         self.decoder = decoder
         self.sampleRate = sampleRate
-        let total = decoder.duration
+        let total = safeSeconds(decoder.duration)
+        let startTime = safeSeconds(startTime), endTime = safeSeconds(endTime)
         self.startTime = total > 0 ? min(startTime, max(0, total - 0.01)) : startTime
         let end = endTime > 0 ? (total > 0 ? min(endTime, total) : endTime) : total
-        _passLength = end > self.startTime ? Int((end - self.startTime) * sampleRate) : nil
-        self.loop = loop && _passLength != nil
+        _passLength = end > self.startTime ? frameCount(end - self.startTime, sampleRate) : nil
+        // En loop må være minst 10 ms, ellers ville dekodertråden bare spole tilbake hele tiden.
+        self.loop = loop && (_passLength ?? 0) >= Int(sampleRate / 100)
         ring = SampleRing(channels: decoder.channels, capacityFrames: Int(bufferSeconds * sampleRate))
         scratch = .allocate(capacity: StreamingSource.chunk * max(1, decoder.channels))
         if self.startTime > 0 { decoder.seek(to: self.startTime) }
@@ -268,7 +270,7 @@ final class StreamingSource: PcmSource {
                 decodedInPass = pl
             }
             let total = decoder.duration
-            let toFileEnd = total > startTime ? Int((total - startTime) * sampleRate) : pl
+            let toFileEnd = total > startTime ? frameCount(total - startTime, sampleRate) : pl
             stateLock.locked { _passLength = max(pl, toFileEnd) }
             doneDecoding = false
         }
@@ -287,16 +289,21 @@ final class StreamingSource: PcmSource {
         }
         if doneDecoding { return false }
         var produced = 0
+        var producedAtRewind = -1 // to tilbakespolinger uten lyd imellom = fila gir ikke mer lyd; stopp i stedet for å henge
         while ring.freeFrames >= StreamingSource.chunk && produced < minimumFrames {
             var want = StreamingSource.chunk
             if let pl = stateLock.locked({ _passLength }) { want = min(want, pl - decodedInPass) }
             if want <= 0 {
-                if loop { decoder.seek(to: startTime); decodedInPass = 0; ring.markPassStart(); continue }
+                if loop && producedAtRewind != produced {
+                    producedAtRewind = produced; decoder.seek(to: startTime); decodedInPass = 0; ring.markPassStart(); continue
+                }
                 doneDecoding = true; ring.setEnded(); return false
             }
             let n = decoder.read(into: scratch, maxFrames: want)
             if n == 0 {
-                if loop && decodedInPass > 0 { decoder.seek(to: startTime); decodedInPass = 0; ring.markPassStart(); continue }
+                if loop && decodedInPass > 0 && producedAtRewind != produced {
+                    producedAtRewind = produced; decoder.seek(to: startTime); decodedInPass = 0; ring.markPassStart(); continue
+                }
                 doneDecoding = true; ring.setEnded(); return false
             }
             ring.write(scratch, frames: n)

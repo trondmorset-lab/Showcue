@@ -24,7 +24,9 @@ public static class ShowSafety
         if (string.IsNullOrEmpty(showPath)) return Path.Combine(dir, "Uten navn.showcue");
         var full = Path.GetFullPath(showPath);
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(full.ToLowerInvariant())))[..8];
-        return Path.Combine(dir, $"{Path.GetFileNameWithoutExtension(full)} {hash}.showcue");
+        var name = Path.GetFileNameWithoutExtension(full);
+        if (name.Length > 80) name = name[..80]; // svært lange filnavn skal ikke stoppe autolagringen
+        return Path.Combine(dir, $"{name} {hash}.showcue");
     }
 
     public static void WriteAutosave(string? showPath, string json, string? root = null)
@@ -59,6 +61,7 @@ public static class ShowSafety
         var dir = BackupDir(root);
         Directory.CreateDirectory(dir);
         var name = Path.GetFileNameWithoutExtension(showPath);
+        if (name.Length > 80) name = name[..80];
         var target = Path.Combine(dir, $"{name} {(now ?? DateTime.Now):yyyy-MM-dd HH.mm.ss}.showcue");
         File.Copy(showPath, target, overwrite: true);
 

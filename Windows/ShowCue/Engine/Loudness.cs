@@ -96,7 +96,8 @@ public sealed class LoudnessMeter
     }
 
     /// <summary>Nivået (dB) som gir målet, begrenset til cuens område −60…+12 dB.</summary>
-    public static double GainFor(double measured, double target) => Math.Round(Math.Clamp(target - measured, -60, 12), 1);
+    public static double GainFor(double measured, double target) =>
+        double.IsFinite(measured) && double.IsFinite(target) ? Math.Round(Math.Clamp(target - measured, -60, 12), 1) : 0;
 
     private struct Biquad
     {

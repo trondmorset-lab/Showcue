@@ -121,6 +121,13 @@ struct AudioRoute: Codable, Hashable {
 
     enum CodingKeys: String, CodingKey { case source = "Source", bus = "Bus", gainDb = "GainDb" }
 
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(source, forKey: .source)
+        try c.encode(bus, forKey: .bus)
+        try c.encode(gainDb.isFinite ? gainDb : 0, forKey: .gainDb)
+    }
+
     /// Mono → utgang 1 og 2, ellers kanal n → utgang n.
     static func defaults(fileChannels: Int) -> [AudioRoute] {
         if fileChannels <= 1 { return [AudioRoute(1, 1), AudioRoute(1, 2)] }
@@ -169,7 +176,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var loop = false
     @Published var fadeIn: Double = 0
     @Published var fadeOut: Double = 0
-    @Published var fileDuration: Double = 0
+    @Published var fileDuration: Double = 0 { didSet { if !(fileDuration >= 0 && fileDuration.isFinite) { fileDuration = 0 } } }
     /// Kanaler i lydfila / lydsporet. For video: 0 = ingen lyd, -1 = ikke undersøkt.
     @Published var fileChannels = 0
     /// nil = standard routing, tom = alt av.
@@ -180,7 +187,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // Visuelt
     @Published var replaceOthers = true
     @Published var stretch: VisualStretch = .uniform
-    @Published var knownDuration: Double = 0
+    @Published var knownDuration: Double = 0 { didSet { if !(knownDuration >= 0 && knownDuration.isFinite) { knownDuration = 0 } } }
     @Published var holdTime: Double = 0
     @Published var page = 1
 
@@ -491,6 +498,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
     static func fmt(_ v: Double) -> String { numberFormatter.string(from: NSNumber(value: v)) ?? "\(v)" }
     static func signedDb(_ v: Double) -> String { (v > 0 ? "+" : "") + fmt(v) }
 
+    /// JSON tåler ikke NaN eller uendelig: slike verdier lagres som 0 (ellers kunne showet ikke lagres).
+    static func finite(_ v: Double) -> Double { v.isFinite ? v : 0 }
+
     func clone() -> Cue {
         let data = try! JSONEncoder().encode(self)
         return try! JSONDecoder().decode(Cue.self, from: data)
@@ -561,7 +571,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(number, forKey: .Number)
         try c.encode(name, forKey: .Name)
         try c.encode(notes, forKey: .Notes)
-        try c.encode(preWait, forKey: .PreWait)
+        try c.encode(Cue.finite(preWait), forKey: .PreWait)
         try c.encode(continueMode, forKey: .ContinueMode)
         try c.encode(hotkey, forKey: .Hotkey)
         try c.encode(disabled, forKey: .Disabled)
@@ -572,46 +582,46 @@ final class Cue: ObservableObject, Identifiable, Codable {
         switch type {
         case .audio:
             try c.encode(filePath, forKey: .FilePath)
-            try c.encode(volumeDb, forKey: .VolumeDb)
-            try c.encode(startTime, forKey: .StartTime)
-            try c.encode(endTime, forKey: .EndTime)
+            try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
+            try c.encode(Cue.finite(startTime), forKey: .StartTime)
+            try c.encode(Cue.finite(endTime), forKey: .EndTime)
             try c.encode(loop, forKey: .Loop)
-            try c.encode(fadeIn, forKey: .FadeIn)
-            try c.encode(fadeOut, forKey: .FadeOut)
-            try c.encode(fileDuration, forKey: .FileDuration)
+            try c.encode(Cue.finite(fadeIn), forKey: .FadeIn)
+            try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
+            try c.encode(Cue.finite(fileDuration), forKey: .FileDuration)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
-            try c.encode(loudness, forKey: .Loudness)
+            try c.encode(loudness.flatMap { $0.isFinite ? $0 : nil }, forKey: .Loudness)
         case .video, .image, .pdf:
             try c.encode(filePath, forKey: .FilePath)
-            try c.encode(fadeIn, forKey: .FadeIn)
-            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(Cue.finite(fadeIn), forKey: .FadeIn)
+            try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
             try c.encode(replaceOthers, forKey: .ReplaceOthers)
             try c.encode(stretch, forKey: .Stretch)
             if type == .video {
-                try c.encode(volumeDb, forKey: .VolumeDb)
-                try c.encode(startTime, forKey: .StartTime)
-                try c.encode(endTime, forKey: .EndTime)
+                try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
+                try c.encode(Cue.finite(startTime), forKey: .StartTime)
+                try c.encode(Cue.finite(endTime), forKey: .EndTime)
                 try c.encode(loop, forKey: .Loop)
-                try c.encode(knownDuration, forKey: .KnownDuration)
+                try c.encode(Cue.finite(knownDuration), forKey: .KnownDuration)
                 try c.encode(fileChannels, forKey: .FileChannels)
                 try c.encode(routes, forKey: .Routes)
             } else {
-                try c.encode(holdTime, forKey: .HoldTime)
+                try c.encode(Cue.finite(holdTime), forKey: .HoldTime)
                 if type == .pdf { try c.encode(page, forKey: .Page) }
             }
         case .fade:
             try c.encode(target, forKey: .Target)
-            try c.encode(fadeTime, forKey: .FadeTime)
+            try c.encode(Cue.finite(fadeTime), forKey: .FadeTime)
             try c.encode(fadeAudio, forKey: .FadeAudio)
-            try c.encode(targetDb, forKey: .TargetDb)
+            try c.encode(Cue.finite(targetDb), forKey: .TargetDb)
             try c.encode(fadeVisual, forKey: .FadeVisual)
-            try c.encode(targetOpacity, forKey: .TargetOpacity)
+            try c.encode(Cue.finite(targetOpacity), forKey: .TargetOpacity)
             try c.encode(stopWhenDone, forKey: .StopWhenDone)
             try c.encode(curve, forKey: .Curve)
         case .stop:
             try c.encode(target, forKey: .Target)
-            try c.encode(fadeTime, forKey: .FadeTime)
+            try c.encode(Cue.finite(fadeTime), forKey: .FadeTime)
             try c.encode(release, forKey: .Release)
         case .goto:
             try c.encode(target, forKey: .Target)
@@ -620,18 +630,18 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(files, forKey: .Files)
             try c.encode(shuffle, forKey: .Shuffle)
             try c.encode(loop, forKey: .Loop)
-            try c.encode(crossfade, forKey: .Crossfade)
-            try c.encode(volumeDb, forKey: .VolumeDb)
-            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(Cue.finite(crossfade), forKey: .Crossfade)
+            try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
+            try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
         case .web:
             try c.encode(url, forKey: .Url)
-            try c.encode(fadeIn, forKey: .FadeIn)
-            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(Cue.finite(fadeIn), forKey: .FadeIn)
+            try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
             try c.encode(replaceOthers, forKey: .ReplaceOthers)
             try c.encode(stretch, forKey: .Stretch)
-            try c.encode(holdTime, forKey: .HoldTime)
+            try c.encode(Cue.finite(holdTime), forKey: .HoldTime)
         case .timecode:
             try c.encode(tcStart, forKey: .Start)
             try c.encode(rate, forKey: .Rate)
@@ -639,19 +649,19 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(device, forKey: .Device)
             try c.encode(sendLtc, forKey: .SendLtc)
             try c.encode(ltcBus, forKey: .LtcBus)
-            try c.encode(ltcLevelDb, forKey: .LtcLevelDb)
-            try c.encode(length, forKey: .Length)
+            try c.encode(Cue.finite(ltcLevelDb), forKey: .LtcLevelDb)
+            try c.encode(Cue.finite(length), forKey: .Length)
         case .light:
             try c.encode(host, forKey: .Host)
             try c.encode(universe, forKey: .Universe)
             try c.encode(levels, forKey: .Levels)
-            try c.encode(fadeTime, forKey: .FadeTime)
+            try c.encode(Cue.finite(fadeTime), forKey: .FadeTime)
         case .input:
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
-            try c.encode(volumeDb, forKey: .VolumeDb)
-            try c.encode(fadeIn, forKey: .FadeIn)
-            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
+            try c.encode(Cue.finite(fadeIn), forKey: .FadeIn)
+            try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
         case .memo:
             try c.encode(text, forKey: .Text)
         case .network:
@@ -741,7 +751,7 @@ enum TimeFormat {
     static func format(_ seconds: Double) -> String {
         guard seconds.isFinite else { return "" }
         let neg = seconds < 0
-        let s = abs(seconds)
+        let s = min(abs(seconds), 359_999) // maks 99:59:59
         let total = Int(s)
         let h = total / 3600, m = (total % 3600) / 60, sec = total % 60
         let tenth = Int((s - Double(total)) * 10)

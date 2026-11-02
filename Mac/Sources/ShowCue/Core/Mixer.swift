@@ -17,7 +17,8 @@ final class UnfairLock {
     }
 }
 
-@inline(__always) func dbToGain(_ db: Double) -> Float { db <= -60 ? 0 : Float(pow(10, db / 20)) }
+/// dB → lineær forsterkning. −60 eller lavere (og NaN) = stille; maks +24 dB.
+@inline(__always) func dbToGain(_ db: Double) -> Float { db > -60 ? Float(pow(10, min(db, 24) / 20)) : 0 }
 
 /// En lydkilde som mikser seg selv inn i bussene. Kalles fra lydtråden.
 protocol BusSource: AnyObject {
@@ -253,10 +254,10 @@ final class Voice: BusSource {
     init(source: PcmSource, sampleRate: Double, volumeDb: Double, fadeIn: Double, fadeOut: Double, loop: Bool, routes: [AudioRoute]) {
         self.source = source
         self.sampleRate = sampleRate
-        self.autoFadeOutFrames = (!loop && fadeOut > 0) ? Int(fadeOut * sampleRate) : 0
+        self.autoFadeOutFrames = loop ? 0 : frameCount(fadeOut, sampleRate)
         self.routing = Voice.buildRouting(routes, channels: source.channels)
         self.tmp = .allocate(capacity: PatchMixer.maxFrames * max(1, source.channels))
-        let level = volumeDb <= -60 ? Voice.silenceDb : volumeDb
+        let level = volumeDb > -60 ? min(volumeDb, 24) : Voice.silenceDb
         if fadeIn > 0 {
             currentDb = Voice.silenceDb; targetDb = level
             beginRamp(level, fadeIn, stop: false)
@@ -303,13 +304,15 @@ final class Voice: BusSource {
     }
 
     func stop(fade: Double) {
-        if fade <= 0 { lock.locked { finished = true } } else { fadeTo(Voice.silenceDb, seconds: fade, stopWhenDone: true) }
+        if !(fade > 0) { lock.locked { finished = true } } else { fadeTo(Voice.silenceDb, seconds: fade, stopWhenDone: true) }
     }
 
     private func beginRamp(_ db: Double, _ seconds: Double, stop: Bool, curve: FadeCurve = .db) {
+        // Ugyldige verdier (NaN, uendelig) skal aldri nå lydtråden.
+        let db = db > -60 ? min(db, 24) : Voice.silenceDb
         targetDb = db
         stopAfterRamp = stop
-        let frames = Int(seconds * sampleRate)
+        let frames = frameCount(seconds, sampleRate)
         if frames <= 0 {
             currentDb = db; rampLeft = 0
             if stop { finished = true }
@@ -453,3 +456,12 @@ final class SampleRing {
         return n
     }
 }
+
+/// Sekunder → antall rammer, uten å krasje på NaN, uendelig eller enorme verdier (maks ett døgn).
+func frameCount(_ seconds: Double, _ sampleRate: Double) -> Int {
+    guard seconds.isFinite, sampleRate.isFinite, seconds > 0, sampleRate > 0 else { return 0 }
+    return Int(min(seconds, 86_400) * min(sampleRate, 1_000_000))
+}
+
+/// Tid i sekunder: aldri negativ, aldri NaN/uendelig (maks ett døgn).
+func safeSeconds(_ v: Double) -> Double { v.isFinite ? min(max(v, 0), 86_400) : 0 }
