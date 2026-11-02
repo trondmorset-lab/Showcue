@@ -23,7 +23,7 @@ final class AppModel: ObservableObject, ShowControl {
     @Published var statusText = ""
     /// Teksten fra siste memo-cue (tom = ingen beskjed vises).
     @Published var memoText = ""
-    private var cartWindow: NSWindow?
+    private var panelWindow: NSWindow?
     private var loudnessTask: Task<Void, Never>?
     @Published var learnText = ""
     @Published private(set) var remoteStatus = ""
@@ -36,7 +36,11 @@ final class AppModel: ObservableObject, ShowControl {
 
     // Innstillinger
     @Published var settings: AppSettings {
-        didSet { if settings.theme != oldValue.theme { settings.save() } }
+        didSet {
+            if settings.theme != oldValue.theme || settings.zoom != oldValue.zoom || settings.listTextScale != oldValue.listTextScale {
+                settings.save()
+            }
+        }
     }
 
     // Motorer
@@ -616,7 +620,7 @@ final class AppModel: ObservableObject, ShowControl {
     func renumber() {
         guard isEditable else { return }
         let a = NSAlert()
-        a.messageText = "Gi alle cuer nye nummer 1, 2, 3 …?"
+        a.messageText = "Gi alle cuer nye nummer (1, 2, 3)?"
         a.informativeText = "Fade-, stopp- og gå til-cuer oppdateres automatisk."
         a.addButton(withTitle: "Nummerer")
         a.addButton(withTitle: "Avbryt")
@@ -655,7 +659,7 @@ final class AppModel: ObservableObject, ShowControl {
         a.messageText = missing.count == 1 ? "Fant ikke mediefila «\(Cue.lastPathComponent(missing[0]))»."
             : "Fant ikke \(missing.count) mediefiler."
         a.informativeText = "Vil du velge en mappe å lete i? Undermapper tas med."
-        a.addButton(withTitle: "Velg mappe …")
+        a.addButton(withTitle: "Velg mappe")
         a.addButton(withTitle: "Ikke nå")
         if a.runModal() == .alertFirstButtonReturn { relink() }
         else { statusText = "Advarsel: \(missing.count) mediefil(er) mangler. Verktøy → Finn manglende mediefiler." }
@@ -750,18 +754,18 @@ final class AppModel: ObservableObject, ShowControl {
     func normalizeSelected() { normalize(selectedCues.isEmpty ? [playhead].compactMap { $0 } : selectedCues) }
     func normalizeAll() { normalize(cues) }
 
-    // MARK: - Cart-vindu
+    // MARK: - Knappepanel
 
-    func showCart() {
-        if let w = cartWindow { w.makeKeyAndOrderFront(nil); return }
+    func showButtonPanel() {
+        if let w = panelWindow { w.makeKeyAndOrderFront(nil); return }
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
                          styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-        w.title = "ShowCue – cart"
+        w.title = "ShowCue – knappepanel"
         w.isReleasedWhenClosed = false
-        w.contentView = NSHostingView(rootView: CartView().environmentObject(self))
+        w.contentView = NSHostingView(rootView: ButtonPanelView().environmentObject(self))
         w.center()
         w.makeKeyAndOrderFront(nil)
-        cartWindow = w
+        panelWindow = w
     }
 
     func closeMemo() { memoText = "" }
@@ -818,6 +822,12 @@ final class AppModel: ObservableObject, ShowControl {
         output.configure(screen: settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
+    }
+
+    /// Zoom inn (`direction` > 0), ut (< 0) eller tilbake til vanlig størrelse (0).
+    func zoom(_ direction: Int) {
+        settings.zoom = direction == 0 ? 1 : UIZoom.step(settings.zoom, direction)
+        statusText = "Zoom: \(UIZoom.percent(settings.zoom))"
     }
 
     func applyPatch() {

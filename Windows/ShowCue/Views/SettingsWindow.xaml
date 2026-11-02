@@ -165,6 +165,16 @@
                               SelectionChanged="Theme_Changed" />
                     <TextBlock Style="{StaticResource Hint}"
                                Text="Mørk passer de fleste kontrollrom. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang (også med ☀-knappen i verktøylinja)." />
+
+                    <TextBlock Style="{StaticResource Label}" Text="Zoom" />
+                    <ComboBox x:Name="ZoomBox" Width="120" HorizontalAlignment="Left" />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Gjør tekst, knapper og cuelista i hovedvinduet større eller mindre. Også med Ctrl og + / − (eller Oppsett-menyen). Fint på store skjermer, for lang avstand til skjermen eller små bærbare." />
+
+                    <TextBlock Style="{StaticResource Label}" Text="Tekst i cuelista" />
+                    <ComboBox x:Name="ListScaleBox" Width="120" HorizontalAlignment="Left" />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Gjør bare cuelista større, i tillegg til zoom – lettere å lese under forestilling." />
                 </StackPanel>
             </TabItem>
 

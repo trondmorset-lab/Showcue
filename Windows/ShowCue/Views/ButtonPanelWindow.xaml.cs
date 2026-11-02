@@ -7,8 +7,8 @@ using ShowCue.Models;
 
 namespace ShowCue.Views;
 
-/// <summary>Store knapper for berøringsskjerm: cuer merket «Knapp i cart-vinduet» og cuer med hurtigtast.</summary>
-public partial class CartWindow : Window
+/// <summary>Knappepanel: store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren. Viser cuer merket «Vis i knappepanelet» og cuer med hurtigtast.</summary>
+public partial class ButtonPanelWindow : Window
 {
     private readonly Action<Cue> _toggle;
     private readonly Action _pause, _panic;
@@ -16,7 +16,7 @@ public partial class CartWindow : Window
     private UniformGrid? _grid;
     private ListCollectionView? _view;
 
-    public CartWindow(int columns, Action<Cue> toggle, Action pause, Action panic, Action<int> columnsChanged)
+    public ButtonPanelWindow(int columns, Action<Cue> toggle, Action pause, Action panic, Action<int> columnsChanged)
     {
         InitializeComponent();
         ThemeManager.Register(this);
@@ -29,17 +29,17 @@ public partial class CartWindow : Window
     {
         _view = new ListCollectionView((System.Collections.IList)cues)
         {
-            Filter = o => o is Cue c && IsCartCue(c),
+            Filter = o => o is Cue c && IsPanelCue(c),
             IsLiveFiltering = true,
         };
         _view.LiveFilteringProperties.Add(nameof(Cue.Hotkey));
-        _view.LiveFilteringProperties.Add(nameof(Cue.Cart));
+        _view.LiveFilteringProperties.Add(nameof(Cue.InButtonPanel));
         ((INotifyCollectionChanged)_view).CollectionChanged += (_, _) => UpdateEmpty();
         Tiles.ItemsSource = _view;
         UpdateEmpty();
     }
 
-    public static bool IsCartCue(Cue c) => c.Cart || !string.IsNullOrEmpty(c.Hotkey);
+    public static bool IsPanelCue(Cue c) => c.InButtonPanel || !string.IsNullOrEmpty(c.Hotkey);
 
     private void UpdateEmpty() => EmptyText.Visibility = _view is { Count: > 0 } ? Visibility.Collapsed : Visibility.Visible;
 

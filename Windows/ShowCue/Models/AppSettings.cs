@@ -55,6 +55,10 @@ public sealed class AppSettings
 
     // ---- Utseende ----
     public AppTheme Theme { get; set; } = AppTheme.Dark;
+    /// <summary>Størrelse på hele hovedvinduet (1 = vanlig), se <see cref="UiZoom"/>.</summary>
+    public double Zoom { get; set; } = 1.0;
+    /// <summary>Ekstra tekststørrelse i cuelista, i tillegg til zoom (1 = vanlig).</summary>
+    public double ListTextScale { get; set; } = 1.0;
 
     // ---- MIDI inn ----
     /// <summary>Navn på MIDI-inngang. Tom = av.</summary>
@@ -85,8 +89,8 @@ public sealed class AppSettings
     public int VideoScreen { get; set; } = -1;
     /// <summary>Mål for «Normaliser lydstyrke» (LUFS). −23 er EBU R128.</summary>
     public double LoudnessTarget { get; set; } = -23;
-    /// <summary>Antall kolonner i cart-vinduet.</summary>
-    public int CartColumns { get; set; } = 4;
+    /// <summary>Antall kolonner i knappepanelet.</summary>
+    public int ButtonPanelColumns { get; set; } = 4;
 
     public double PanicFadeTime { get; set; } = 1.0;
     /// <summary>Hindrer dobbel-GO ved prell på tasten.</summary>
@@ -112,6 +116,8 @@ public sealed class AppSettings
     {
         // En tom eller manglende patch (f.eks. fra eldre versjon) gir standardpatch.
         if (s.Buses == null || s.Buses.Count == 0) s.Buses = PatchBus.DefaultPatch(8);
+        s.Zoom = UiZoom.Clamp(s.Zoom);
+        s.ListTextScale = UiZoom.ClampList(s.ListTextScale);
         return s;
     }
 
@@ -127,4 +133,21 @@ public sealed class AppSettings
 
     public AppSettings Copy() =>
         JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(this, ShowDocument.JsonOptions), ShowDocument.JsonOptions)!;
+}
+
+/// <summary>Trinn for zoom av hovedvinduet og tekststørrelse i cuelista.</summary>
+public static class UiZoom
+{
+    public static readonly double[] Steps = { 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0 };
+    public static readonly (string Label, double Scale)[] ListSizes = { ("Vanlig", 1.0), ("Stor", 1.25), ("Ekstra stor", 1.5) };
+
+    public static double Clamp(double z) => double.IsFinite(z) ? Math.Clamp(z, Steps[0], Steps[^1]) : 1;
+    public static double ClampList(double s) => double.IsFinite(s) ? Math.Clamp(s, 1, 2) : 1;
+
+    /// <summary>Neste trinn opp (<paramref name="direction"/> &gt; 0) eller ned fra <paramref name="z"/>.</summary>
+    public static double Step(double z, int direction) => direction > 0
+        ? Steps.FirstOrDefault(s => s > z + 0.001, Steps[^1])
+        : Steps.LastOrDefault(s => s < z - 0.001, Steps[0]);
+
+    public static string Percent(double z) => $"{Math.Round(z * 100)} %";
 }

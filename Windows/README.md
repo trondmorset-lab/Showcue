@@ -154,8 +154,9 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+1 … Ctrl+8** | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | **Ctrl+9 / Ctrl+0** | Legg til spilleliste / gå til-cue |
 | **Ctrl+P** | Pause / fortsett alt |
-| **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til memo / nettverks-cue |
-| **Ctrl+K** | Cart-vindu |
+| **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til beskjed / nettverks-cue |
+| **Ctrl+K** | Knappepanel |
+| **Ctrl + / Ctrl −** | Zoom inn / ut (vanlig størrelse i *Oppsett*-menyen) |
 | **Ctrl+Shift+T / L / I / W** | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
@@ -189,25 +190,27 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 |---|---|
 | **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler |
 | **＋ Media** | Lyd, video, bilde, PDF, nettside, spilleliste, live-inngang |
-| **Styring** | Fade, stopp, gå til, memo |
-| **Signal ut** | OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
+| **Styring** | Fade, stopp, gå til, beskjed |
+| **Utstyr** | Styr annet utstyr: OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
 | **Rediger** | Dupliser, slett, flytt, nummerer, normaliser lydstyrke |
 | **Oppsett** | Lydpatch, utgangsvinduet, innstillinger, tema, om ShowCue |
 
-Angre/gjør om, **▦ Cart** og **🔒 Showmodus** er egne knapper. Hurtigtastene står i menyene.
+Angre/gjør om, **▦ Knappepanel** og **🔒 Showmodus** er egne knapper. Hurtigtastene står i menyene.
 
 **Nettside-cue** (◍): viser en nettside (f.eks. `https://time.is`) eller en lokal .html-fil fullskjerm på utgangen,
 med fade og visningstid som et bilde. Windows bruker Microsoft Edge WebView2, som er innebygd i Windows 10 og 11.
 Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
 
-## Cart, nettverk, memo og lydstyrke
+## Knappepanel, nettverk, beskjed og lydstyrke
 
-- **Cart-vindu** (▦ Cart eller Ctrl+K): store knapper for berøringsskjerm. Viser cuer med hurtigtast og cuer merket
-  «Knapp i cart-vinduet». Trykk for å starte, trykk igjen for å stoppe (med cuens fade ut). Antall kolonner kan justeres.
+- **Knappepanel** (▦ Knappepanel eller Ctrl+K): et eget vindu med store knapper som starter og stopper cuer direkte,
+  uten å flytte GO-markøren – nyttig for jingler, lydeffekter og applaus-stikk, og på berøringsskjerm. Viser cuer med
+  hurtigtast og cuer merket «Vis i knappepanelet». Trykk for å starte, trykk igjen for å stoppe (med cuens fade ut).
+  Antall kolonner kan justeres.
 - **Nettverks-cue** (⇄ Nett): sender tekst over **UDP** eller **TCP**, eller en **HTTP**-forespørsel. `\r`, `\n`, `\t`
   og `\xHH` i meldingen gir linjeskift, tab og enkeltbytes. Eksempel PJLink-projektor av: TCP, port 4352, `%1POWR 0\r`.
   Feil (f.eks. ingen kontakt) vises på cuen; GO venter aldri på nettverket.
-- **Memo-cue** (✎ Memo): en beskjed til operatøren («Vent på applaus») som vises stort øverst til den lukkes.
+- **Beskjed-cue** (✎ Beskjed): en beskjed til operatøren («Vent på applaus») som vises stort øverst til den lukkes.
 - **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Rediger → Normaliser lydstyrke*, måler
   lydstyrken (integrert LUFS etter EBU R128) mellom start og slutt og setter nivået så cuen treffer målet
   (standard −23 LUFS, endres under *Innstillinger → Sikkerhet*).
@@ -250,6 +253,10 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
 Tre fargetemaer, som byttes med en gang via *Oppsett → Bytt tema* eller *Innstillinger → Utseende*:
 **Mørk** (grafitt), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
 Tittellinja i Windows følger temaet.
+
+**Zoom og tekststørrelse:** *Oppsett → Zoom inn / Zoom ut* (Ctrl + og Ctrl −) gjør hele hovedvinduet 80–200 % stort.
+*Oppsett → Tekst i cuelista* (Vanlig, Stor, Ekstra stor) gjør bare cuelista større, i tillegg.
+Begge finnes også under *Innstillinger → Utseende* og huskes til neste gang.
 
 **Cuefarger:** gi cuer en farge (rød, oransje, gul, grønn, blå, lilla, grå) i panelet til høyre. Raden blir tonet,
 og hurtigknappen får en fargestripe. Velg flere cuer for å farge alle på én gang.

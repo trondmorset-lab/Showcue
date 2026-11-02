@@ -69,9 +69,9 @@ public abstract class Cue : ObservableObject
     /// <summary>MIDI-melding som starter cuen, f.eks. "N:60" (note), "CC:20" eller "PC:5". Tom = ingen.</summary>
     public string MidiTrigger { get => _midiTrigger; set { if (SetCue(ref _midiTrigger, value ?? "")) OnPropertyChanged(nameof(TriggerText)); } }
 
-    private bool _cart;
-    /// <summary>Vis cuen som knapp i cart-vinduet (berøringsskjerm). Cuer med hurtigtast vises der uansett.</summary>
-    public bool Cart { get => _cart; set => SetCue(ref _cart, value); }
+    private bool _inButtonPanel;
+    /// <summary>Vis cuen som knapp i knappepanelet. Cuer med hurtigtast vises der uansett.</summary>
+    public bool InButtonPanel { get => _inButtonPanel; set => SetCue(ref _inButtonPanel, value); }
 
     private string _timecodeTrigger = "";
     /// <summary>Start cuen når innkommende tidskode (MTC) passerer dette tidspunktet, «tt:mm:ss:ff». Tom = ingen.</summary>
@@ -453,9 +453,9 @@ public sealed class MemoCue : Cue
 
     public string Text { get => _text; set => SetCue(ref _text, value ?? ""); }
 
-    public override string TypeName => "Memo";
+    public override string TypeName => "Beskjed";
     public override string TypeIcon => "✎";
-    protected override string DefaultName => FirstLine is { Length: > 0 } l ? l : "Memo";
+    protected override string DefaultName => FirstLine is { Length: > 0 } l ? l : "Beskjed";
     public override string Summary => FirstLine;
     private string FirstLine => Text.Split('\n', 2)[0].Trim();
 }

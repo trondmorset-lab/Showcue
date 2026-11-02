@@ -16,7 +16,7 @@ struct PatchView: View {
                 .foregroundColor(audio.isRunning ? theme.text : theme.danger)
                 .padding(.bottom, 6)
             Text("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. «Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot Dante/PA. Patchen lagres på denne maskinen, ikke i showfila.")
-                .font(.system(size: 11.5)).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true)
+                .uiFont(11.5).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 Button("+ Utgang") {
                     let n = model.settings.buses.count + 1
@@ -85,7 +85,7 @@ struct PatchView: View {
                 }
                 .frame(height: rowH)
             }
-            Text("Kanalnivå på lydkortet").font(.system(size: 11.5)).foregroundColor(theme.muted)
+            Text("Kanalnivå på lydkortet").uiFont(11.5).foregroundColor(theme.muted)
                 .padding(.leading, 34).frame(height: rowH)
         }
     }
@@ -130,7 +130,7 @@ struct PatchView: View {
     }
 
     private func header(_ s: String) -> some View {
-        Text(s).font(.system(size: 11, weight: .semibold)).foregroundColor(theme.muted).padding(.bottom, 6)
+        Text(s).uiFont(11, weight: .semibold).foregroundColor(theme.muted).padding(.bottom, 6)
     }
 }
 

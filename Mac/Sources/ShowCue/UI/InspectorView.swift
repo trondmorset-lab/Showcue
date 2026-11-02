@@ -42,13 +42,13 @@ struct CueInspector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("\(cue.typeIcon) \(cue.typeName)").font(.system(size: 15, weight: .semibold))
+                Text("\(cue.typeIcon) \(cue.typeName)").uiFont(15, weight: .semibold)
                 Spacer()
                 Button("▶ Test") { model.fire(cue) }.buttonStyle(PanelButtonStyle()).help("Kjør cuen uten å flytte GO-markøren")
                 Button("■") { model.stop(cue) }.buttonStyle(PanelButtonStyle()).help("Stopp denne cuen")
             }
             if let e = cue.error {
-                Text(e).foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 6).fixedSize(horizontal: false, vertical: true)
+                Text(e).foregroundColor(theme.danger).uiFont(12).padding(.top, 6).fixedSize(horizontal: false, vertical: true)
             }
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 0) { FieldLabel("Nummer"); TextInput($cue.number, mono: true) }.frame(width: 80)
@@ -65,7 +65,7 @@ struct CueInspector: View {
                 FieldLabel("Hurtigtast")
                 Button(action: { model.hotkeyCapture = (model.hotkeyCapture === cue) ? nil : cue }) {
                     Text(model.hotkeyCapture === cue ? "Trykk en tast …" : (cue.hotkey.isEmpty ? "(ingen)" : cue.hotkey))
-                        .font(.system(size: 13, design: .monospaced))
+                        .uiFont(13, design: .monospaced)
                         .foregroundColor(model.hotkeyCapture === cue ? theme.wait : theme.text)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 6).padding(.vertical, 5)
@@ -78,7 +78,7 @@ struct CueInspector: View {
             FieldLabel("MIDI-trigger")
             HStack(spacing: 6) {
                 Text(cue.midiTrigger.isEmpty ? "(ingen)" : MidiTriggers.describe(cue.midiTrigger))
-                    .font(.system(size: 13, design: .monospaced))
+                    .uiFont(13, design: .monospaced)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 6).padding(.vertical, 5)
                     .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
@@ -97,7 +97,7 @@ struct CueInspector: View {
                 ForEach(ContinueMode.allCases, id: \.self) { Text($0.label).tag($0) }
             }.labelsHidden()
             Toggle("Deaktivert (hoppes over av GO)", isOn: $cue.disabled).padding(.top, 8)
-            Toggle("Knapp i cart-vinduet", isOn: $cue.cart).padding(.top, 4).help("Cuer med hurtigtast vises der uansett")
+            Toggle("Vis i knappepanelet", isOn: $cue.inButtonPanel).padding(.top, 4).help("Cuer med hurtigtast vises der uansett")
 
             FieldLabel("Farge")
             HStack(spacing: 6) {
@@ -121,7 +121,7 @@ struct CueInspector: View {
 
             FieldLabel("Notater (vises ved NESTE CUE)")
             TextEditor(text: $cue.notes)
-                .font(.system(size: 13))
+                .uiFont(13)
                 .scrollContentBackground(.hidden)
                 .padding(4)
                 .frame(minHeight: 54)
@@ -163,7 +163,7 @@ struct CueInspector: View {
                     .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
                     .help(cue.filePath)
-                Button("Velg …") { model.browseFile(for: cue) }.buttonStyle(PanelButtonStyle())
+                Button("Velg") { model.browseFile(for: cue) }.buttonStyle(PanelButtonStyle())
             }
         }
     }
@@ -240,7 +240,7 @@ struct CueInspector: View {
             if cue.hasNoAudio { Hint("Videoen har ikke noe lydspor.") }
             RoutingMatrixView(cue: cue)
             Hint("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.")
-            Button("Pakk ut lyd til egen lyd-cue …") { model.extractVideoAudio(cue) }
+            Button("Pakk ut lyd til egen lyd-cue") { model.extractVideoAudio(cue) }
                 .buttonStyle(PanelButtonStyle()).padding(.top, 10)
                 .help("Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum.")
         }
@@ -292,7 +292,7 @@ struct CueInspector: View {
     private var webSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel("Adresse (URL eller fil)"); TextInput($cue.url, mono: true)
-            if cue.webURL == nil { Text("Ugyldig adresse").foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 2) }
+            if cue.webURL == nil { Text("Ugyldig adresse").foregroundColor(theme.danger).uiFont(12).padding(.top, 2) }
             Hint("F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter og vises fullskjerm på utgangen, over bilder og video. Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.")
             FieldLabel("Vis i (s, 0 = til stoppet)")
             NumberInput(value: $cue.holdTime, range: 0...86400)
@@ -335,7 +335,7 @@ struct CueInspector: View {
                 VStack(alignment: .leading, spacing: 0) { FieldLabel("Univers"); IntInput(value: $cue.universe, range: 0...32767) }.frame(width: 90)
             }
             FieldLabel("Nivåer (kanal@verdi)"); TextInput($cue.levels, mono: true)
-            if !errorText.isEmpty { Text(errorText).foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 2) }
+            if !errorText.isEmpty { Text(errorText).foregroundColor(theme.danger).uiFont(12).padding(.top, 2) }
             Hint("F.eks. 1@255 2-4@50% 10@0. Verdi 0–255 eller prosent. Kanaler som ikke nevnes, beholder nivået sitt.")
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600)
             Hint("Sendes som Art-Net (UDP 6454). 255.255.255.255 eller 2.255.255.255 når alle noder på nettet skal få det. Å stoppe cuen lar lyset stå.")
@@ -369,7 +369,7 @@ struct CueInspector: View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel("Beskjed til operatøren")
             TextEditor(text: $cue.text)
-                .font(.system(size: 13))
+                .uiFont(13)
                 .scrollContentBackground(.hidden)
                 .padding(4)
                 .frame(minHeight: 90)
@@ -414,10 +414,10 @@ struct CueInspector: View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel("Spor")
             VStack(alignment: .leading, spacing: 2) {
-                if cue.files.isEmpty { Text("(ingen spor)").foregroundColor(theme.muted).font(.system(size: 12)) }
+                if cue.files.isEmpty { Text("(ingen spor)").foregroundColor(theme.muted).uiFont(12) }
                 ForEach(Array(cue.files.enumerated()), id: \.offset) { i, f in
                     HStack(spacing: 4) {
-                        Text("\(i + 1). \((f as NSString).lastPathComponent)").font(.system(size: 12)).lineLimit(1)
+                        Text("\(i + 1). \((f as NSString).lastPathComponent)").uiFont(12).lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading).help(f)
                         Button("↑") { if i > 0 { cue.files.swapAt(i, i - 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == 0)
                         Button("↓") { if i < cue.files.count - 1 { cue.files.swapAt(i, i + 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == cue.files.count - 1)
@@ -428,7 +428,7 @@ struct CueInspector: View {
             .padding(6)
             .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
-            Button("+ Legg til spor …") { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
+            Button("+ Legg til spor") { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
             Pair {
                 FieldLabel("Nivå (dB)"); NumberInput(value: $cue.volumeDb, range: -60...12)
             } _: {
@@ -506,13 +506,13 @@ struct RoutingMatrixView: View {
                     GridRow {
                         Text("")
                         ForEach(buses.indices, id: \.self) { b in
-                            Text("\(b + 1)").font(.system(size: 11)).foregroundColor(theme.muted).frame(width: 38).help("Utgang \(b + 1): \(buses[b].name)")
+                            Text("\(b + 1)").uiFont(11).foregroundColor(theme.muted).frame(width: 38).help("Utgang \(b + 1): \(buses[b].name)")
                         }
                     }
                     ForEach(0..<rows, id: \.self) { r in
                         GridRow {
                             Text(rows == 1 ? "Mono" : rows == 2 ? (r == 0 ? "Venstre" : "Høyre") : "Kanal \(r + 1)")
-                                .font(.system(size: 11.5)).foregroundColor(theme.muted).padding(.trailing, 6).gridColumnAlignment(.leading)
+                                .uiFont(11.5).foregroundColor(theme.muted).padding(.trailing, 6).gridColumnAlignment(.leading)
                             ForEach(buses.indices, id: \.self) { b in
                                 let route = routes.first { $0.source == r + 1 && $0.bus == b + 1 }
                                 RouteCell(initial: route.map { Cue.fmt($0.gainDb) } ?? "", active: route != nil,
@@ -536,7 +536,7 @@ struct RoutingMatrixView: View {
                 }.help("Alle kanaler til utgang 1 og 2")
             }
             .buttonStyle(PanelButtonStyle())
-            .font(.system(size: 11.5))
+            .uiFont(11.5)
         }
     }
 
@@ -582,7 +582,7 @@ private struct RouteCell: View {
         TextField("", text: $text)
             .textFieldStyle(.plain)
             .multilineTextAlignment(.center)
-            .font(.system(size: 12))
+            .uiFont(12)
             .frame(width: 38, height: 24)
             .background(RoundedRectangle(cornerRadius: 3).fill(active ? theme.runningRow : theme.panel2))
             .overlay(RoundedRectangle(cornerRadius: 3).stroke(focused ? theme.playhead : theme.line))

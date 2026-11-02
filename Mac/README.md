@@ -71,8 +71,9 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
 | ⌘P | Pause / fortsett alt |
-| ⇧⌘M, ⇧⌘N | Legg til memo-, nettverks-cue |
-| ⌘K | Cart-vindu |
+| ⇧⌘M, ⇧⌘N | Legg til beskjed-, nettverks-cue |
+| ⌘K | Knappepanel |
+| ⌘+ / ⌘− | Zoom inn / ut (vanlig størrelse i *Oppsett*-menyen) |
 | ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
@@ -88,8 +89,8 @@ Du kan dra filer fra Finder rett inn i lista.
 Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagring`), sikkerhetskopier
 (`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
 i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
-(*Pause, spillelister og loop*), og cart-vinduet, nettverks- og memo-cuer, lydstyrke-normalisering og finn/samle
-mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Cart, nettverk, memo og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
+(*Pause, spillelister og loop*), og knappepanelet, nettverks- og beskjed-cuer, lydstyrke-normalisering og finn/samle
+mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Knappepanel, nettverk, beskjed og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
 live-inngang er beskrevet under *Tidskode, lys og live-inngang* (på Mac velges inngangen blant CoreAudio-enhetene,
 og macOS spør om tilgang til mikrofonen første gang).
 

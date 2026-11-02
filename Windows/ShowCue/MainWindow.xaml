@@ -36,7 +36,7 @@
         <!-- Felles: filvelger -->
         <DataTemplate x:Key="FilePicker">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Bla …" Margin="6,0,0,0" Click="BrowseFile_Click" />
+                <Button DockPanel.Dock="Right" Content="Bla" Margin="6,0,0,0" Click="BrowseFile_Click" />
                 <TextBox Text="{Binding FilePath, UpdateSourceTrigger=LostFocus}" ToolTip="{Binding FilePath}" />
             </DockPanel>
         </DataTemplate>
@@ -159,7 +159,7 @@
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
                            Text="Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum." />
-                <Button Content="Pakk ut lyd til egen lyd-cue …" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
+                <Button Content="Pakk ut lyd til egen lyd-cue" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
                         ToolTip="Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum." />
             </StackPanel>
         </DataTemplate>
@@ -249,7 +249,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <WrapPanel Margin="0,6,0,0">
-                    <Button Content="+ Legg til filer …" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
+                    <Button Content="+ Legg til filer" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
                     <Button Content="Fjern" Margin="0,0,6,0" Click="PlaylistRemove_Click" Tag="{Binding ElementName=PlaylistBox}" />
                     <Button Content="↑" Margin="0,0,6,0" Click="PlaylistUp_Click" Tag="{Binding ElementName=PlaylistBox}" />
                     <Button Content="↓" Click="PlaylistDown_Click" Tag="{Binding ElementName=PlaylistBox}" />
@@ -493,6 +493,9 @@
     </Window.Resources>
 
     <Grid>
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}" />
+        </Grid.LayoutTransform>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -582,12 +585,12 @@
                         <Button.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Nytt show" InputGestureText="Ctrl+N" Click="New_Click" />
-                                <MenuItem Header="Åpne …" InputGestureText="Ctrl+O" Click="Open_Click" />
+                                <MenuItem Header="Åpne" InputGestureText="Ctrl+O" Click="Open_Click" />
                                 <MenuItem Header="Lagre" InputGestureText="Ctrl+S" Click="Save_Click" />
-                                <MenuItem Header="Lagre som …" Click="SaveAs_Click" />
+                                <MenuItem Header="Lagre som" Click="SaveAs_Click" />
                                 <Separator />
-                                <MenuItem Header="Samle show og mediefiler i én mappe …" Click="Collect_Click" />
-                                <MenuItem Header="Finn manglende mediefiler …" Click="Relink_Click" />
+                                <MenuItem Header="Samle show og mediefiler i én mappe" Click="Collect_Click" />
+                                <MenuItem Header="Finn manglende mediefiler" Click="Relink_Click" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
@@ -595,31 +598,31 @@
                     <Button Style="{StaticResource ToolButton}" Content="↷" Click="Redo_Click" IsEnabled="{Binding CanRedo}" FontSize="15" ToolTip="Gjør om (Ctrl+Y)" />
                     <Rectangle Width="1" Fill="{DynamicResource Line}" Margin="8,3" />
                     <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsEditable}">
-                        <Button Style="{StaticResource ToolButton}" Content="＋ Media ▾" Click="Menu_Click" ToolTip="Legg til lyd, video, bilde, PDF, nettside …">
+                        <Button Style="{StaticResource ToolButton}" Content="＋ Media ▾" Click="Menu_Click" ToolTip="Legg til lyd, video, bilde, PDF, nettside og mer">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="♪  Lyd …" InputGestureText="Ctrl+1" Tag="audio" Click="AddCue_Click" />
-                                    <MenuItem Header="▶  Video …" InputGestureText="Ctrl+2" Tag="video" Click="AddCue_Click" />
-                                    <MenuItem Header="▣  Bilde …" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
-                                    <MenuItem Header="▤  PDF …" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
+                                    <MenuItem Header="♪  Lyd" InputGestureText="Ctrl+1" Tag="audio" Click="AddCue_Click" />
+                                    <MenuItem Header="▶  Video" InputGestureText="Ctrl+2" Tag="video" Click="AddCue_Click" />
+                                    <MenuItem Header="▣  Bilde" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
+                                    <MenuItem Header="▤  PDF" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
                                     <MenuItem Header="◍  Nettside" InputGestureText="Ctrl+Shift+W" Tag="web" Click="AddCue_Click" />
                                     <Separator />
-                                    <MenuItem Header="☰  Spilleliste …" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
+                                    <MenuItem Header="☰  Spilleliste" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
                                     <MenuItem Header="◉  Live-inngang" InputGestureText="Ctrl+Shift+I" Tag="input" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Style="{StaticResource ToolButton}" Content="Styring ▾" Click="Menu_Click" ToolTip="Fade, stopp, gå til og memo">
+                        <Button Style="{StaticResource ToolButton}" Content="Styring ▾" Click="Menu_Click" ToolTip="Fade, stopp, gå til og beskjed">
                             <Button.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="◢  Fade (valgt cue)" InputGestureText="Ctrl+5" Tag="fade" Click="AddCue_Click" />
                                     <MenuItem Header="■  Stopp" InputGestureText="Ctrl+6" Tag="stop" Click="AddCue_Click" />
                                     <MenuItem Header="↪  Gå til" InputGestureText="Ctrl+0" Tag="goto" Click="AddCue_Click" />
-                                    <MenuItem Header="✎  Memo" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
+                                    <MenuItem Header="✎  Beskjed" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Style="{StaticResource ToolButton}" Content="Signal ut ▾" Click="Menu_Click" ToolTip="OSC, MIDI, nettverk, tidskode og lys">
+                        <Button Style="{StaticResource ToolButton}" Content="Utstyr ▾" Click="Menu_Click" ToolTip="Styr annet utstyr: lys, miksere, videoservere og andre programmer (OSC, MIDI, nettverk, tidskode, DMX)">
                             <Button.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="⇢  OSC" InputGestureText="Ctrl+7" Tag="osc" Click="AddCue_Click" />
@@ -637,7 +640,7 @@
                                     <MenuItem Header="Slett" InputGestureText="Delete" Click="Delete_Click" />
                                     <MenuItem Header="Flytt opp" InputGestureText="Ctrl+↑" Click="MoveUp_Click" />
                                     <MenuItem Header="Flytt ned" InputGestureText="Ctrl+↓" Click="MoveDown_Click" />
-                                    <MenuItem Header="Nummerer alle 1, 2, 3 …" Click="Renumber_Click" />
+                                    <MenuItem Header="Nummerer alle (1, 2, 3)" Click="Renumber_Click" />
                                     <Separator />
                                     <MenuItem Header="Normaliser lydstyrke for valgte lyd-cuer" Click="NormalizeSelected_Click" />
                                     <MenuItem Header="Normaliser lydstyrke for alle lyd-cuer" Click="NormalizeAll_Click" />
@@ -647,16 +650,21 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <Button Style="{StaticResource ToolButton}" Content="▦ Cart" Click="Cart_Click" ToolTip="Store knapper for berøringsskjerm (Ctrl+K)" />
+                    <Button Style="{StaticResource ToolButton}" Content="▦ Knappepanel" Click="ButtonPanel_Click" ToolTip="Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (Ctrl+K)" />
                     <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
                             ToolTip="Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)" />
                     <Button Style="{StaticResource ToolButton}" Content="Oppsett ▾" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Lydpatch …" Click="Patch_Click" />
+                                <MenuItem Header="Lydpatch" Click="Patch_Click" />
                                 <MenuItem Header="Vis/skjul utgangsvinduet" Click="ToggleOutput_Click" />
-                                <MenuItem Header="Innstillinger …" Click="Settings_Click" />
+                                <MenuItem Header="Innstillinger" Click="Settings_Click" />
                                 <MenuItem Header="Bytt tema (mørk → lys → natt)" Click="ThemeToggle_Click" />
+                                <Separator />
+                                <MenuItem Header="Zoom inn" InputGestureText="Ctrl++" Tag="1" Click="Zoom_Click" />
+                                <MenuItem Header="Zoom ut" InputGestureText="Ctrl+−" Tag="-1" Click="Zoom_Click" />
+                                <MenuItem Header="Vanlig størrelse (100 %)" Tag="0" Click="Zoom_Click" />
+                                <MenuItem x:Name="ListScaleMenu" Header="Tekst i cuelista" SubmenuOpened="ListScaleMenu_Opened" />
                                 <Separator />
                                 <MenuItem Header="Om ShowCue" Click="About_Click" />
                             </ContextMenu>
@@ -677,6 +685,9 @@
             <Grid>
                 <DataGrid x:Name="CueGrid" ItemsSource="{Binding Cues}" SelectedItem="{Binding SelectedCue, Mode=TwoWay}"
                           AllowDrop="{Binding IsEditable}" Drop="CueGrid_Drop" DragOver="CueGrid_DragOver" MouseDoubleClick="CueGrid_DoubleClick">
+                    <DataGrid.LayoutTransform>
+                        <ScaleTransform ScaleX="{Binding ListTextScale}" ScaleY="{Binding ListTextScale}" />
+                    </DataGrid.LayoutTransform>
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Setter Property="BorderThickness" Value="3,0,0,0" />
@@ -867,7 +878,7 @@
                             <ComboBox ItemsSource="{x:Static local:EnumValues.ContinueModes}" SelectedItem="{Binding SelectedCue.ContinueMode}"
                                       ItemTemplate="{StaticResource EnumItem}" />
                             <CheckBox IsChecked="{Binding SelectedCue.Disabled}" Content="Deaktivert (hoppes over av GO)" />
-                            <CheckBox IsChecked="{Binding SelectedCue.Cart}" Content="Knapp i cart-vinduet"
+                            <CheckBox IsChecked="{Binding SelectedCue.InButtonPanel}" Content="Vis i knappepanelet"
                                       ToolTip="Cuer med hurtigtast vises der uansett" />
                             <TextBlock Style="{StaticResource Label}" Text="Farge" />
                             <ItemsControl ItemsSource="{x:Static local:EnumValues.CueColors}">

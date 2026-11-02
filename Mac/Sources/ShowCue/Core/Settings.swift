@@ -95,12 +95,16 @@ struct AppSettings: Codable, Equatable {
 
     // Utseende og sikkerhet
     var theme: AppTheme = .dark
+    /// Størrelse på hele hovedvinduet (1 = vanlig), se `UIZoom`.
+    var zoom = 1.0
+    /// Ekstra tekststørrelse i cuelista, i tillegg til zoom (1 = vanlig).
+    var listTextScale = 1.0
     var panicFadeTime = 1.0
     var doubleGoProtectionMs = 300
     /// Mål for «Normaliser lydstyrke» (LUFS). −23 er EBU R128.
     var loudnessTarget = -23.0
-    /// Antall kolonner i cart-vinduet.
-    var cartColumns = 4
+    /// Antall kolonner i knappepanelet.
+    var buttonPanelColumns = 4
 
     var lastShowPath = ""
 
@@ -110,7 +114,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, cartColumns, mtcInEnabled, inputDeviceUID
+        case theme, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, inputDeviceUID
     }
 
     init(from decoder: Decoder) throws {
@@ -140,11 +144,13 @@ struct AppSettings: Codable, Equatable {
         mscInEnabled = v(.mscInEnabled, d.mscInEnabled)
         mscInDeviceId = v(.mscInDeviceId, d.mscInDeviceId)
         theme = v(.theme, d.theme)
+        zoom = UIZoom.clamp(v(.zoom, d.zoom))
+        listTextScale = UIZoom.clampList(v(.listTextScale, d.listTextScale))
         panicFadeTime = v(.panicFadeTime, d.panicFadeTime)
         doubleGoProtectionMs = v(.doubleGoProtectionMs, d.doubleGoProtectionMs)
         lastShowPath = v(.lastShowPath, d.lastShowPath)
         loudnessTarget = v(.loudnessTarget, d.loudnessTarget)
-        cartColumns = v(.cartColumns, d.cartColumns)
+        buttonPanelColumns = v(.buttonPanelColumns, d.buttonPanelColumns)
         mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
         inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
     }
@@ -174,4 +180,21 @@ struct AppSettings: Codable, Equatable {
             NSLog("ShowCue: kunne ikke lagre innstillinger: \(error)")
         }
     }
+}
+
+/// Trinn for zoom av hovedvinduet og tekststørrelse i cuelista.
+enum UIZoom {
+    static let steps: [Double] = [0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0]
+    static let listSizes: [(label: String, scale: Double)] = [("Vanlig", 1.0), ("Stor", 1.25), ("Ekstra stor", 1.5)]
+
+    static func clamp(_ z: Double) -> Double { z.isFinite ? min(steps.last!, max(steps.first!, z)) : 1 }
+    static func clampList(_ s: Double) -> Double { s.isFinite ? min(2, max(1, s)) : 1 }
+
+    /// Neste trinn opp (`direction` > 0) eller ned fra `z`.
+    static func step(_ z: Double, _ direction: Int) -> Double {
+        if direction > 0 { return steps.first { $0 > z + 0.001 } ?? steps.last! }
+        return steps.last { $0 < z - 0.001 } ?? steps.first!
+    }
+
+    static func percent(_ z: Double) -> String { "\(Int((z * 100).rounded())) %" }
 }

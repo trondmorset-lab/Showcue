@@ -21,7 +21,7 @@ struct SettingsView: View {
             }
             HStack {
                 Text(draft.audioKey != model.settings.audioKey ? "Nytt lydoppsett stopper alt som spiller." : "")
-                    .font(.system(size: 11.5)).foregroundColor(theme.wait)
+                    .uiFont(11.5).foregroundColor(theme.wait)
                 Spacer()
                 Button("Tilbakestill") { draft = model.settings }
                 Button("Bruk") { model.applySettings(draft); draft = model.settings }
@@ -123,7 +123,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .font(.system(size: 12, design: .monospaced))
+            .uiFont(12, design: .monospaced)
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
@@ -180,7 +180,7 @@ struct SettingsView: View {
         HStack(spacing: 6) {
             Text(label).foregroundColor(theme.muted).frame(width: 90, alignment: .leading)
             Text(learning == label ? "Venter på MIDI …" : (draft[keyPath: key].isEmpty ? "(ingen)" : MidiTriggers.describe(draft[keyPath: key])))
-                .font(.system(size: 13, design: .monospaced))
+                .uiFont(13, design: .monospaced)
                 .foregroundColor(learning == label ? theme.wait : theme.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 6).padding(.vertical, 5)
@@ -214,6 +214,22 @@ struct SettingsView: View {
             .labelsHidden()
             .pickerStyle(.radioGroup)
             Hint("Mørk passer de fleste kontrollrom. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang (også med ☀︎-knappen i verktøylinja eller ⇧⌘T).")
+
+            FieldLabel("Zoom")
+            Picker("", selection: Binding(get: { model.settings.zoom }, set: { z in model.settings.zoom = z; draft.zoom = z })) {
+                ForEach(UIZoom.steps, id: \.self) { Text(UIZoom.percent($0)).tag($0) }
+            }
+            .labelsHidden()
+            .frame(width: 120)
+            Hint("Gjør tekst, knapper og cuelista i hovedvinduet større eller mindre. Også med ⌘+ og ⌘−. Fint på store skjermer, for lang avstand til skjermen eller små bærbare.")
+
+            FieldLabel("Tekst i cuelista")
+            Picker("", selection: Binding(get: { model.settings.listTextScale }, set: { v in model.settings.listTextScale = v; draft.listTextScale = v })) {
+                ForEach(UIZoom.listSizes.indices, id: \.self) { i in Text(UIZoom.listSizes[i].label).tag(UIZoom.listSizes[i].scale) }
+            }
+            .labelsHidden()
+            .pickerStyle(.radioGroup)
+            Hint("Gjør bare cuelista større, i tillegg til zoom – lettere å lese under forestilling.")
         }
     }
 
