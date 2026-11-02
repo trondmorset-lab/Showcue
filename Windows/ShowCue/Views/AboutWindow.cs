@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using ShowCue.Models;
 
 namespace ShowCue.Views;
 
@@ -23,7 +24,7 @@ public sealed class AboutWindow : Window
 
     public AboutWindow()
     {
-        Title = "Om ShowCue";
+        Title = Loc.T("Om ShowCue");
         Width = 640; Height = 560;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
@@ -39,23 +40,23 @@ public sealed class AboutWindow : Window
             Width = 96, Height = 96, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 10),
         });
         head.Children.Add(new TextBlock { Text = "ShowCue " + MainWindow.AppVersion, FontSize = 22, FontWeight = FontWeights.SemiBold });
-        head.Children.Add(new TextBlock { Text = "Showavvikling for lyd, video, bilde, lys og tidskode.", Margin = new Thickness(0, 2, 0, 10) });
+        head.Children.Add(new TextBlock { Text = Loc.T("Showavvikling for lyd, video, bilde, lys og tidskode."), Margin = new Thickness(0, 2, 0, 10) });
         head.Children.Add(new TextBlock { Text = Copyright });
         head.Children.Add(new TextBlock
         {
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 6),
-            Text = "ShowCue er fri programvare: du kan dele det videre og endre det under vilkårene i GNU General Public License versjon 3. " +
-                   "Programmet leveres UTEN NOEN FORM FOR GARANTI, heller ikke underforstått garanti for salgbarhet eller egnethet for et bestemt formål.",
+            Text = Loc.T("ShowCue er fri programvare: du kan dele det videre og endre det under vilkårene i GNU General Public License versjon 3. ") +
+                   Loc.T("Programmet leveres UTEN NOEN FORM FOR GARANTI, heller ikke underforstått garanti for salgbarhet eller egnethet for et bestemt formål."),
         });
         var link = new Hyperlink(new Run(Source)) { NavigateUri = new Uri(Source) };
         link.RequestNavigate += (_, e) => { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); e.Handled = true; };
         head.Children.Add(new TextBlock(link));
 
         var tabs = new TabControl { Margin = new Thickness(18, 4, 18, 8) };
-        tabs.Items.Add(Page("Tredjepartslisenser", Resource("ThirdPartyNotices.txt")));
-        tabs.Items.Add(Page("GPL versjon 3", Resource("License.txt")));
+        tabs.Items.Add(Page(Loc.T("Tredjepartslisenser"), Resource("ThirdPartyNotices.txt")));
+        tabs.Items.Add(Page(Loc.T("GPL versjon 3"), Resource("License.txt")));
 
-        var ok = new Button { Content = "Lukk", Width = 90, IsDefault = true, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(18, 0, 18, 16) };
+        var ok = new Button { Content = Loc.T("Lukk"), Width = 90, IsDefault = true, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(18, 0, 18, 16) };
         ok.Click += (_, _) => Close();
 
         var root = new DockPanel();

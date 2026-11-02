@@ -1,5 +1,7 @@
 # ShowCue
 
+*[English](README.en.md)*
+
 Cue-basert avspillingsprogram for Windows. Laget for konsert og event:
 GO-knapp med cueliste, hurtigtaster for jingler og walk-in, og utgang til projektor.
 
@@ -258,6 +260,9 @@ Tittellinja i Windows følger temaet.
 *Oppsett → Tekst i cuelista* (Vanlig, Stor, Ekstra stor) gjør bare cuelista større, i tillegg.
 Begge finnes også under *Innstillinger → Utseende* og huskes til neste gang.
 
+**Språk:** norsk eller engelsk under *Innstillinger → Utseende → Språk*. Standard følger språket i Windows
+(norsk på norske maskiner, ellers engelsk). Det nye språket brukes neste gang ShowCue startes.
+
 **Cuefarger:** gi cuer en farge (rød, oransje, gul, grønn, blå, lilla, grå) i panelet til høyre. Raden blir tonet,
 og hurtigknappen får en fargestripe. Velg flere cuer for å farge alle på én gang.
 Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i lys).
@@ -288,14 +293,13 @@ og show fra Windows åpnes på Mac. ShowCue finner mediefilene igjen hvis de lig
   kan kreve kodeker fra Microsoft Store. Videoer med flere lydspor: bare det første brukes.
 - Bilde og lyd starter samtidig når videoen er åpnet. Store 4K-filer kan bruke litt tid på å åpne – legg gjerne
   inn et lite pre-wait på cuen før i stedet for å trykke GO i siste sekund.
-- Ingen angre-funksjon ennå – lagre ofte.
-- Ingen gruppe-cues eller timecode ennå.
+- Ingen gruppe-cues ennå.
 
 ## Mappestruktur
 
 ```
 ShowCue/
-  Models/      Cue-typer, showfil og innstillinger
+  Models/      Cue-typer, showfil, innstillinger og språk (Loc)
   Engine/      Lydmotor: PatchMixer (busser → kanaler), CuePlayback (routing, fades),
                AudioEngine (WASAPI/ASIO), VideoAudio, OSC inn/ut, OscFeedback, MIDI inn/ut,
                RemoteControl, cue-motor

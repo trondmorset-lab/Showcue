@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using ShowCue.Models;
 
 namespace ShowCue.Engine;
 
@@ -7,7 +8,7 @@ public static class Monitors
 {
     public sealed record MonitorInfo(int Index, int Left, int Top, int Width, int Height, bool Primary)
     {
-        public override string ToString() => $"Skjerm {Index + 1}: {Width}×{Height}{(Primary ? " (hovedskjerm)" : "")}";
+        public override string ToString() => Loc.F("Skjerm {0}: {1}×{2}{3}", Index + 1, Width, Height, (Primary ? Loc.T(" (hovedskjerm)") : ""));
     }
 
     public static List<MonitorInfo> GetAll()

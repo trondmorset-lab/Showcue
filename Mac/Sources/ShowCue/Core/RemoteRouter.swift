@@ -49,11 +49,11 @@ final class RemoteRouter {
         let frame = tc.toFrame(rate)
         if let prev = lastTcFrame, lastTcRate == rate {
             let n = show.fireTimecodeTriggers(from: prev, to: frame, rate: rate)
-            if n > 0 { show.remoteLog("MTC \(tc.format(rate)) → " + (n == 1 ? "1 cue" : "\(n) cuer")) }
+            if n > 0 { show.remoteLog(L("MTC {0} → ", tc.format(rate)) + (n == 1 ? L("1 cue") : L("{0} cuer", n))) }
         }
         lastTcFrame = frame
         lastTcRate = rate
-        let text = "MTC inn: " + tc.format(rate)
+        let text = L("MTC inn: ") + tc.format(rate)
         if text != timecodeStatus { timecodeStatus = text; onTimecodeStatus?(text) }
     }
 
@@ -65,7 +65,7 @@ final class RemoteRouter {
 
     func handleOsc(_ m: OscMessage, from: String) {
         let ok = execute(m)
-        show?.remoteLog("OSC fra \(from): \(m)" + (ok ? "" : "  – ukjent kommando eller cue"))
+        show?.remoteLog(L("OSC fra {0}: {1}", from, m) + (ok ? "" : L("  – ukjent kommando eller cue")))
     }
 
     @discardableResult
@@ -136,18 +136,18 @@ final class RemoteRouter {
         guard let show else { return }
         let what: String
         if trigger == settings.midiGo { show.go(); what = "GO" }
-        else if trigger == settings.midiStopAll { show.panic(); what = "stopp alt" }
-        else if trigger == settings.midiNext { show.movePlayhead(1); what = "neste" }
-        else if trigger == settings.midiPrevious { show.movePlayhead(-1); what = "forrige" }
+        else if trigger == settings.midiStopAll { show.panic(); what = L("stopp alt") }
+        else if trigger == settings.midiNext { show.movePlayhead(1); what = L("neste") }
+        else if trigger == settings.midiPrevious { show.movePlayhead(-1); what = L("forrige") }
         else {
             let n = show.fireMidiTrigger(trigger)
             if n == 0 {
-                show.remoteLog("MIDI: \(MidiTriggers.describe(trigger)) (kanal \(channel)) – ingen cue koblet til")
+                show.remoteLog(L("MIDI: {0} (kanal {1}) – ingen cue koblet til", MidiTriggers.describe(trigger), channel))
                 return
             }
-            what = n == 1 ? "1 cue" : "\(n) cues"
+            what = n == 1 ? L("1 cue") : L("{0} cues", n)
         }
-        show.remoteLog("MIDI: \(MidiTriggers.describe(trigger)) → \(what)")
+        show.remoteLog(L("MIDI: {0} → {1}", MidiTriggers.describe(trigger), what))
     }
 
     func handleMsc(_ m: MscCommand) {
@@ -166,6 +166,6 @@ final class RemoteRouter {
         default:
             return
         }
-        show.remoteLog("MSC: kommando \(String(format: "%02X", m.command)) \(m.cueNumber)" + (ok ? "" : " – fant ikke cuen"))
+        show.remoteLog(L("MSC: kommando {0} {1}", String(format: "%02X", m.command), m.cueNumber) + (ok ? "" : L(" – fant ikke cuen")))
     }
 }

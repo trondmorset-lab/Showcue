@@ -64,7 +64,7 @@ public sealed class DmxOutput : IDisposable
                 _udp ??= new UdpClient { EnableBroadcast = true };
                 _udp.Send(packet, packet.Length, host, ArtNet.Port);
             }
-            catch (Exception ex) { Error?.Invoke($"Art-Net til {host}: {ex.Message}"); }
+            catch (Exception ex) { Error?.Invoke(Loc.F("Art-Net til {0}: {1}", host, ex.Message)); }
         }
     }
 

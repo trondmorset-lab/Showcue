@@ -17,7 +17,7 @@ enum DecoderError: LocalizedError {
     case unsupported(String)
     var errorDescription: String? {
         switch self {
-        case .noAudio: return "Fila har ikke noe lydspor."
+        case .noAudio: return L("Fila har ikke noe lydspor.")
         case .unsupported(let s): return s
         }
     }
@@ -53,12 +53,12 @@ final class AudioFileDecoder: FrameDecoder {
             } else if let f = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: outputRate, channels: inFormat.channelCount, interleaved: false) {
                 outFormat = f
             } else {
-                throw DecoderError.unsupported("Kan ikke konvertere \(channels) kanaler")
+                throw DecoderError.unsupported(L("Kan ikke konvertere {0} kanaler", channels))
             }
             converter = AVAudioConverter(from: inFormat, to: outFormat)
             converter?.sampleRateConverterQuality = AVAudioQuality.high.rawValue
         }
-        guard let b = AVAudioPCMBuffer(pcmFormat: inFormat, frameCapacity: 4096) else { throw DecoderError.unsupported("Minnefeil") }
+        guard let b = AVAudioPCMBuffer(pcmFormat: inFormat, frameCapacity: 4096) else { throw DecoderError.unsupported(L("Minnefeil")) }
         inBuf = b
     }
 
@@ -168,12 +168,12 @@ final class AssetDecoder: FrameDecoder {
         }
         let o = AVAssetReaderTrackOutput(track: track, outputSettings: settings)
         o.alwaysCopiesSampleData = false
-        guard r.canAdd(o) else { throw DecoderError.unsupported("Lydsporet kan ikke dekodes") }
+        guard r.canAdd(o) else { throw DecoderError.unsupported(L("Lydsporet kan ikke dekodes")) }
         r.add(o)
         if seconds > 0 {
             r.timeRange = CMTimeRange(start: CMTime(seconds: seconds, preferredTimescale: 48000), duration: .positiveInfinity)
         }
-        guard r.startReading() else { throw r.error ?? DecoderError.unsupported("Kunne ikke starte dekoding") }
+        guard r.startReading() else { throw r.error ?? DecoderError.unsupported(L("Kunne ikke starte dekoding")) }
         reader = r
         output = o
         pending.removeAll(keepingCapacity: true)

@@ -7,9 +7,9 @@ enum MidiTriggers {
         let p = trigger.split(separator: ":", maxSplits: 1).map(String.init)
         guard p.count == 2 else { return trigger }
         switch p[0] {
-        case "N": return "Note \(p[1])"
+        case "N": return L("Note {0}", p[1])
         case "CC": return "CC \(p[1])"
-        case "PC": return "Prog \(p[1])"
+        case "PC": return L("Prog {0}", p[1])
         default: return trigger
         }
     }

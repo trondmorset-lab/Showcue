@@ -24,11 +24,11 @@ public sealed class MidiEngine : IDisposable
     private MidiOut GetOut(string name)
     {
         var devices = GetDevices();
-        if (devices.Count == 0) throw new InvalidOperationException("Ingen MIDI-utganger funnet.");
+        if (devices.Count == 0) throw new InvalidOperationException(Loc.T("Ingen MIDI-utganger funnet."));
         if (string.IsNullOrEmpty(name)) name = devices[0];
         if (_open.TryGetValue(name, out var mo)) return mo;
         int index = devices.IndexOf(name);
-        if (index < 0) throw new InvalidOperationException($"MIDI-enheten «{name}» finnes ikke.");
+        if (index < 0) throw new InvalidOperationException(Loc.F("MIDI-enheten «{0}» finnes ikke.", name));
         mo = new MidiOut(index);
         _open[name] = mo;
         return mo;

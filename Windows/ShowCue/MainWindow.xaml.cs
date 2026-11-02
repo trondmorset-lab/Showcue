@@ -23,16 +23,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private static readonly string[] VideoExt = { ".mp4", ".mov", ".m4v", ".wmv", ".avi", ".mkv" };
     private static readonly string[] ImageExt = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff" };
     private static readonly string[] PdfExt = { ".pdf" };
-    private const string ShowFilter = "ShowCue-show|*.showcue|Alle filer|*.*";
+    private static string ShowFilter => Loc.T("ShowCue-show|*.showcue|Alle filer|*.*");
 
     /// <summary>Filter for fildialogen, f.eks. «Lydfiler|*.wav;*.mp3|Alle filer|*.*».</summary>
-    private static string Filter(string name, string[] ext) => $"{name}|{string.Join(";", ext.Select(e => "*" + e))}|Alle filer|*.*";
+    private static string Filter(string name, string[] ext) => Loc.F("{0}|{1}|Alle filer|*.*", name, string.Join(";", ext.Select(e => "*" + e)));
 
     private static string FilterFor(object cueOrType) => cueOrType switch
     {
-        AudioCue or "audio" => Filter("Lydfiler", AudioExt),
-        VideoCue or "video" => Filter("Videofiler", VideoExt),
-        ImageCue or "image" => Filter("Bilder", ImageExt),
+        AudioCue or "audio" => Filter(Loc.T("Lydfiler"), AudioExt),
+        VideoCue or "video" => Filter(Loc.T("Videofiler"), VideoExt),
+        ImageCue or "image" => Filter(Loc.T("Bilder"), ImageExt),
         _ => Filter("PDF", PdfExt),
     };
 
@@ -69,7 +69,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public IReadOnlyList<PatchBus> Buses => _settings.Buses.ToList();
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
-        + (_settings.OscFeedbackEnabled ? $"   ·   Status ut: {_settings.OscFeedbackHost}:{_settings.OscFeedbackPort}" : "");
+        + (_settings.OscFeedbackEnabled ? Loc.F("   ·   Status ut: {0}:{1}", _settings.OscFeedbackHost, _settings.OscFeedbackPort) : "");
     private string _learnText = "";
     /// <summary>Vises i inspector mens vi venter på en MIDI-melding.</summary>
     public string LearnText { get => _learnText; set { _learnText = value; Raise(); } }
@@ -100,11 +100,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public bool IsEmpty => Cues.Count == 0;
     public bool NothingActive => Engine.Active.Count == 0;
     public bool NoHotkeys => HotkeyCues.Count == 0;
-    public string NextCueTitle => _selected?.DisplayName ?? (Cues.Count > 0 ? "— slutt på lista —" : "");
-    public string ActiveCountText => Engine.Active.Count == 0 ? "" : $"{Engine.Active.Count} aktive";
+    public string NextCueTitle => _selected?.DisplayName ?? (Cues.Count > 0 ? Loc.T("— slutt på lista —") : "");
+    public string ActiveCountText => Engine.Active.Count == 0 ? "" : Loc.F("{0} aktive", Engine.Active.Count);
     public string StatusText { get => _statusText; set { _statusText = value; Raise(); } }
     public string WindowTitle =>
-        $"{(_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn")}{(IsDirty ? " •" : "")}{(_showMode ? "  🔒 SHOWMODUS" : "")} — ShowCue {AppVersion}";
+        Loc.F("{0}{1}{2} — ShowCue {3}", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), (IsDirty ? " •" : ""), (_showMode ? Loc.T("  🔒 SHOWMODUS") : ""), AppVersion);
 
     /// <summary>Programversjonen (fra VERSION-fila ved bygging), f.eks. «0.5.0».</summary>
     public static string AppVersion
@@ -129,15 +129,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             _showMode = value;
             if (value) Engine.Preview.Stop();
             Raise(); Raise(nameof(IsEditable)); Raise(nameof(ShowModeLabel)); RaiseUndo(); RaiseTitle();
-            StatusText = value ? "Showmodus: redigering er låst (Ctrl+L for å låse opp)." : "Redigering er låst opp.";
+            StatusText = value ? Loc.T("Showmodus: redigering er låst (Ctrl+L for å låse opp).") : Loc.T("Redigering er låst opp.");
         }
     }
     public bool IsEditable => !_showMode;
     public string PauseGlyph => Engine.IsPaused ? "▶" : "⏸";
     /// <summary>Teksten fra siste memo-cue (tom = ingen beskjed vises).</summary>
     public string MemoText { get => _memoText; set { _memoText = value ?? ""; Raise(); } }
-    public string PauseText => Engine.IsPaused ? "Fortsett" : "Pause";
-    public string ShowModeLabel => _showMode ? "🔓 Lås opp" : "🔒 Showmodus";
+    public string PauseText => Engine.IsPaused ? Loc.T("Fortsett") : Loc.T("Pause");
+    public string ShowModeLabel => _showMode ? Loc.T("🔓 Lås opp") : Loc.T("🔒 Showmodus");
     public bool CanUndo => IsEditable && _history.CanUndo;
     public bool CanRedo => IsEditable && _history.CanRedo;
     private void RaiseUndo() { Raise(nameof(CanUndo)); Raise(nameof(CanRedo)); }
@@ -167,13 +167,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Engine.PauseChanged += () =>
         {
             Raise(nameof(PauseGlyph)); Raise(nameof(PauseText));
-            StatusText = Engine.IsPaused ? "Pause – alt står stille. Ctrl+P, Pause-knappen eller GO fortsetter." : "Fortsetter.";
+            StatusText = Engine.IsPaused ? Loc.T("Pause – alt står stille. Ctrl+P, Pause-knappen eller GO fortsetter.") : Loc.T("Fortsetter.");
         };
         // «Gå til»-cue: vent til GO er ferdig med å flytte markøren, så flytt den til målet.
         Engine.GotoRequested += (target, fire) => Dispatcher.BeginInvoke(() =>
         {
             var c = FindCue(target);
-            if (c == null) { StatusText = $"Gå til: fant ikke cue {target}."; return; }
+            if (c == null) { StatusText = Loc.F("Gå til: fant ikke cue {0}.", target); return; }
             SelectedCue = c;
             if (fire) { _lastGo = DateTime.MinValue; Go(); }
         });
@@ -240,8 +240,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         RaiseTitle();
 
         var missing = _show.Cues.Where(c => c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath)).ToList();
-        foreach (var c in missing) c.Error = "Fila finnes ikke: " + ((IFileCue)c).FilePath;
-        if (missing.Count > 0) StatusText = $"Advarsel: {missing.Count} mediefil(er) mangler. De er merket med ! i lista.";
+        foreach (var c in missing) c.Error = Loc.T("Fila finnes ikke: ") + ((IFileCue)c).FilePath;
+        if (missing.Count > 0) StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. De er merket med ! i lista.", missing.Count);
     }
 
     private void Cues_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -266,7 +266,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         {
             if (c is AudioCue a) (a.FileDuration, a.FileChannels) = File.Exists(a.FilePath) ? AudioEngine.Probe(a.FilePath) : (0, 0);
             if (c is VideoCue v) { v.KnownDuration = 0; v.FileChannels = -1; ProbeVideoAudio(v); }
-            c.Error = c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath) ? "Fila finnes ikke" : null;
+            c.Error = c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath) ? Loc.T("Fila finnes ikke") : null;
             if (c is StillCue) MediaCache.Preload(new[] { c });
         }
         if (e.PropertyName == nameof(PdfCue.Page)) MediaCache.Preload(new[] { c });
@@ -283,7 +283,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private bool ConfirmDiscard()
     {
         if (!IsDirty) return true;
-        var r = MessageBox.Show(this, "Vil du lagre endringene i showet?", "ShowCue", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        var r = MessageBox.Show(this, Loc.T("Vil du lagre endringene i showet?"), "ShowCue", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (r == MessageBoxResult.Cancel) return false;
         if (r == MessageBoxResult.Yes) return Save(false);
         ShowSafety.DeleteAutosave(_showPath);
@@ -311,13 +311,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             _savedJson = _show.ToJson();
             _settings.LastShowPath = path;
             _settings.Save();
-            StatusText = "Lagret " + path;
+            StatusText = Loc.T("Lagret ") + path;
             RaiseTitle();
             return true;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, "Kunne ikke lagre: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, Loc.T("Kunne ikke lagre: ") + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
     }
@@ -329,13 +329,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             SetShow(ShowDocument.Load(path), path);
             _settings.LastShowPath = path;
             _settings.Save();
-            if (string.IsNullOrEmpty(StatusText) || !StatusText.StartsWith("Advarsel")) StatusText = "Åpnet " + path;
+            if (string.IsNullOrEmpty(StatusText) || !StatusText.StartsWith(Loc.T("Advarsel"))) StatusText = Loc.T("Åpnet ") + path;
             OfferRecovery();
             OfferRelink();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, "Kunne ikke åpne showet: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, Loc.T("Kunne ikke åpne showet: ") + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -343,7 +343,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         CommitFocusedTextBox();
         if (Engine.Active.Count > 0 &&
-            MessageBox.Show(this, "Cues spiller fortsatt. Vil du avslutte?", "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            MessageBox.Show(this, Loc.T("Cues spiller fortsatt. Vil du avslutte?"), "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             e.Cancel = true;
             return;
@@ -387,7 +387,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var hard = (DateTime.Now - _lastPanic).TotalSeconds < 1.0;
         _lastPanic = DateTime.Now;
         Engine.StopAll(hard ? 0 : _settings.PanicFadeTime);
-        StatusText = hard ? "Alt stoppet umiddelbart." : $"Stopper alt (fade {_settings.PanicFadeTime:0.#} s). Trykk Esc igjen for umiddelbar stopp.";
+        StatusText = hard ? Loc.T("Alt stoppet umiddelbart.") : Loc.F("Stopper alt (fade {0:0.#} s). Trykk Esc igjen for umiddelbar stopp.", _settings.PanicFadeTime);
     }
 
     private static double FadeOutOf(Cue c) => c switch
@@ -609,7 +609,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (name != null)
         {
             var other = Cues.FirstOrDefault(c => c != SelectedCue && c.Hotkey == name);
-            if (other != null) { other.Hotkey = ""; StatusText = $"Hurtigtast {name} flyttet fra cue {other.Number}."; }
+            if (other != null) { other.Hotkey = ""; StatusText = Loc.F("Hurtigtast {0} flyttet fra cue {1}.", name, other.Number); }
             SelectedCue.Hotkey = name;
             CueGrid.Focus();
         }
@@ -732,7 +732,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
         if (selected.Count == 0) return;
-        var text = selected.Count == 1 ? $"Slette cue {selected[0].Number} «{selected[0].DisplayName}»?" : $"Slette {selected.Count} cues?";
+        var text = selected.Count == 1 ? Loc.F("Slette cue {0} «{1}»?", selected[0].Number, selected[0].DisplayName) : Loc.F("Slette {0} cues?", selected.Count);
         if (MessageBox.Show(this, text, "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         int idx = selected.Min(c => Cues.IndexOf(c));
         foreach (var c in selected)
@@ -760,7 +760,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, "Gi alle cues nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cues oppdateres automatisk.", "ShowCue",
+        if (MessageBox.Show(this, Loc.T("Gi alle cues nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cues oppdateres automatisk."), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < Cues.Count; i++)
@@ -804,14 +804,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
         var cues = files.OrderBy(f => f, StringComparer.CurrentCultureIgnoreCase).Select(CreateCueForFile).OfType<Cue>().ToList();
-        if (cues.Count == 0) { StatusText = "Ingen støttede filer i det du slapp."; return; }
+        if (cues.Count == 0) { StatusText = Loc.T("Ingen støttede filer i det du slapp."); return; }
 
         // Sett inn under raden det ble sluppet på, ellers nederst.
         int at = Cues.Count;
         var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
         if (row?.Item is Cue c) at = Cues.IndexOf(c) + 1;
         InsertCues(cues, at);
-        StatusText = $"La til {cues.Count} cue(s).";
+        StatusText = Loc.F("La til {0} cue(s).", cues.Count);
     }
 
     private static T? FindParent<T>(DependencyObject? d) where T : DependencyObject
@@ -834,7 +834,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void ReleaseSelected_Click(object sender, RoutedEventArgs e)
     {
-        if (SelectedCue != null && !Engine.Release(SelectedCue)) StatusText = "Cuen looper ikke (eller spiller ikke).";
+        if (SelectedCue != null && !Engine.Release(SelectedCue)) StatusText = Loc.T("Cuen looper ikke (eller spiller ikke).");
     }
 
     // ---------- Spilleliste ----------
@@ -900,7 +900,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var text = box.Text.Trim();
         if (text.Length > 0 && !Timecode.TryParse(text, out _))
         {
-            StatusText = "Tidskode må skrives tt:mm:ss:ff, f.eks. 01:00:10:00.";
+            StatusText = Loc.T("Tidskode må skrives tt:mm:ss:ff, f.eks. 01:00:10:00.");
             box.Text = SelectedCue.TimecodeTrigger;
             return;
         }
@@ -934,23 +934,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         var missing = MediaTools.Missing(Cues);
         if (missing.Count == 0) return;
-        var text = missing.Count == 1 ? $"Fant ikke mediefila «{MediaTools.FileName(missing[0])}»." : $"Fant ikke {missing.Count} mediefiler.";
-        if (MessageBox.Show(this, text + "\n\nVil du velge en mappe å lete i (undermapper tas med)?", "ShowCue",
+        var text = missing.Count == 1 ? Loc.F("Fant ikke mediefila «{0}».", MediaTools.FileName(missing[0])) : Loc.F("Fant ikke {0} mediefiler.", missing.Count);
+        if (MessageBox.Show(this, text + Loc.T("\n\nVil du velge en mappe å lete i (undermapper tas med)?"), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             Relink();
-        else StatusText = $"Advarsel: {missing.Count} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.";
+        else StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.", missing.Count);
     }
 
     private void Relink_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MediaTools.Missing(Cues).Count == 0) { StatusText = "Ingen mediefiler mangler."; return; }
+        if (MediaTools.Missing(Cues).Count == 0) { StatusText = Loc.T("Ingen mediefiler mangler."); return; }
         Relink();
     }
 
     private void Relink()
     {
-        var dlg = new OpenFolderDialog { Title = "Velg mappa mediefilene ligger i" };
+        var dlg = new OpenFolderDialog { Title = Loc.T("Velg mappa mediefilene ligger i") };
         if (_showPath != null) dlg.InitialDirectory = Path.GetDirectoryName(_showPath);
         if (dlg.ShowDialog(this) != true) return;
         var found = MediaTools.Relink(Cues, dlg.FolderName);
@@ -960,27 +960,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         MediaCache.Clear();
         MediaCache.Preload(Cues);
         var left = MediaTools.Missing(Cues).Count;
-        StatusText = $"Fant {found} fil(er)." + (left > 0 ? $" {left} mangler fortsatt." : " Alle mediefiler er på plass.");
+        StatusText = Loc.F("Fant {0} fil(er).", found) + (left > 0 ? Loc.F(" {0} mangler fortsatt.", left) : Loc.T(" Alle mediefiler er på plass."));
     }
 
     private void Collect_Click(object sender, RoutedEventArgs e)
     {
         CommitFocusedTextBox();
-        var dlg = new OpenFolderDialog { Title = "Velg (eller lag) en mappe for showet og mediefilene" };
+        var dlg = new OpenFolderDialog { Title = Loc.T("Velg (eller lag) en mappe for showet og mediefilene") };
         if (dlg.ShowDialog(this) != true) return;
-        var name = _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Show";
+        var name = _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Show");
         try
         {
             var r = MediaTools.Collect(_show, dlg.FolderName, name);
-            var msg = $"Showet og {r.Copied} mediefil(er) er kopiert til\n{dlg.FolderName}\n\nShowfil: {Path.GetFileName(r.ShowPath)}, mediefiler i undermappa «Media»."
-                      + (r.Missing.Count > 0 ? $"\n\n{r.Missing.Count} fil(er) manglet og ble ikke kopiert." : "")
-                      + "\n\nVil du åpne den samlede kopien nå?";
-            if (MessageBox.Show(this, msg, "Samle show", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes && ConfirmDiscard())
+            var msg = Loc.F("Showet og {0} mediefil(er) er kopiert til\n{1}\n\nShowfil: {2}, mediefiler i undermappa «Media».", r.Copied, dlg.FolderName, Path.GetFileName(r.ShowPath))
+                      + (r.Missing.Count > 0 ? Loc.F("\n\n{0} fil(er) manglet og ble ikke kopiert.", r.Missing.Count) : "")
+                      + Loc.T("\n\nVil du åpne den samlede kopien nå?");
+            if (MessageBox.Show(this, msg, Loc.T("Samle show"), MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes && ConfirmDiscard())
                 TryOpen(r.ShowPath);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, "Kunne ikke samle showet: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, Loc.T("Kunne ikke samle showet: ") + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -998,31 +998,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         CommitFocusedTextBox();
         cues = cues.Where(c => File.Exists(c.FilePath)).ToList();
-        if (cues.Count == 0) { StatusText = "Ingen lyd-cuer med fil å normalisere."; return; }
+        if (cues.Count == 0) { StatusText = Loc.T("Ingen lyd-cuer med fil å normalisere."); return; }
         _loudnessCancel?.Cancel();
         var cancel = _loudnessCancel = new CancellationTokenSource();
         var target = _settings.LoudnessTarget;
         int done = 0, silent = 0;
         foreach (var c in cues)
         {
-            StatusText = $"Måler lydstyrke {++done}/{cues.Count}: {c.DisplayName} …";
+            StatusText = Loc.F("Måler lydstyrke {0}/{1}: {2} …", ++done, cues.Count, c.DisplayName);
             var (path, start, end) = (c.FilePath, c.StartTime, c.EndTime);
             double? lufs;
             try { lufs = await Task.Run(() => LoudnessMeter.MeasureFile(path, start, end, cancel.Token)); }
-            catch (Exception ex) { c.Error = "Lydstyrke: " + ex.Message; continue; }
+            catch (Exception ex) { c.Error = Loc.T("Lydstyrke: ") + ex.Message; continue; }
             if (cancel.IsCancellationRequested) return;
             c.Loudness = lufs.HasValue ? Math.Round(lufs.Value, 1) : null;
             if (lufs is double l) c.VolumeDb = LoudnessMeter.GainFor(l, target);
             else silent++;
         }
-        StatusText = $"Normalisert {cues.Count - silent} lyd-cue(r) til {target:0.#} LUFS." + (silent > 0 ? $" {silent} var stille eller for korte." : "");
+        StatusText = Loc.F("Normalisert {0} lyd-cue(r) til {1:0.#} LUFS.", cues.Count - silent, target) + (silent > 0 ? Loc.F(" {0} var stille eller for korte.", silent) : "");
     }
 
     private void New_Click(object sender, RoutedEventArgs e)
     {
         if (!ConfirmDiscard()) return;
         SetShow(new ShowDocument(), null);
-        StatusText = "Nytt show.";
+        StatusText = Loc.T("Nytt show.");
     }
 
     private void Open_Click(object sender, RoutedEventArgs e)
@@ -1049,7 +1049,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         // Bare endringer i lydoppsettet krever omstart av lyden (som stopper alt som spiller).
         bool restartAudio = AudioKey(win.Result) != AudioKey(_settings);
         if (restartAudio && Engine.Active.Count > 0 &&
-            MessageBox.Show(this, "Nytt lydoppsett stopper alt som spiller. Fortsette?", "ShowCue",
+            MessageBox.Show(this, Loc.T("Nytt lydoppsett stopper alt som spiller. Fortsette?"), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             win.Result.AudioDriver = _settings.AudioDriver; win.Result.WasapiDeviceId = _settings.WasapiDeviceId;
@@ -1057,8 +1057,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             win.Result.SampleRate = _settings.SampleRate; win.Result.LatencyMs = _settings.LatencyMs;
             restartAudio = false;
         }
+        bool languageChanged = win.Result.Language != _settings.Language;
         _settings = win.Result;
         _settings.Save();
+        if (languageChanged)
+            MessageBox.Show(this, Loc.T("Det nye språket brukes neste gang ShowCue startes."), "ShowCue", MessageBoxButton.OK, MessageBoxImage.Information);
         Engine.ApplySettings(_settings, restartAudio);
         Remote.Apply(_settings);
         ApplyFeedbackSettings();
@@ -1080,7 +1083,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _settings.Zoom = direction == 0 ? 1 : UiZoom.Step(_settings.Zoom, direction);
         _settings.Save();
         Raise(nameof(Zoom));
-        StatusText = $"Zoom: {UiZoom.Percent(_settings.Zoom)}";
+        StatusText = Loc.F("Zoom: {0}", UiZoom.Percent(_settings.Zoom));
     }
 
     private void Zoom_Click(object sender, RoutedEventArgs e) =>
@@ -1141,7 +1144,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         btn.IsEnabled = false;
         try
         {
-            var progress = new Progress<double>(p => StatusText = $"Pakker ut lyd fra {Path.GetFileName(v.FilePath)} … {p:P0}");
+            var progress = new Progress<double>(p => StatusText = Loc.F("Pakker ut lyd fra {0} … {1:P0}", Path.GetFileName(v.FilePath), p));
             var wav = await VideoAudio.ExtractAsync(v.FilePath, null, progress);
             var (dur, ch) = AudioEngine.Probe(wav);
             var audio = new AudioCue
@@ -1149,7 +1152,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 FilePath = wav,
                 FileDuration = dur,
                 FileChannels = ch,
-                Name = v.DisplayName + " (lyd)",
+                Name = v.DisplayName + Loc.T(" (lyd)"),
                 VolumeDb = v.VolumeDb,
                 FadeIn = v.FadeIn,
                 FadeOut = v.FadeOut,
@@ -1164,11 +1167,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             v.Routes = new List<AudioRoute>();
             InsertCues(new List<Cue> { audio }, Cues.IndexOf(v) + 1);
             SelectedCue = v;
-            StatusText = $"Lyden er lagret som {Path.GetFileName(wav)} og lagt inn som cue {audio.Number} (starter samtidig med videoen).";
+            StatusText = Loc.F("Lyden er lagret som {0} og lagt inn som cue {1} (starter samtidig med videoen).", Path.GetFileName(wav), audio.Number);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, "Kunne ikke pakke ut lyden: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Loc.T("Kunne ikke pakke ut lyden: ") + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
@@ -1195,7 +1198,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 a.Duration > 0 ? Math.Max(0, a.Duration - a.Elapsed) : 0, a.Duration > 0, !a.Started))
             .ToList();
         return new ShowStatus(
-            _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn",
+            _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn"),
             next?.Number ?? "", next?.DisplayName ?? "", next?.Notes ?? "",
             next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
     }
@@ -1227,17 +1230,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (SelectedCue == null) return;
         if (!Remote.MidiOpen)
         {
-            MessageBox.Show(this, "Velg en MIDI-inngang under Innstillinger → MIDI inn først.", "ShowCue", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, Loc.T("Velg en MIDI-inngang under Innstillinger → MIDI inn først."), "ShowCue", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var cue = SelectedCue;
-        LearnText = "Venter på MIDI … trykk en tast/knapp på kontrolleren";
+        LearnText = Loc.T("Venter på MIDI … trykk en tast/knapp på kontrolleren");
         Remote.BeginLearn(t =>
         {
             LearnText = "";
             var other = Cues.FirstOrDefault(c => c != cue && c.MidiTrigger == t);
             cue.MidiTrigger = t;
-            StatusText = $"Cue {cue.Number} startes nå av {MidiTriggers.Describe(t)}" + (other != null ? $" (cue {other.Number} har samme trigger)" : "");
+            StatusText = Loc.F("Cue {0} startes nå av {1}", cue.Number, MidiTriggers.Describe(t)) + (other != null ? Loc.F(" (cue {0} har samme trigger)", other.Number) : "");
         });
     }
 
@@ -1270,7 +1273,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         CommitFocusedTextBox();
         FlushUndo();
-        if (_history.Undo() is { } state) { ReplaceCues(state); StatusText = "Angret."; }
+        if (_history.Undo() is { } state) { ReplaceCues(state); StatusText = Loc.T("Angret."); }
     }
 
     private void Redo()
@@ -1278,7 +1281,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         CommitFocusedTextBox();
         FlushUndo();
-        if (_history.Redo() is { } state) { ReplaceCues(state); StatusText = "Gjort om."; }
+        if (_history.Redo() is { } state) { ReplaceCues(state); StatusText = Loc.T("Gjort om."); }
     }
 
     /// <summary>Bytt ut cuene med en lagret tilstand. Showfil, innstillinger og det som spiller røres ikke.</summary>
@@ -1308,7 +1311,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         if (!IsDirty) return;
         try { ShowSafety.WriteAutosave(_showPath, _show.ToJson()); }
-        catch (Exception ex) { StatusText = "Autolagring feilet: " + ex.Message; }
+        catch (Exception ex) { StatusText = Loc.T("Autolagring feilet: ") + ex.Message; }
     }
 
     /// <summary>Tilby å hente tilbake ulagrede endringer etter krasj eller strømbrudd.</summary>
@@ -1317,18 +1320,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (ShowSafety.PendingAutosave(_showPath) is not { } file) return;
         var when = File.GetLastWriteTime(file).ToString("dd.MM HH:mm");
         var r = MessageBox.Show(this,
-            $"Det finnes ulagrede endringer i «{(_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : "Uten navn")}» fra {when} " +
-            "(programmet ble ikke avsluttet normalt).\n\nVil du hente dem tilbake?", "Gjenopprett", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            Loc.F("Det finnes ulagrede endringer i «{0}» fra {1} ", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), when) +
+            Loc.T("(programmet ble ikke avsluttet normalt).\n\nVil du hente dem tilbake?"), Loc.T("Gjenopprett"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) { ShowSafety.DeleteAutosave(_showPath); return; }
         try
         {
             ReplaceCues(File.ReadAllText(file));
             FlushUndo();
-            StatusText = "Ulagrede endringer er hentet tilbake. Husk å lagre.";
+            StatusText = Loc.T("Ulagrede endringer er hentet tilbake. Husk å lagre.");
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, "Kunne ikke lese autolagringen: " + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Loc.T("Kunne ikke lese autolagringen: ") + ex.Message, "ShowCue", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

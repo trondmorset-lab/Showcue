@@ -39,8 +39,8 @@ struct CueListView: View {
             .overlay {
                 if model.cues.isEmpty {
                     VStack(spacing: 6) {
-                        Text("Dra lyd-, video-, bilde- eller PDF-filer hit").uiFont(18).foregroundColor(theme.muted)
-                        Text("eller bruk «Legg til» i verktøylinja").uiFont(13).foregroundColor(theme.faint)
+                        Text(L("Dra lyd-, video-, bilde- eller PDF-filer hit")).uiFont(18).foregroundColor(theme.muted)
+                        Text(L("eller bruk «Legg til» i verktøylinja")).uiFont(13).foregroundColor(theme.faint)
                     }
                     .allowsHitTesting(false)
                 }
@@ -58,14 +58,14 @@ struct CueListView: View {
         let col = Col(scale)
         return HStack(spacing: 0) {
             Text("").frame(width: col.status)
-            h("NR").frame(width: col.number, alignment: .leading)
-            h("TYPE").frame(width: col.type, alignment: .leading)
-            h("NAVN").frame(maxWidth: .infinity, alignment: .leading)
-            h("MÅL / FIL").frame(maxWidth: .infinity, alignment: .leading)
-            h("PRE-WAIT").frame(width: col.preWait, alignment: .leading)
-            h("LENGDE").frame(width: col.length, alignment: .leading)
+            h(L("NR")).frame(width: col.number, alignment: .leading)
+            h(L("TYPE")).frame(width: col.type, alignment: .leading)
+            h(L("NAVN")).frame(maxWidth: .infinity, alignment: .leading)
+            h(L("MÅL / FIL")).frame(maxWidth: .infinity, alignment: .leading)
+            h(L("PRE-WAIT")).frame(width: col.preWait, alignment: .leading)
+            h(L("LENGDE")).frame(width: col.length, alignment: .leading)
             Text("").frame(width: col.cont)
-            h("TRIGGER").frame(width: col.trigger, alignment: .leading)
+            h(L("TRIGGER")).frame(width: col.trigger, alignment: .leading)
         }
         .padding(.leading, 3)
         .padding(.vertical, 7)
@@ -165,14 +165,14 @@ struct CueRow: View {
             if NSApp.currentEvent?.clickCount == 2 { model.fire(cue) }
         }
         .contextMenu {
-            Button("Test (spill nå)") { model.fire(cue) }
-            Button("Stopp") { model.stop(cue) }
+            Button(L("Test (spill nå)")) { model.fire(cue) }
+            Button(L("Stopp")) { model.stop(cue) }
             Divider()
-            Menu("Farge") {
+            Menu(L("Farge")) {
                 ForEach(CueColor.allCases, id: \.self) { c in Button(c.label) { cue.color = c } }
             }
-            Button(cue.disabled ? "Aktiver" : "Deaktiver") { cue.disabled.toggle() }
-            Button("Dupliser") { model.select(cue); model.duplicateSelected() }
+            Button(cue.disabled ? L("Aktiver") : L("Deaktiver")) { cue.disabled.toggle() }
+            Button(L("Dupliser")) { model.select(cue); model.duplicateSelected() }
         }
     }
 }

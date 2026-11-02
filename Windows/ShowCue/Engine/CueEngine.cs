@@ -134,7 +134,7 @@ public sealed class CueEngine : IDisposable
         catch (Exception ex)
         {
             a.Cue.Error = ex.Message;
-            Log?.Invoke($"Cue {a.Cue.Number}: {ex.Message}");
+            Log?.Invoke(Loc.F("Cue {0}: {1}", a.Cue.Number, ex.Message));
             if (!a.Done) a.Stop(0);
             if (!a.Done) ForceRemove(a);
         }

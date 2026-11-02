@@ -332,4 +332,20 @@ final class ToolsTests: XCTestCase {
         XCTAssertEqual(UIZoom.clampList(0.5), 1.0)
         XCTAssertEqual(UIZoom.percent(1.25), "125 %")
     }
+
+    func testLanguageFollowsSettingThenSystem() {
+        XCTAssertEqual(Loc.resolve("", system: "nb-NO"), "nb")
+        XCTAssertEqual(Loc.resolve("", system: "nn"), "nb")
+        XCTAssertEqual(Loc.resolve("", system: "en-US"), "en")
+        XCTAssertEqual(Loc.resolve("en", system: "nb-NO"), "en")
+        XCTAssertEqual(Loc.resolve("nb", system: "en-US"), "nb")
+    }
+
+    func testEnglishTableIsComplete() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../i18n/en.json").standardizedFileURL
+        let table = try JSONDecoder().decode([String: String].self, from: Data(contentsOf: url))
+        XCTAssertEqual(table["Lagre"], "Save")
+        XCTAssertTrue(table.values.allSatisfy { !$0.isEmpty })
+    }
 }

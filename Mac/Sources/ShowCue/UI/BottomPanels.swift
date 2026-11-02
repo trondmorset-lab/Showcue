@@ -8,9 +8,9 @@ struct BottomPanels: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            panel("AKTIVE CUER") {
+            panel(L("AKTIVE CUER")) {
                 if model.engine.active.isEmpty {
-                    Text("Ingenting spiller").foregroundColor(theme.faint).frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Text(L("Ingenting spiller")).foregroundColor(theme.faint).frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         VStack(spacing: 5) {
@@ -19,10 +19,10 @@ struct BottomPanels: View {
                     }
                 }
             }
-            panel("HURTIGTASTER") {
+            panel(L("HURTIGTASTER")) {
                 let hot = model.cues.filter { !$0.hotkey.isEmpty }
                 if hot.isEmpty {
-                    Text("Gi en cue en hurtigtast i panelet til høyre, så dukker den opp her. Hurtigtaster starter cuen uten å flytte GO-markøren.")
+                    Text(L("Gi en cue en hurtigtast i panelet til høyre, så dukker den opp her. Hurtigtaster starter cuen uten å flytte GO-markøren."))
                         .foregroundColor(theme.faint).multilineTextAlignment(.center).frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
@@ -34,12 +34,12 @@ struct BottomPanels: View {
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                SectionHeader("UTGANG")
+                SectionHeader(L("UTGANG"))
                 PreviewView(root: model.output.previewRoot)
                     .frame(width: 300, height: 169)
                     .clipShape(RoundedRectangle(cornerRadius: 3))
                     .onTapGesture(count: 2) { model.output.toggle() }
-                    .help("Dobbeltklikk for å vise/skjule utgangsvinduet")
+                    .help(L("Dobbeltklikk for å vise/skjule utgangsvinduet"))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
@@ -84,7 +84,7 @@ struct ActiveRow: View {
             .padding(.horizontal, 12)
             Button("■") { active.stop(fade: AppModel.fadeOut(of: active.cue)) }
                 .buttonStyle(PanelButtonStyle())
-                .help("Stopp (med cuens fade ut)")
+                .help(L("Stopp (med cuens fade ut)"))
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(RoundedRectangle(cornerRadius: 5).fill(theme.panel2))

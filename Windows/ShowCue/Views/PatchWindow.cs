@@ -36,7 +36,7 @@ public sealed class PatchWindow : Window
         _buses = buses;
         _changed = changed;
 
-        Title = "Lydpatch — ShowCue";
+        Title = Loc.T("Lydpatch — ShowCue");
         Width = 1000;
         Height = 620;
         MinWidth = 640;
@@ -50,32 +50,32 @@ public sealed class PatchWindow : Window
         ShowInTaskbar = false;
 
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 10) };
-        toolbar.Children.Add(Btn("+ Utgang", "Legg til en ny utgang", () =>
+        toolbar.Children.Add(Btn(Loc.T("+ Utgang"), Loc.T("Legg til en ny utgang"), () =>
         {
             int n = _buses.Count + 1;
-            var b = new PatchBus { Name = $"Utgang {n}" };
+            var b = new PatchBus { Name = Loc.F("Utgang {0}", n) };
             if (n <= Math.Max(_audio.DeviceChannels, 1)) b.Channels.Add(n);
             _buses.Add(b);
             Changed(rebuild: true);
         }));
-        toolbar.Children.Add(Btn("− Fjern siste", "Fjern den nederste utgangen", () =>
+        toolbar.Children.Add(Btn(Loc.T("− Fjern siste"), Loc.T("Fjern den nederste utgangen"), () =>
         {
             if (_buses.Count <= 1) return;
             _audio.SetTestTone(_buses.Count - 1, false);
             _buses.RemoveAt(_buses.Count - 1);
             Changed(rebuild: true);
         }));
-        toolbar.Children.Add(Btn("1:1", "Utgang 1 → kanal 1, utgang 2 → kanal 2 osv.", () =>
+        toolbar.Children.Add(Btn("1:1", Loc.T("Utgang 1 → kanal 1, utgang 2 → kanal 2 osv."), () =>
         {
             for (int i = 0; i < _buses.Count; i++) _buses[i].Channels = i < _audio.DeviceChannels ? new List<int> { i + 1 } : new List<int>();
             Changed(rebuild: true);
         }));
-        toolbar.Children.Add(Btn("Nullstill krysspunkter", "Fjern alle krysspunkter", () =>
+        toolbar.Children.Add(Btn(Loc.T("Nullstill krysspunkter"), Loc.T("Fjern alle krysspunkter"), () =>
         {
             foreach (var b in _buses) b.Channels = new List<int>();
             Changed(rebuild: true);
         }));
-        toolbar.Children.Add(Btn("Stopp testtoner", "Slå av all rosa støy", () =>
+        toolbar.Children.Add(Btn(Loc.T("Stopp testtoner"), Loc.T("Slå av all rosa støy"), () =>
         {
             _audio.StopAllTestTones();
             foreach (var t in _testButtons) t.IsChecked = false;
@@ -83,8 +83,8 @@ public sealed class PatchWindow : Window
 
         var hint = new TextBlock
         {
-            Text = "Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. " +
-                   "«Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot PA. Patchen lagres på denne maskinen, ikke i showfila.",
+            Text = Loc.T("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. ") +
+                   Loc.T("«Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot PA. Patchen lagres på denne maskinen, ikke i showfila."),
             FontSize = 11.5,
             TextWrapping = TextWrapping.Wrap,
         };
@@ -152,7 +152,7 @@ public sealed class PatchWindow : Window
         int D = _audio.DeviceChannels;
         _status.Text = _audio.IsRunning
             ? $"{_audio.Status}"
-            : "Lydutgangen er ikke startet. Velg lydkort under Innstillinger.";
+            : Loc.T("Lydutgangen er ikke startet. Velg lydkort under Innstillinger.");
         _status.Foreground = _audio.IsRunning ? Res("Text") : Res("Danger");
         _status.Margin = new Thickness(0, 0, 0, 6);
 
@@ -171,14 +171,14 @@ public sealed class PatchWindow : Window
         }
 
         // --- Overskrifter ---
-        string[] heads = { "#", "UTGANG", "NIVÅ dB", "TEST", "NIVÅ" };
+        string[] heads = { "#", Loc.T("UTGANG"), Loc.T("NIVÅ dB"), "TEST", Loc.T("NIVÅ") };
         for (int i = 0; i < heads.Length; i++) Place(_left, Header(heads[i]), 0, i);
         var names = _audio.ChannelNames;
         for (int c = 0; c < D; c++)
         {
             var h = Header((c + 1).ToString());
             h.HorizontalAlignment = HorizontalAlignment.Center;
-            h.ToolTip = c < names.Count ? $"Kanal {c + 1}: {names[c]}" : $"Kanal {c + 1}";
+            h.ToolTip = c < names.Count ? Loc.F("Kanal {0}: {1}", c + 1, names[c]) : Loc.F("Kanal {0}", c + 1);
             Place(_right, h, 0, c);
         }
 
@@ -208,11 +208,11 @@ public sealed class PatchWindow : Window
 
             var test = new ToggleButton
             {
-                Content = "Test",
+                Content = Loc.T("Test"),
                 IsChecked = _audio.IsTestToneOn(busIndex),
                 Margin = new Thickness(0, 3, 6, 3),
                 Focusable = false,
-                ToolTip = "Rosa støy på denne utgangen",
+                ToolTip = Loc.T("Rosa støy på denne utgangen"),
             };
             test.Checked += (_, _) => _audio.SetTestTone(busIndex, true);
             test.Unchecked += (_, _) => _audio.SetTestTone(busIndex, false);
@@ -234,7 +234,7 @@ public sealed class PatchWindow : Window
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0),
                     Focusable = false,
-                    ToolTip = $"{bus.Name} → kanal {ch}" + (c < names.Count ? $" ({names[c]})" : ""),
+                    ToolTip = Loc.F("{0} → kanal {1}", bus.Name, ch) + (c < names.Count ? $" ({names[c]})" : ""),
                 };
                 cb.Checked += (_, _) => { if (!bus.Channels.Contains(ch)) { bus.Channels = bus.Channels.Append(ch).OrderBy(x => x).ToList(); Changed(false); } };
                 cb.Unchecked += (_, _) => { bus.Channels = bus.Channels.Where(x => x != ch).ToList(); Changed(false); };
@@ -251,7 +251,7 @@ public sealed class PatchWindow : Window
 
         // --- Kanalmålere nederst ---
         int last = rows - 1;
-        var chanLabel = new TextBlock { Text = "Kanalnivå på lydkortet", Foreground = Res("Muted"), FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center };
+        var chanLabel = new TextBlock { Text = Loc.T("Kanalnivå på lydkortet"), Foreground = Res("Muted"), FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center };
         Place(_left, chanLabel, last, 1);
         Grid.SetColumnSpan(chanLabel, 4);
         for (int c = 0; c < D; c++)

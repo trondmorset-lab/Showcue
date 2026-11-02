@@ -9,7 +9,7 @@ struct AudioDeviceInfo: Identifiable, Hashable {
     let outputChannels: Int
     let sampleRate: Double
 
-    var label: String { "\(name)  (\(outputChannels) kanaler)" }
+    var label: String { L("{0}  ({1} kanaler)", name, outputChannels) }
 }
 
 enum CoreAudioDevices {
@@ -54,7 +54,7 @@ enum CoreAudioDevices {
     static func info(_ id: AudioDeviceID) -> AudioDeviceInfo {
         AudioDeviceInfo(id: id,
                         uid: string(id, kAudioDevicePropertyDeviceUID) ?? "",
-                        name: string(id, kAudioObjectPropertyName) ?? "Lydenhet \(id)",
+                        name: string(id, kAudioObjectPropertyName) ?? L("Lydenhet {0}", id),
                         outputChannels: outputChannelCount(id),
                         sampleRate: nominalSampleRate(id))
     }
@@ -77,7 +77,7 @@ enum CoreAudioDevices {
         allDeviceIDs().compactMap { id in
             let n = inputChannelCount(id)
             guard n > 0, let uid = string(id, kAudioDevicePropertyDeviceUID) else { return nil }
-            return (uid, "\(string(id, kAudioObjectPropertyName) ?? "Lydenhet \(id)")  (\(n) kanaler)")
+            return (uid, L("{0}  ({1} kanaler)", string(id, kAudioObjectPropertyName) ?? L("Lydenhet {0}", id), n))
         }
     }
 
@@ -103,7 +103,7 @@ enum CoreAudioDevices {
     static func channelNames(_ id: AudioDeviceID, count: Int) -> [String] {
         (0..<count).map { i in
             let n = string(id, kAudioObjectPropertyElementName, kAudioObjectPropertyScopeOutput, AudioObjectPropertyElement(i + 1)) ?? ""
-            return n.isEmpty ? "Ut \(i + 1)" : n
+            return n.isEmpty ? L("Ut {0}", i + 1) : n
         }
     }
 

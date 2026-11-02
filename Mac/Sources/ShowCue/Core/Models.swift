@@ -15,7 +15,7 @@ enum NetworkProtocol: String, Codable, CaseIterable {
         switch self {
         case .udp: return "UDP"
         case .tcp: return "TCP"
-        case .http: return "HTTP-forespørsel"
+        case .http: return L("HTTP-forespørsel")
         }
     }
 }
@@ -26,9 +26,9 @@ enum FadeCurve: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .db: return "Jevn (lineær i dB)"
-        case .sCurve: return "S-kurve (myk start og slutt)"
-        case .linear: return "Lineær amplitude (som en fader)"
+        case .db: return L("Jevn (lineær i dB)")
+        case .sCurve: return L("S-kurve (myk start og slutt)")
+        case .linear: return L("Lineær amplitude (som en fader)")
         }
     }
 
@@ -49,9 +49,9 @@ enum ContinueMode: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .none: return "Ingen"
-        case .autoContinue: return "Auto-continue (start neste samtidig)"
-        case .autoFollow: return "Auto-follow (start neste når ferdig)"
+        case .none: return L("Ingen")
+        case .autoContinue: return L("Auto-continue (start neste samtidig)")
+        case .autoFollow: return L("Auto-follow (start neste når ferdig)")
         }
     }
     var glyph: String {
@@ -68,10 +68,10 @@ enum VisualStretch: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .uniform: return "Tilpass (behold format)"
-        case .uniformToFill: return "Fyll (beskjær)"
-        case .fill: return "Strekk"
-        case .none: return "Originalstørrelse"
+        case .uniform: return L("Tilpass (behold format)")
+        case .uniformToFill: return L("Fyll (beskjær)")
+        case .fill: return L("Strekk")
+        case .none: return L("Originalstørrelse")
         }
     }
 }
@@ -81,11 +81,11 @@ enum MidiMessageType: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .noteOn: return "Note on"
-        case .noteOff: return "Note off"
-        case .programChange: return "Program change"
-        case .controlChange: return "Control change (CC)"
-        case .mscGo: return "MSC GO (MIDI Show Control)"
+        case .noteOn: return L("Note on")
+        case .noteOff: return L("Note off")
+        case .programChange: return L("Program change")
+        case .controlChange: return L("Control change (CC)")
+        case .mscGo: return L("MSC GO (MIDI Show Control)")
         }
     }
 }
@@ -95,14 +95,14 @@ enum CueColor: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .none: return "Ingen"
-        case .red: return "Rød"
-        case .orange: return "Oransje"
-        case .yellow: return "Gul"
-        case .green: return "Grønn"
-        case .blue: return "Blå"
-        case .purple: return "Lilla"
-        case .gray: return "Grå"
+        case .none: return L("Ingen")
+        case .red: return L("Rød")
+        case .orange: return L("Oransje")
+        case .yellow: return L("Gul")
+        case .green: return L("Grønn")
+        case .blue: return L("Blå")
+        case .purple: return L("Lilla")
+        case .gray: return L("Grå")
         }
     }
 }
@@ -294,22 +294,22 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     var typeName: String {
         switch type {
-        case .audio: return "Lyd"
+        case .audio: return L("Lyd")
         case .video: return "Video"
-        case .image: return "Bilde"
+        case .image: return L("Bilde")
         case .pdf: return "PDF"
         case .fade: return "Fade"
-        case .stop: return "Stopp"
+        case .stop: return L("Stopp")
         case .osc: return "OSC"
         case .midi: return "MIDI"
-        case .playlist: return "Spilleliste"
-        case .goto: return "Gå til"
-        case .memo: return "Beskjed"
-        case .network: return "Nettverk"
-        case .timecode: return "Tidskode"
-        case .light: return "Lys"
-        case .input: return "Inngang"
-        case .web: return "Nettside"
+        case .playlist: return L("Spilleliste")
+        case .goto: return L("Gå til")
+        case .memo: return L("Beskjed")
+        case .network: return L("Nettverk")
+        case .timecode: return L("Tidskode")
+        case .light: return L("Lys")
+        case .input: return L("Inngang")
+        case .web: return L("Nettside")
         }
     }
 
@@ -340,7 +340,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         if let dot = n.lastIndex(of: "."), dot > n.startIndex { return String(n[..<dot]) }
         return n
     }
-    private var fileLabel: String { filePath.isEmpty ? "(ingen fil)" : fileName }
+    private var fileLabel: String { filePath.isEmpty ? L("(ingen fil)") : fileName }
 
     /// Fungerer både for Mac-stier og Windows-stier (fra show laget på Windows).
     static func lastPathComponent(_ path: String) -> String {
@@ -353,21 +353,21 @@ final class Cue: ObservableObject, Identifiable, Codable {
         switch type {
         case .audio, .video, .image: return fileStem.isEmpty ? typeName : fileStem
         case .pdf: return (fileStem.isEmpty ? typeName : fileStem) + " s.\(page)"
-        case .fade: return target.isEmpty ? "Fade" : "Fade cue \(target)"
+        case .fade: return target.isEmpty ? "Fade" : L("Fade cue {0}", target)
         case .stop:
-            if release { return ("Slipp loop " + target).trimmingCharacters(in: .whitespaces) }
-            return target.isEmpty ? "Stopp alt" : "Stopp cue \(target)"
+            if release { return (L("Slipp loop ") + target).trimmingCharacters(in: .whitespaces) }
+            return target.isEmpty ? L("Stopp alt") : L("Stopp cue {0}", target)
         case .osc: return "OSC " + address
         case .midi: return "MIDI"
-        case .playlist: return "Spilleliste"
-        case .goto: return target.isEmpty ? "Gå til" : "Gå til \(target)"
-        case .memo: return memoFirstLine.isEmpty ? "Beskjed" : memoFirstLine
+        case .playlist: return L("Spilleliste")
+        case .goto: return target.isEmpty ? L("Gå til") : L("Gå til {0}", target)
+        case .memo: return memoFirstLine.isEmpty ? L("Beskjed") : memoFirstLine
         case .network:
             return networkProtocol == .http ? "HTTP \(method)" : "\(networkProtocol.rawValue.uppercased()) \(host)"
-        case .timecode: return "Tidskode " + tcStart
-        case .light: return "Lys"
+        case .timecode: return L("Tidskode ") + tcStart
+        case .light: return L("Lys")
         case .input: return "Live-inngang"
-        case .web: return webURL.flatMap { $0.isFileURL ? nil : $0.host } ?? "Nettside"
+        case .web: return webURL.flatMap { $0.isFileURL ? nil : $0.host } ?? L("Nettside")
         }
     }
 
@@ -382,8 +382,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .video:
             var s = fileLabel
             if loop { s += "  ⟲" }
-            if fileChannels == 0 { s += "  (ingen lyd)" }
-            else if let r = routes, r.isEmpty { s += "  (lyd av)" }
+            if fileChannels == 0 { s += L("  (ingen lyd)") }
+            else if let r = routes, r.isEmpty { s += L("  (lyd av)") }
             else if volumeDb != 0 { s += "  " + Cue.signedDb(volumeDb) + " dB" }
             return s
         case .image:
@@ -391,28 +391,28 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .pdf:
             return "\(fileLabel)  s. \(page)"
         case .fade:
-            var s = target.isEmpty ? "(mål mangler)" : "→ " + target
+            var s = target.isEmpty ? L("(mål mangler)") : "→ " + target
             if fadeAudio { s += targetDb <= -60 ? "  −∞ dB" : "  " + Cue.fmt(targetDb) + " dB" }
-            if stopWhenDone { s += "  + stopp" }
+            if stopWhenDone { s += L("  + stopp") }
             return s
         case .stop:
-            return (target.isEmpty ? "Alle cues" : "→ " + target)
-                + (release ? "  slipp loop" : fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+            return (target.isEmpty ? L("Alle cues") : "→ " + target)
+                + (release ? L("  slipp loop") : fadeTime > 0 ? L("  fade {0}s", Cue.fmt(fadeTime)) : "")
         case .playlist:
-            return "\(files.count) spor" + (shuffle ? "  tilfeldig" : "") + (loop ? "  ⟲" : "")
-                + (crossfade > 0 ? "  krysstoning \(Cue.fmt(crossfade))s" : "")
+            return L("{0} spor", files.count) + (shuffle ? L("  tilfeldig") : "") + (loop ? "  ⟲" : "")
+                + (crossfade > 0 ? L("  krysstoning {0}s", Cue.fmt(crossfade)) : "")
         case .goto:
-            return (target.isEmpty ? "(mål mangler)" : "→ " + target) + (fire ? "  + GO" : "")
+            return (target.isEmpty ? L("(mål mangler)") : "→ " + target) + (fire ? "  + GO" : "")
         case .memo:
             return memoFirstLine
         case .timecode:
-            return "\(tcStart) @ \(rate.label.split(separator: " ")[0]) fps" + (sendMtc ? "  MTC" : "") + (sendLtc ? "  LTC → ut \(ltcBus)" : "")
+            return L("{0} @ {1} fps", tcStart, rate.label.split(separator: " ")[0]) + (sendMtc ? "  MTC" : "") + (sendLtc ? L("  LTC → ut {0}", ltcBus) : "")
         case .light:
-            return "Univers \(universe)  \(DmxLevels.summary(levels))" + (fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+            return L("Univers {0}  {1}", universe, DmxLevels.summary(levels)) + (fadeTime > 0 ? L("  fade {0}s", Cue.fmt(fadeTime)) : "")
         case .web:
             return url
         case .input:
-            var s = "\(fileChannels) kanal(er)"
+            var s = L("{0} kanal(er)", fileChannels)
             if volumeDb != 0 { s += "  " + Cue.signedDb(volumeDb) + " dB" }
             if let r = routes { s += "  → " + Cue.routeSummary(r) }
             return s
@@ -424,11 +424,11 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi:
             let s: String
             switch messageType {
-            case .noteOn: s = "Note on  ch\(channel)  \(data1) / \(data2)"
-            case .noteOff: s = "Note off  ch\(channel)  \(data1)"
-            case .programChange: s = "Program  ch\(channel)  \(data1)"
+            case .noteOn: s = L("Note on  ch{0}  {1} / {2}", channel, data1, data2)
+            case .noteOff: s = L("Note off  ch{0}  {1}", channel, data1)
+            case .programChange: s = L("Program  ch{0}  {1}", channel, data1)
             case .controlChange: s = "CC  ch\(channel)  \(data1) = \(data2)"
-            case .mscGo: s = "MSC GO  cue \(mscCueNumber)"
+            case .mscGo: s = L("MSC GO  cue {0}", mscCueNumber)
             }
             return s + (device.isEmpty ? "" : "  [\(device)]")
         }
@@ -478,7 +478,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     static func routeSummary(_ r: [AudioRoute]) -> String {
         let buses = Array(Set(r.map { $0.bus })).sorted()
-        return buses.isEmpty ? "av" : "ut " + buses.map(String.init).joined(separator: ",")
+        return buses.isEmpty ? L("av") : L("ut ") + buses.map(String.init).joined(separator: ",")
     }
 
     private static let numberFormatter: NumberFormatter = {
@@ -684,7 +684,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
 /// Innholdet i en .showcue-fil (samme format som Windows-versjonen).
 struct ShowDocument: Codable {
     var formatVersion = 1
-    var title = "Nytt show"
+    var title = L("Nytt show")
     var cues: [Cue] = []
 
     enum CodingKeys: String, CodingKey { case formatVersion = "FormatVersion", title = "Title", cues = "Cues" }
@@ -694,7 +694,7 @@ struct ShowDocument: Codable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         formatVersion = (try? c.decodeIfPresent(Int.self, forKey: .formatVersion)) ?? 1
-        title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? "Show"
+        title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? L("Show")
         cues = try c.decodeIfPresent([Cue].self, forKey: .cues) ?? []
     }
 

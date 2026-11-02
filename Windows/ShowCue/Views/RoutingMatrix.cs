@@ -28,9 +28,9 @@ public sealed class RoutingMatrix : UserControl
     public RoutingMatrix()
     {
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        buttons.Children.Add(MakeButton("Standard", "Mono → 1+2, stereo → 1/2 osv.", () => SetRoutes(null)));
-        buttons.Children.Add(MakeButton("Alt av", "Fjern all routing", () => SetRoutes(new List<AudioRoute>())));
-        buttons.Children.Add(MakeButton("Sum til mono", "Alle kanaler til utgang 1 og 2 (−6 dB hver)", () =>
+        buttons.Children.Add(MakeButton(Loc.T("Standard"), Loc.T("Mono → 1+2, stereo → 1/2 osv."), () => SetRoutes(null)));
+        buttons.Children.Add(MakeButton(Loc.T("Alt av"), Loc.T("Fjern all routing"), () => SetRoutes(new List<AudioRoute>())));
+        buttons.Children.Add(MakeButton(Loc.T("Sum til mono"), Loc.T("Alle kanaler til utgang 1 og 2 (−6 dB hver)"), () =>
         {
             int ch = Math.Max(1, Cue?.FileChannels ?? 1);
             SetRoutes(Enumerable.Range(1, ch).SelectMany(c => new[] { new AudioRoute(c, 1, ch > 1 ? -6 : 0), new AudioRoute(c, 2, ch > 1 ? -6 : 0) }).ToList());
@@ -94,7 +94,7 @@ public sealed class RoutingMatrix : UserControl
             var h = new TextBlock
             {
                 Text = (b + 1).ToString(),
-                ToolTip = $"Utgang {b + 1}: {buses[b].Name}",
+                ToolTip = Loc.F("Utgang {0}: {1}", b + 1, buses[b].Name),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Foreground = muted,
                 FontSize = 11,
@@ -108,7 +108,7 @@ public sealed class RoutingMatrix : UserControl
         {
             var label = new TextBlock
             {
-                Text = rows == 2 ? (r == 0 ? "Venstre" : "Høyre") : rows == 1 ? "Mono" : $"Kanal {r + 1}",
+                Text = rows == 2 ? (r == 0 ? Loc.T("Venstre") : Loc.T("Høyre")) : rows == 1 ? Loc.T("Mono") : Loc.F("Kanal {0}", r + 1),
                 Foreground = muted,
                 FontSize = 11.5,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -128,7 +128,7 @@ public sealed class RoutingMatrix : UserControl
                     Padding = new Thickness(2, 3, 2, 3),
                     FontSize = 12,
                     TextAlignment = TextAlignment.Center,
-                    ToolTip = $"Kanal {src} → {buses[b].Name}",
+                    ToolTip = Loc.F("Kanal {0} → {1}", src, buses[b].Name),
                     Tag = (src, bus),
                 };
                 if (focusedKey is (int fs, int fb) && fs == src && fb == bus)
@@ -159,7 +159,7 @@ public sealed class RoutingMatrix : UserControl
         var existing = list.FirstOrDefault(r => r.Source == src && r.Bus == bus);
 
         text = text.Trim();
-        if (text.Length == 0 || text is "-" or "-inf" or "av")
+        if (text.Length == 0 || text is "-" or "-inf" or Loc.T("av"))
         {
             if (existing == null) return;
             list.Remove(existing);

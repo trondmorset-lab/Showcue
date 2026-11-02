@@ -156,16 +156,16 @@ final class AudioInput {
             var dev = id
             let err = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &dev,
                                            UInt32(MemoryLayout<AudioDeviceID>.size))
-            if err != noErr { throw NSError(domain: "ShowCue.Input", code: Int(err), userInfo: [NSLocalizedDescriptionKey: "Kunne ikke velge inngangen (feil \(err))"]) }
+            if err != noErr { throw NSError(domain: "ShowCue.Input", code: Int(err), userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke velge inngangen (feil {0})", err)]) }
         }
         let inFormat = input.outputFormat(forBus: 0)
         guard inFormat.channelCount > 0, inFormat.sampleRate > 0 else {
-            throw NSError(domain: "ShowCue.Input", code: -1, userInfo: [NSLocalizedDescriptionKey: "Fant ingen lydinngang. Sjekk at ShowCue har tilgang til mikrofonen (Systeminnstillinger → Personvern)."])
+            throw NSError(domain: "ShowCue.Input", code: -1, userInfo: [NSLocalizedDescriptionKey: L("Fant ingen lydinngang. Sjekk at ShowCue har tilgang til mikrofonen (Systeminnstillinger → Personvern).")])
         }
         let ch = Int(inFormat.channelCount)
         guard let outFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: rate, channels: AVAudioChannelCount(ch), interleaved: true),
               let converter = AVAudioConverter(from: inFormat, to: outFormat) else {
-            throw NSError(domain: "ShowCue.Input", code: -2, userInfo: [NSLocalizedDescriptionKey: "Kunne ikke gjøre om lydformatet fra inngangen"])
+            throw NSError(domain: "ShowCue.Input", code: -2, userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke gjøre om lydformatet fra inngangen")])
         }
         channels = ch
         input.installTap(onBus: 0, bufferSize: 512, format: inFormat) { [weak self] buffer, _ in

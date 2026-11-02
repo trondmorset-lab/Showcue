@@ -37,7 +37,7 @@ public sealed class WaveformEditor : UserControl
     private readonly TextBlock _routeWarning = new()
     {
         FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4),
-        Text = "⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.",
+        Text = Loc.T("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd."),
     };
     private int _loadId;
 
@@ -48,24 +48,24 @@ public sealed class WaveformEditor : UserControl
         _scroll.Scroll += (_, _) => { _canvas.ViewStart = _scroll.Value; _canvas.InvalidateVisual(); };
 
         var playRow = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
-        playRow.Children.Add(MakeButton("▶ Fra start", "Lytt fra startpunktet (gjennom lydpatchen)", () => PlayFrom(Cue?.StartTime ?? 0)));
-        playRow.Children.Add(MakeButton("▶ Fra markør", "Lytt fra den blå markøren. Klikk i bølgeformen for å flytte markøren, dobbeltklikk for å lytte derfra.", () => PlayFrom(_canvas.CursorTime)));
-        playRow.Children.Add(MakeButton("▶ Slutten", "Lytt til de siste 5 sekundene før sluttpunktet", () => PlayFrom(Math.Max(Cue?.StartTime ?? 0, _canvas.EffectiveEnd - 5))));
-        _stopButton = MakeButton("■ Stopp", "Stopp forhåndslyttingen", () => Engine?.Preview.Stop());
+        playRow.Children.Add(MakeButton(Loc.T("▶ Fra start"), Loc.T("Lytt fra startpunktet (gjennom lydpatchen)"), () => PlayFrom(Cue?.StartTime ?? 0)));
+        playRow.Children.Add(MakeButton(Loc.T("▶ Fra markør"), Loc.T("Lytt fra den blå markøren. Klikk i bølgeformen for å flytte markøren, dobbeltklikk for å lytte derfra."), () => PlayFrom(_canvas.CursorTime)));
+        playRow.Children.Add(MakeButton(Loc.T("▶ Slutten"), Loc.T("Lytt til de siste 5 sekundene før sluttpunktet"), () => PlayFrom(Math.Max(Cue?.StartTime ?? 0, _canvas.EffectiveEnd - 5))));
+        _stopButton = MakeButton(Loc.T("■ Stopp"), Loc.T("Stopp forhåndslyttingen"), () => Engine?.Preview.Stop());
         playRow.Children.Add(_stopButton);
-        playRow.Children.Add(MakeButton("▶ Kjør herfra", "Kjør cuen som i showet (gjennom cuens utganger) fra markøren – nyttig på prøver", () =>
+        playRow.Children.Add(MakeButton(Loc.T("▶ Kjør herfra"), Loc.T("Kjør cuen som i showet (gjennom cuens utganger) fra markøren – nyttig på prøver"), () =>
         {
             if (Engine != null && Cue is ShowCue.Models.Cue c) Engine.Fire(c, Math.Max(0, _canvas.CursorTime - Cue.StartTime));
         }));
 
         var editRow = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
-        editRow.Children.Add(MakeButton("Start = markør", "Sett startpunktet der markøren (eller lyttingen) er nå", () => SetStart(CurrentPoint())));
-        editRow.Children.Add(MakeButton("Slutt = markør", "Sett sluttpunktet der markøren (eller lyttingen) er nå", () => SetEnd(CurrentPoint())));
-        editRow.Children.Add(MakeButton("Nullstill", "Hele fila: start 0, slutt = filslutt", () => { if (Cue != null) { Cue.StartTime = 0; Cue.EndTime = 0; } }));
-        editRow.Children.Add(MakeButton("−", "Zoom ut (eller musehjul)", () => _canvas.Zoom(2, null)));
-        editRow.Children.Add(MakeButton("+", "Zoom inn (eller musehjul)", () => _canvas.Zoom(0.5, null)));
-        editRow.Children.Add(MakeButton("Hele", "Vis hele fila", () => _canvas.ZoomAll()));
-        _bigButton = MakeButton("⤢ Stort vindu", "Åpne et stort redigeringsvindu", OpenLarge);
+        editRow.Children.Add(MakeButton(Loc.T("Start = markør"), Loc.T("Sett startpunktet der markøren (eller lyttingen) er nå"), () => SetStart(CurrentPoint())));
+        editRow.Children.Add(MakeButton(Loc.T("Slutt = markør"), Loc.T("Sett sluttpunktet der markøren (eller lyttingen) er nå"), () => SetEnd(CurrentPoint())));
+        editRow.Children.Add(MakeButton(Loc.T("Nullstill"), Loc.T("Hele fila: start 0, slutt = filslutt"), () => { if (Cue != null) { Cue.StartTime = 0; Cue.EndTime = 0; } }));
+        editRow.Children.Add(MakeButton("−", Loc.T("Zoom ut (eller musehjul)"), () => _canvas.Zoom(2, null)));
+        editRow.Children.Add(MakeButton("+", Loc.T("Zoom inn (eller musehjul)"), () => _canvas.Zoom(0.5, null)));
+        editRow.Children.Add(MakeButton(Loc.T("Hele"), Loc.T("Vis hele fila"), () => _canvas.ZoomAll()));
+        _bigButton = MakeButton(Loc.T("⤢ Stort vindu"), Loc.T("Åpne et stort redigeringsvindu"), OpenLarge);
         editRow.Children.Add(_bigButton);
 
         var border = new Border
@@ -137,13 +137,13 @@ public sealed class WaveformEditor : UserControl
         var cue = Cue;
         int id = ++_loadId;
         _canvas.Data = null;
-        _canvas.Status = cue == null || string.IsNullOrEmpty(cue.FilePath) ? "Ingen fil valgt" : "Leser bølgeform …";
+        _canvas.Status = cue == null || string.IsNullOrEmpty(cue.FilePath) ? Loc.T("Ingen fil valgt") : Loc.T("Leser bølgeform …");
         Refresh();
         if (cue == null || string.IsNullOrEmpty(cue.FilePath)) return;
         var data = await WaveformCache.Get(cue.FilePath, cue.IsVideo);
         if (id != _loadId) return;
         _canvas.Data = data;
-        _canvas.Status = data == null ? (cue.IsVideo ? "Videoen har ikke noe lydspor – markørene virker likevel" : "Kunne ikke lese fila") : null;
+        _canvas.Status = data == null ? (cue.IsVideo ? Loc.T("Videoen har ikke noe lydspor – markørene virker likevel") : Loc.T("Kunne ikke lese fila")) : null;
         Refresh();
     }
 
@@ -165,8 +165,8 @@ public sealed class WaveformEditor : UserControl
         {
             var end = _canvas.EffectiveEnd;
             _info.Text = len <= 0
-                ? "Start " + Fmt(cue.StartTime) + "   Slutt " + (cue.EndTime > 0 ? Fmt(cue.EndTime) : "filslutt")
-                : $"Start {Fmt(cue.StartTime)}   Slutt {(cue.EndTime > 0 ? Fmt(end) : Fmt(end) + " (filslutt)")}   Lengde {Fmt(Math.Max(0, end - cue.StartTime))}   Markør {Fmt(_canvas.CursorTime)}";
+                ? Loc.T("Start ") + Fmt(cue.StartTime) + Loc.T("   Slutt ") + (cue.EndTime > 0 ? Fmt(cue.EndTime) : Loc.T("filslutt"))
+                : Loc.F("Start {0}   Slutt {1}   Lengde {2}   Markør {3}", Fmt(cue.StartTime), (cue.EndTime > 0 ? Fmt(end) : Fmt(end) + Loc.T(" (filslutt)")), Fmt(Math.Max(0, end - cue.StartTime)), Fmt(_canvas.CursorTime));
         }
         _canvas.InvalidateVisual();
     }
@@ -187,9 +187,9 @@ public sealed class WaveformEditor : UserControl
     internal void PlayFrom(double t)
     {
         if (Engine == null || Cue is not ShowCue.Models.Cue c) return;
-        if (!Engine.Audio.IsRunning) { MessageBox.Show("Lydutgangen er ikke startet. Sjekk Innstillinger → Lyd.", "ShowCue"); return; }
+        if (!Engine.Audio.IsRunning) { MessageBox.Show(Loc.T("Lydutgangen er ikke startet. Sjekk Innstillinger → Lyd."), "ShowCue"); return; }
         if (!Engine.Preview.Play(c, t, Cue.EndTime))
-            MessageBox.Show("Klarte ikke å spille av lyden i denne cuen.", "ShowCue");
+            MessageBox.Show(Loc.T("Klarte ikke å spille av lyden i denne cuen."), "ShowCue");
     }
 
     private void OnTick()
@@ -239,8 +239,8 @@ public sealed class WaveformEditor : UserControl
         if (Cue == null) return;
         var ed = new WaveformEditor { Large = true, Cue = Cue, Margin = new Thickness(14) };
         var fields = new WrapPanel { Margin = new Thickness(14, 0, 14, 14) };
-        fields.Children.Add(Field("Start (s)", nameof(ITrimmable.StartTime)));
-        fields.Children.Add(Field("Slutt (s, 0 = filslutt)", nameof(ITrimmable.EndTime)));
+        fields.Children.Add(Field(Loc.T("Start (s)"), nameof(ITrimmable.StartTime)));
+        fields.Children.Add(Field(Loc.T("Slutt (s, 0 = filslutt)"), nameof(ITrimmable.EndTime)));
         var panel = new DockPanel();
         DockPanel.SetDock(fields, Dock.Bottom);
         panel.Children.Add(fields);
@@ -248,7 +248,7 @@ public sealed class WaveformEditor : UserControl
 
         var w = new Window
         {
-            Title = "Rediger start og slutt – " + ((Cue as ShowCue.Models.Cue)?.DisplayName ?? ""),
+            Title = Loc.T("Rediger start og slutt – ") + ((Cue as ShowCue.Models.Cue)?.DisplayName ?? ""),
             Width = 1100, Height = 620, MinWidth = 600, MinHeight = 400,
             Owner = Window.GetWindow(this),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,

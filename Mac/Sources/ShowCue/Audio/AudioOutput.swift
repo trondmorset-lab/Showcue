@@ -20,7 +20,7 @@ final class AudioOutput {
 
     private func check(_ st: OSStatus, _ what: String) throws {
         guard st == noErr else {
-            throw NSError(domain: "ShowCue.Audio", code: Int(st), userInfo: [NSLocalizedDescriptionKey: "\(what) feilet (kode \(st))"])
+            throw NSError(domain: "ShowCue.Audio", code: Int(st), userInfo: [NSLocalizedDescriptionKey: L("{0} feilet (kode {1})", what, st)])
         }
     }
 
@@ -32,16 +32,16 @@ final class AudioOutput {
                                              componentManufacturer: kAudioUnitManufacturer_Apple,
                                              componentFlags: 0, componentFlagsMask: 0)
         guard let comp = AudioComponentFindNext(nil, &desc) else {
-            throw NSError(domain: "ShowCue.Audio", code: -1, userInfo: [NSLocalizedDescriptionKey: "Fant ikke CoreAudio-utgang"])
+            throw NSError(domain: "ShowCue.Audio", code: -1, userInfo: [NSLocalizedDescriptionKey: L("Fant ikke CoreAudio-utgang")])
         }
         var au: AudioUnit?
-        try check(AudioComponentInstanceNew(comp, &au), "Åpne lydutgang")
+        try check(AudioComponentInstanceNew(comp, &au), L("Åpne lydutgang"))
         guard let u = au else { throw NSError(domain: "ShowCue.Audio", code: -2) }
 
         do {
             var devID = device.id
             try check(AudioUnitSetProperty(u, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
-                                           &devID, UInt32(MemoryLayout<AudioDeviceID>.size)), "Velge lydenhet")
+                                           &devID, UInt32(MemoryLayout<AudioDeviceID>.size)), L("Velge lydenhet"))
 
             let channels = max(1, min(device.outputChannels, max(2, maxChannels), 512))
             let rate = device.sampleRate > 0 ? device.sampleRate : 48000
@@ -52,7 +52,7 @@ final class AudioOutput {
                 mBytesPerPacket: 4, mFramesPerPacket: 1, mBytesPerFrame: 4,
                 mChannelsPerFrame: UInt32(channels), mBitsPerChannel: 32, mReserved: 0)
             try check(AudioUnitSetProperty(u, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0,
-                                           &asbd, UInt32(MemoryLayout<AudioStreamBasicDescription>.size)), "Sette lydformat")
+                                           &asbd, UInt32(MemoryLayout<AudioStreamBasicDescription>.size)), L("Sette lydformat"))
 
             CoreAudioDevices.setBufferFrameSize(device.id, bufferFrames)
 
@@ -62,9 +62,9 @@ final class AudioOutput {
 
             var cb = AURenderCallbackStruct(inputProc: renderCallback, inputProcRefCon: Unmanaged.passUnretained(self).toOpaque())
             try check(AudioUnitSetProperty(u, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0,
-                                           &cb, UInt32(MemoryLayout<AURenderCallbackStruct>.size)), "Koble til mikser")
-            try check(AudioUnitInitialize(u), "Starte lydenhet")
-            try check(AudioOutputUnitStart(u), "Starte avspilling")
+                                           &cb, UInt32(MemoryLayout<AURenderCallbackStruct>.size)), L("Koble til mikser"))
+            try check(AudioUnitInitialize(u), L("Starte lydenhet"))
+            try check(AudioOutputUnitStart(u), L("Starte avspilling"))
             unit = u
             self.device = device
             return m

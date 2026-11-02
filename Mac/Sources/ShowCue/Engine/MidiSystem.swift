@@ -19,8 +19,8 @@ final class MidiSystem {
 
     init() {
         MIDIClientCreateWithBlock("ShowCue" as CFString, &client) { _ in }
-        MIDIOutputPortCreate(client, "ShowCue ut" as CFString, &outPort)
-        MIDIInputPortCreateWithBlock(client, "ShowCue inn" as CFString, &inPort) { [weak self] list, _ in
+        MIDIOutputPortCreate(client, L("ShowCue ut") as CFString, &outPort)
+        MIDIInputPortCreateWithBlock(client, L("ShowCue inn") as CFString, &inPort) { [weak self] list, _ in
             self?.receive(list)
         }
     }
@@ -57,7 +57,7 @@ final class MidiSystem {
     func send(_ bytes: [UInt8], device: String) throws {
         guard let dest = MidiSystem.destination(named: device) else {
             throw NSError(domain: "ShowCue.MIDI", code: 1, userInfo: [NSLocalizedDescriptionKey:
-                device.isEmpty ? "Ingen MIDI-utganger funnet." : "MIDI-enheten «\(device)» finnes ikke."])
+                device.isEmpty ? L("Ingen MIDI-utganger funnet.") : L("MIDI-enheten «{0}» finnes ikke.", device)])
         }
         let bufferSize = 1024
         let raw = UnsafeMutableRawPointer.allocate(byteCount: bufferSize, alignment: MemoryLayout<MIDIPacketList>.alignment)
@@ -79,13 +79,13 @@ final class MidiSystem {
             let src = MIDIGetSource(i)
             if MidiSystem.name(src) == n {
                 let st = MIDIPortConnectSource(inPort, src, nil)
-                guard st == noErr else { throw NSError(domain: "ShowCue.MIDI", code: Int(st), userInfo: [NSLocalizedDescriptionKey: "Kunne ikke åpne «\(n)»"]) }
+                guard st == noErr else { throw NSError(domain: "ShowCue.MIDI", code: Int(st), userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke åpne «{0}»", n)]) }
                 connectedSource = src
                 inputName = n
                 return
             }
         }
-        throw NSError(domain: "ShowCue.MIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: "MIDI-inngangen «\(n)» finnes ikke."])
+        throw NSError(domain: "ShowCue.MIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: L("MIDI-inngangen «{0}» finnes ikke.", n)])
     }
 
     func closeInput() {

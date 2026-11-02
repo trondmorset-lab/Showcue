@@ -57,7 +57,7 @@ final class Playback {
 /// Lydmotoren: én CoreAudio-utgang med PatchMixer, testtoner og avspillinger.
 final class AudioEngine: ObservableObject {
     private let output = AudioOutput()
-    @Published private(set) var status = "Lyd ikke startet"
+    @Published private(set) var status = L("Lyd ikke startet")
     @Published private(set) var deviceChannels = 0
     @Published private(set) var sampleRate: Double = 0
     @Published private(set) var channelNames: [String] = []
@@ -76,19 +76,19 @@ final class AudioEngine: ObservableObject {
             try open(s, uid: s.audioDeviceUID)
         } catch {
             let reason = error.localizedDescription
-            guard fallbackToDefault else { status = "Kunne ikke åpne lydenheten: \(reason)"; return }
+            guard fallbackToDefault else { status = L("Kunne ikke åpne lydenheten: {0}", reason); return }
             do {
                 try open(s, uid: "")
-                status = "Kunne ikke åpne valgt lydenhet (\(reason)). Bruker systemets standard utgang."
+                status = L("Kunne ikke åpne valgt lydenhet ({0}). Bruker systemets standard utgang.", reason)
             } catch {
-                status = "Ingen lydutgang: \(error.localizedDescription)"
+                status = L("Ingen lydutgang: {0}", error.localizedDescription)
             }
         }
     }
 
     private func open(_ s: AppSettings, uid: String) throws {
         guard let dev = CoreAudioDevices.device(uid: uid) else {
-            throw NSError(domain: "ShowCue.Audio", code: -10, userInfo: [NSLocalizedDescriptionKey: "Lydenheten finnes ikke (er den koblet til?)"])
+            throw NSError(domain: "ShowCue.Audio", code: -10, userInfo: [NSLocalizedDescriptionKey: L("Lydenheten finnes ikke (er den koblet til?)")])
         }
         let m = try output.start(device: dev, maxChannels: s.maxChannels, bufferFrames: s.bufferFrames, patch: s.buses)
         m.onSourceFinished = { [weak self] src in
@@ -99,7 +99,7 @@ final class AudioEngine: ObservableObject {
         deviceChannels = m.deviceChannels
         sampleRate = m.sampleRate
         channelNames = CoreAudioDevices.channelNames(dev.id, count: m.deviceChannels)
-        status = "\(dev.name) · \(m.deviceChannels) kanaler · \(Cue.fmt(m.sampleRate / 1000)) kHz"
+        status = L("{0} · {1} kanaler · {2} kHz", dev.name, m.deviceChannels, Cue.fmt(m.sampleRate / 1000))
     }
 
     func stop() {
@@ -117,7 +117,7 @@ final class AudioEngine: ObservableObject {
 
     /// Lager en avspilling av en lyd-cue (startes med `start()`). `offset` = start så mange sekunder inn (prøver).
     func makePlayback(audio cue: Cue, offset: Double = 0) throws -> Playback {
-        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."]) }
+        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")]) }
         let url = URL(fileURLWithPath: cue.filePath)
         let decoder: FrameDecoder
         do { decoder = try AudioFileDecoder(url: url, outputRate: m.sampleRate) }
@@ -130,7 +130,7 @@ final class AudioEngine: ObservableObject {
 
     /// Ett spor i en spilleliste: hele fila, med spillelistens nivå og routing.
     func makePlayback(track path: String, for cue: Cue, fadeIn: Double, offset: Double = 0) throws -> Playback {
-        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."]) }
+        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")]) }
         let url = URL(fileURLWithPath: path)
         let decoder: FrameDecoder
         do { decoder = try AudioFileDecoder(url: url, outputRate: m.sampleRate) }
@@ -153,7 +153,7 @@ final class AudioEngine: ObservableObject {
 
     /// Live-inngang med cuens nivå, fades og routing. Ringbufferen lukkes når stemmen er borte.
     func makePlayback(live ring: LiveRing, for cue: Cue, onClose: @escaping (LiveRing) -> Void) throws -> Playback {
-        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."]) }
+        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")]) }
         let src = LiveSource(ring: ring)
         src.onClose = onClose
         let voice = Voice(source: src, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: cue.fadeIn, fadeOut: cue.fadeOut,

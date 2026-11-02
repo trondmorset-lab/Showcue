@@ -28,6 +28,8 @@
     <!-- Lisensene følger med i selve programmet (vises under «Om ShowCue»). -->
     <EmbeddedResource Include="../../THIRD-PARTY-NOTICES.txt" LogicalName="ThirdPartyNotices.txt" />
     <EmbeddedResource Include="../../LICENSE" LogicalName="License.txt" />
+    <!-- Engelsk oversettelse av brukerflaten (felles for Windows og Mac). -->
+    <EmbeddedResource Include="../../i18n/en.json" LogicalName="en.json" />
   </ItemGroup>
 
   <ItemGroup>

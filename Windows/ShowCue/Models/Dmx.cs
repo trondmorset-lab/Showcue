@@ -12,22 +12,22 @@ public static class DmxLevels
         foreach (var raw in (text ?? "").Split(new[] { ' ', ',', ';', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var at = raw.Split('@', '=');
-            if (at.Length != 2) { error = $"«{raw}»: skriv kanal@verdi, f.eks. 1@255 eller 1-4@50%"; return false; }
+            if (at.Length != 2) { error = Loc.F("«{0}»: skriv kanal@verdi, f.eks. 1@255 eller 1-4@50%", raw); return false; }
             var range = at[0].Split('-');
             if (!int.TryParse(range[0], NumberStyles.None, CultureInfo.InvariantCulture, out var from)
                 || !int.TryParse(range[^1], NumberStyles.None, CultureInfo.InvariantCulture, out var to)
                 || range.Length > 2 || from < 1 || to > 512 || to < from)
-            { error = $"«{raw}»: kanal må være 1–512"; return false; }
+            { error = Loc.F("«{0}»: kanal må være 1–512", raw); return false; }
             var v = at[1].Trim();
             double value;
             if (v.EndsWith('%'))
             {
                 if (!double.TryParse(v[..^1].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var pct) || pct < 0 || pct > 100)
-                { error = $"«{raw}»: prosent må være 0–100"; return false; }
+                { error = Loc.F("«{0}»: prosent må være 0–100", raw); return false; }
                 value = pct * 255 / 100;
             }
             else if (!double.TryParse(v.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value) || value < 0 || value > 255)
-            { error = $"«{raw}»: verdi må være 0–255"; return false; }
+            { error = Loc.F("«{0}»: verdi må være 0–255", raw); return false; }
             for (int c = from; c <= to; c++) levels[c] = (byte)Math.Round(value, MidpointRounding.AwayFromZero);
         }
         return true;
@@ -36,7 +36,7 @@ public static class DmxLevels
     public static string Summary(string? text)
     {
         if (!TryParse(text, out var l, out _) || l.Count == 0) return "";
-        return l.Count == 1 ? $"kanal {l.Keys.First()}" : $"{l.Count} kanaler";
+        return l.Count == 1 ? Loc.F("kanal {0}", l.Keys.First()) : Loc.F("{0} kanaler", l.Count);
     }
 }
 

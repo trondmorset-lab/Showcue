@@ -67,7 +67,7 @@ final class AppModel: ObservableObject, ShowControl {
             NSApp.keyWindow?.makeFirstResponder(nil)
             if showMode { engine.preview.stop() }
             refreshUndo()
-            statusText = showMode ? "Showmodus: redigering er låst (⌘L for å låse opp)." : "Redigering er låst opp."
+            statusText = showMode ? L("Showmodus: redigering er låst (⌘L for å låse opp).") : L("Redigering er låst opp.")
         }
     }
     var isEditable: Bool { !showMode }
@@ -85,7 +85,7 @@ final class AppModel: ObservableObject, ShowControl {
         engine.onGoto = { [weak self] target, fire in
             DispatchQueue.main.async {
                 guard let self else { return }
-                guard let c = self.find(target) else { self.statusText = "Gå til: fant ikke cue \(target)."; return }
+                guard let c = self.find(target) else { self.statusText = L("Gå til: fant ikke cue {0}.", target); return }
                 self.select(c)
                 if fire { self.lastGo = .distantPast; self.go() }
             }
@@ -169,8 +169,8 @@ final class AppModel: ObservableObject, ShowControl {
         let hard = Date().timeIntervalSince(lastPanic) < 1
         lastPanic = Date()
         engine.stopAll(fade: hard ? 0 : settings.panicFadeTime)
-        statusText = hard ? "Alt stoppet umiddelbart."
-            : "Stopper alt (fade \(Cue.fmt(settings.panicFadeTime)) s). Trykk Esc igjen for umiddelbar stopp."
+        statusText = hard ? L("Alt stoppet umiddelbart.")
+            : L("Stopper alt (fade {0} s). Trykk Esc igjen for umiddelbar stopp.", Cue.fmt(settings.panicFadeTime))
     }
 
     func stopAll() { engine.stopAll(fade: settings.panicFadeTime) }
@@ -180,7 +180,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     func togglePause() {
         engine.togglePause()
-        statusText = engine.isPaused ? "Pause – alt står stille. ⌘P, Pause-knappen eller GO fortsetter." : "Fortsetter."
+        statusText = engine.isPaused ? L("Pause – alt står stille. ⌘P, Pause-knappen eller GO fortsetter.") : L("Fortsetter.")
     }
 
     func setPaused(_ paused: Bool?) {
@@ -196,7 +196,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     func releaseSelected() {
         guard let c = playhead else { return }
-        if !engine.release(c) { statusText = "Cuen looper ikke (eller spiller ikke)." }
+        if !engine.release(c) { statusText = L("Cuen looper ikke (eller spiller ikke).") }
     }
 
     /// Hurtigtast/MIDI-trigger: lyd og bilde/video startes og stoppes (av/på), resten bare startes.
@@ -273,7 +273,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     private func currentData() -> Data {
         var doc = ShowDocument()
-        doc.title = showURL?.deletingPathExtension().lastPathComponent ?? "Show"
+        doc.title = showURL?.deletingPathExtension().lastPathComponent ?? L("Show")
         doc.cues = cues
         return (try? doc.jsonData()) ?? Data()
     }
@@ -285,8 +285,8 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     var windowTitle: String {
-        (showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn") + (isDirty ? " •" : "") + (showMode ? "  🔒 SHOWMODUS" : "")
-            + " — ShowCue " + AppModel.version
+        (showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn")) + (isDirty ? " •" : "") + (showMode ? L("  🔒 SHOWMODUS") : "")
+            + L(" — ShowCue ") + AppModel.version
     }
 
     // MARK: - Angre / gjør om
@@ -300,14 +300,14 @@ final class AppModel: ObservableObject, ShowControl {
         guard isEditable else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         updateDirty() // ta med endringer som ikke er registrert ennå
-        if let d = history.undo() { replaceCues(d); statusText = "Angret." }
+        if let d = history.undo() { replaceCues(d); statusText = L("Angret.") }
     }
 
     func redo() {
         guard isEditable else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         updateDirty()
-        if let d = history.redo() { replaceCues(d); statusText = "Gjort om." }
+        if let d = history.redo() { replaceCues(d); statusText = L("Gjort om.") }
     }
 
     /// Bytt ut cuene med en lagret tilstand. Showfil, innstillinger og det som spiller røres ikke.
@@ -326,7 +326,7 @@ final class AppModel: ObservableObject, ShowControl {
         updateDirty()
         guard isDirty else { return }
         do { try ShowSafety.writeAutosave(for: showURL, data: currentData()) }
-        catch { statusText = "Autolagring feilet: \(error.localizedDescription)" }
+        catch { statusText = L("Autolagring feilet: {0}", error.localizedDescription) }
     }
 
     /// Tilby å hente tilbake ulagrede endringer etter krasj eller strømbrudd.
@@ -336,14 +336,14 @@ final class AppModel: ObservableObject, ShowControl {
         let f = DateFormatter()
         f.dateFormat = "dd.MM HH:mm"
         let a = NSAlert()
-        a.messageText = "Gjenopprette ulagrede endringer?"
-        a.informativeText = "Det finnes ulagrede endringer i «\(showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn")» fra \(f.string(from: date)) (programmet ble ikke avsluttet normalt)."
-        a.addButton(withTitle: "Hent tilbake")
-        a.addButton(withTitle: "Forkast")
+        a.messageText = L("Gjenopprette ulagrede endringer?")
+        a.informativeText = L("Det finnes ulagrede endringer i «{0}» fra {1} (programmet ble ikke avsluttet normalt).", showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn"), f.string(from: date))
+        a.addButton(withTitle: L("Hent tilbake"))
+        a.addButton(withTitle: L("Forkast"))
         guard a.runModal() == .alertFirstButtonReturn else { ShowSafety.deleteAutosave(for: showURL); return }
-        guard let data = try? Data(contentsOf: file) else { alert("Kunne ikke lese autolagringen."); return }
+        guard let data = try? Data(contentsOf: file) else { alert(L("Kunne ikke lese autolagringen.")); return }
         replaceCues(data)
-        statusText = "Ulagrede endringer er hentet tilbake. Husk å lagre."
+        statusText = L("Ulagrede endringer er hentet tilbake. Husk å lagre.")
     }
 
     /// Programversjonen fra Info.plist (settes fra VERSION-fila når appen bygges).
@@ -353,10 +353,10 @@ final class AppModel: ObservableObject, ShowControl {
         updateDirty()
         guard isDirty else { return true }
         let a = NSAlert()
-        a.messageText = "Vil du lagre endringene i showet?"
-        a.addButton(withTitle: "Lagre")
-        a.addButton(withTitle: "Ikke lagre")
-        a.addButton(withTitle: "Avbryt")
+        a.messageText = L("Vil du lagre endringene i showet?")
+        a.addButton(withTitle: L("Lagre"))
+        a.addButton(withTitle: L("Ikke lagre"))
+        a.addButton(withTitle: L("Avbryt"))
         switch a.runModal() {
         case .alertFirstButtonReturn: return save(as: false)
         case .alertSecondButtonReturn: ShowSafety.deleteAutosave(for: showURL); return true
@@ -367,7 +367,7 @@ final class AppModel: ObservableObject, ShowControl {
     func newShow(confirm: Bool = true) {
         if confirm && !confirmDiscard() { return }
         setShow(ShowDocument(), url: nil)
-        statusText = "Nytt show."
+        statusText = L("Nytt show.")
     }
 
     func openDialog() {
@@ -385,11 +385,11 @@ final class AppModel: ObservableObject, ShowControl {
             setShow(doc, url: url)
             settings.lastShowPath = url.path
             settings.save()
-            if !statusText.hasPrefix("Advarsel") { statusText = "Åpnet \(url.path)" }
+            if !statusText.hasPrefix(L("Advarsel")) { statusText = L("Åpnet {0}", url.path) }
             offerRecovery()
             offerRelink()
         } catch {
-            alert("Kunne ikke åpne showet: \(error.localizedDescription)")
+            alert(L("Kunne ikke åpne showet: {0}", error.localizedDescription))
         }
     }
 
@@ -418,10 +418,10 @@ final class AppModel: ObservableObject, ShowControl {
             isDirty = false
             settings.lastShowPath = target.path
             settings.save()
-            statusText = "Lagret \(target.path)"
+            statusText = L("Lagret {0}", target.path)
             return true
         } catch {
-            alert("Kunne ikke lagre: \(error.localizedDescription)")
+            alert(L("Kunne ikke lagre: {0}", error.localizedDescription))
             return false
         }
     }
@@ -444,8 +444,8 @@ final class AppModel: ObservableObject, ShowControl {
         select(cues.first { !$0.disabled })
         memoText = ""
         let missing = cues.filter { $0.isFileCue && !$0.filePath.isEmpty && !FileManager.default.fileExists(atPath: $0.filePath) }
-        missing.forEach { $0.error = "Fila finnes ikke: \($0.filePath)" }
-        if !missing.isEmpty { statusText = "Advarsel: \(missing.count) mediefil(er) mangler. De er merket med ! i lista." }
+        missing.forEach { $0.error = L("Fila finnes ikke: {0}", $0.filePath) }
+        if !missing.isEmpty { statusText = L("Advarsel: {0} mediefil(er) mangler. De er merket med ! i lista.", missing.count) }
     }
 
     func alert(_ text: String) {
@@ -511,9 +511,9 @@ final class AppModel: ObservableObject, ShowControl {
     func addFiles(_ urls: [URL], at: Int? = nil) {
         guard isEditable else { return }
         let new = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }.compactMap(cue(forFile:))
-        if new.isEmpty { statusText = "Ingen støttede filer."; return }
+        if new.isEmpty { statusText = L("Ingen støttede filer."); return }
         insert(new, at: at)
-        statusText = "La til \(new.count) cue(s)."
+        statusText = L("La til {0} cue(s).", new.count)
     }
 
     func pickFiles(_ types: [String], multiple: Bool) -> [URL] {
@@ -577,7 +577,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     func setFile(_ c: Cue, _ path: String) {
         c.filePath = path
-        c.error = FileManager.default.fileExists(atPath: path) ? nil : "Fila finnes ikke"
+        c.error = FileManager.default.fileExists(atPath: path) ? nil : L("Fila finnes ikke")
         switch c.type {
         case .audio: let p = AudioEngine.probeAudio(path); c.fileDuration = p.duration; c.fileChannels = p.channels
         case .video: c.knownDuration = 0; c.fileChannels = -1; probeVideo(c)
@@ -597,9 +597,9 @@ final class AppModel: ObservableObject, ShowControl {
         let sel = selectedCues
         guard !sel.isEmpty else { return }
         let a = NSAlert()
-        a.messageText = sel.count == 1 ? "Slette cue \(sel[0].number) «\(sel[0].displayName)»?" : "Slette \(sel.count) cuer?"
-        a.addButton(withTitle: "Slett")
-        a.addButton(withTitle: "Avbryt")
+        a.messageText = sel.count == 1 ? L("Slette cue {0} «{1}»?", sel[0].number, sel[0].displayName) : L("Slette {0} cuer?", sel.count)
+        a.addButton(withTitle: L("Slett"))
+        a.addButton(withTitle: L("Avbryt"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
         let first = sel.compactMap(index(of:)).min() ?? 0
         sel.forEach { engine.stop($0, fade: 0) }
@@ -620,10 +620,10 @@ final class AppModel: ObservableObject, ShowControl {
     func renumber() {
         guard isEditable else { return }
         let a = NSAlert()
-        a.messageText = "Gi alle cuer nye nummer (1, 2, 3)?"
-        a.informativeText = "Fade-, stopp- og gå til-cuer oppdateres automatisk."
-        a.addButton(withTitle: "Nummerer")
-        a.addButton(withTitle: "Avbryt")
+        a.messageText = L("Gi alle cuer nye nummer (1, 2, 3)?")
+        a.informativeText = L("Fade-, stopp- og gå til-cuer oppdateres automatisk.")
+        a.addButton(withTitle: L("Nummerer"))
+        a.addButton(withTitle: L("Avbryt"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
         var map: [String: String] = [:]
         for (i, c) in cues.enumerated() {
@@ -656,18 +656,18 @@ final class AppModel: ObservableObject, ShowControl {
         let missing = MediaTools.missing(cues)
         guard !missing.isEmpty else { return }
         let a = NSAlert()
-        a.messageText = missing.count == 1 ? "Fant ikke mediefila «\(Cue.lastPathComponent(missing[0]))»."
-            : "Fant ikke \(missing.count) mediefiler."
-        a.informativeText = "Vil du velge en mappe å lete i? Undermapper tas med."
-        a.addButton(withTitle: "Velg mappe")
-        a.addButton(withTitle: "Ikke nå")
+        a.messageText = missing.count == 1 ? L("Fant ikke mediefila «{0}».", Cue.lastPathComponent(missing[0]))
+            : L("Fant ikke {0} mediefiler.", missing.count)
+        a.informativeText = L("Vil du velge en mappe å lete i? Undermapper tas med.")
+        a.addButton(withTitle: L("Velg mappe"))
+        a.addButton(withTitle: L("Ikke nå"))
         if a.runModal() == .alertFirstButtonReturn { relink() }
-        else { statusText = "Advarsel: \(missing.count) mediefil(er) mangler. Verktøy → Finn manglende mediefiler." }
+        else { statusText = L("Advarsel: {0} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.", missing.count) }
     }
 
     func relinkMenu() {
         guard isEditable else { return }
-        if MediaTools.missing(cues).isEmpty { statusText = "Ingen mediefiler mangler."; return }
+        if MediaTools.missing(cues).isEmpty { statusText = L("Ingen mediefiler mangler."); return }
         relink()
     }
 
@@ -677,13 +677,13 @@ final class AppModel: ObservableObject, ShowControl {
         p.canChooseDirectories = true
         p.canCreateDirectories = true
         p.message = message
-        p.prompt = "Velg"
+        p.prompt = L("Velg")
         if let start { p.directoryURL = start }
         return p.runModal() == .OK ? p.url : nil
     }
 
     private func relink() {
-        guard let folder = pickFolder("Velg mappa mediefilene ligger i", start: showURL?.deletingLastPathComponent()) else { return }
+        guard let folder = pickFolder(L("Velg mappa mediefilene ligger i"), start: showURL?.deletingLastPathComponent()) else { return }
         let found = MediaTools.relink(cues, in: folder)
         for c in cues where c.type == .audio && c.fileDuration <= 0 && FileManager.default.fileExists(atPath: c.filePath) {
             let p = AudioEngine.probeAudio(c.filePath); c.fileDuration = p.duration; c.fileChannels = p.channels
@@ -692,28 +692,28 @@ final class AppModel: ObservableObject, ShowControl {
         MediaCache.shared.clear()
         MediaCache.shared.preload(cues)
         let left = MediaTools.missing(cues).count
-        statusText = "Fant \(found) fil(er)." + (left > 0 ? " \(left) mangler fortsatt." : " Alle mediefiler er på plass.")
+        statusText = L("Fant {0} fil(er).", found) + (left > 0 ? L(" {0} mangler fortsatt.", left) : L(" Alle mediefiler er på plass."))
         updateDirty()
     }
 
     func collectShow() {
         NSApp.keyWindow?.makeFirstResponder(nil)
-        guard let folder = pickFolder("Velg (eller lag) en mappe for showet og mediefilene") else { return }
+        guard let folder = pickFolder(L("Velg (eller lag) en mappe for showet og mediefilene")) else { return }
         var doc = ShowDocument()
         doc.cues = cues
-        let name = showURL?.deletingPathExtension().lastPathComponent ?? "Show"
+        let name = showURL?.deletingPathExtension().lastPathComponent ?? L("Show")
         do {
             let r = try MediaTools.collect(doc, to: folder, name: name)
             let a = NSAlert()
-            a.messageText = "Showet og \(r.copied) mediefil(er) er kopiert"
-            a.informativeText = "\(folder.path)\n\nShowfil: \(r.showURL.lastPathComponent), mediefiler i undermappa «Media»."
-                + (r.missing.isEmpty ? "" : "\n\n\(r.missing.count) fil(er) manglet og ble ikke kopiert.")
-                + "\n\nVil du åpne den samlede kopien nå?"
-            a.addButton(withTitle: "Åpne kopien")
-            a.addButton(withTitle: "Ferdig")
+            a.messageText = L("Showet og {0} mediefil(er) er kopiert", r.copied)
+            a.informativeText = L("{0}\n\nShowfil: {1}, mediefiler i undermappa «Media».", folder.path, r.showURL.lastPathComponent)
+                + (r.missing.isEmpty ? "" : L("\n\n{0} fil(er) manglet og ble ikke kopiert.", r.missing.count))
+                + L("\n\nVil du åpne den samlede kopien nå?")
+            a.addButton(withTitle: L("Åpne kopien"))
+            a.addButton(withTitle: L("Ferdig"))
             if a.runModal() == .alertFirstButtonReturn { open(r.showURL) }
         } catch {
-            alert("Kunne ikke samle showet: \(error.localizedDescription)")
+            alert(L("Kunne ikke samle showet: {0}", error.localizedDescription))
         }
     }
 
@@ -723,21 +723,21 @@ final class AppModel: ObservableObject, ShowControl {
         guard isEditable else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         let targets = list.filter { $0.type == .audio && FileManager.default.fileExists(atPath: $0.filePath) }
-        guard !targets.isEmpty else { statusText = "Ingen lyd-cuer med fil å normalisere."; return }
+        guard !targets.isEmpty else { statusText = L("Ingen lyd-cuer med fil å normalisere."); return }
         loudnessTask?.cancel()
         let goal = settings.loudnessTarget
         loudnessTask = Task { @MainActor [weak self] in
             var silent = 0, n = 0
             for c in targets {
                 n += 1
-                self?.statusText = "Måler lydstyrke \(n)/\(targets.count): \(c.displayName) …"
+                self?.statusText = L("Måler lydstyrke {0}/{1}: {2} …", n, targets.count, c.displayName)
                 let (path, start, end) = (c.filePath, c.startTime, c.endTime)
                 let result: Result<Double?, Error> = await Task.detached(priority: .userInitiated) {
                     Result { try LoudnessMeter.measure(file: URL(fileURLWithPath: path), start: start, end: end, isCancelled: { Task.isCancelled }) }
                 }.value
                 if Task.isCancelled { return }
                 switch result {
-                case .failure(let e): c.error = "Lydstyrke: \(e.localizedDescription)"
+                case .failure(let e): c.error = L("Lydstyrke: {0}", e.localizedDescription)
                 case .success(let lufs?):
                     c.loudness = (lufs * 10).rounded() / 10
                     c.volumeDb = LoudnessMeter.gain(for: lufs, target: goal)
@@ -745,8 +745,8 @@ final class AppModel: ObservableObject, ShowControl {
                     c.loudness = nil; silent += 1
                 }
             }
-            self?.statusText = "Normalisert \(targets.count - silent) lyd-cue(r) til \(Cue.fmt(goal)) LUFS."
-                + (silent > 0 ? " \(silent) var stille eller for korte." : "")
+            self?.statusText = L("Normalisert {0} lyd-cue(r) til {1} LUFS.", targets.count - silent, Cue.fmt(goal))
+                + (silent > 0 ? L(" {0} var stille eller for korte.", silent) : "")
             self?.updateDirty()
         }
     }
@@ -760,7 +760,7 @@ final class AppModel: ObservableObject, ShowControl {
         if let w = panelWindow { w.makeKeyAndOrderFront(nil); return }
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
                          styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-        w.title = "ShowCue – knappepanel"
+        w.title = L("ShowCue – knappepanel")
         w.isReleasedWhenClosed = false
         w.contentView = NSHostingView(rootView: ButtonPanelView().environmentObject(self))
         w.center()
@@ -775,21 +775,21 @@ final class AppModel: ObservableObject, ShowControl {
     func extractVideoAudio(_ v: Cue) {
         guard isEditable else { return }
         guard v.type == .video, FileManager.default.fileExists(atPath: v.filePath) else { return }
-        statusText = "Pakker ut lyd fra \(v.fileName) …"
+        statusText = L("Pakker ut lyd fra {0} …", v.fileName)
         let src = URL(fileURLWithPath: v.filePath)
         DispatchQueue.global(qos: .userInitiated).async {
             let result = Result { try VideoAudioExtractor.extract(src) { p in
-                DispatchQueue.main.async { self.statusText = "Pakker ut lyd fra \(v.fileName) … \(Int(p * 100)) %" }
+                DispatchQueue.main.async { self.statusText = L("Pakker ut lyd fra {0} … {1} %", v.fileName, Int(p * 100)) }
             } }
             DispatchQueue.main.async {
                 switch result {
                 case .failure(let e):
-                    self.alert("Kunne ikke pakke ut lyden: \(e.localizedDescription)")
+                    self.alert(L("Kunne ikke pakke ut lyden: {0}", e.localizedDescription))
                 case .success(let wav):
                     let a = Cue(type: .audio)
                     a.filePath = wav.path
                     let p = AudioEngine.probeAudio(wav.path); a.fileDuration = p.duration; a.fileChannels = p.channels
-                    a.name = v.displayName + " (lyd)"
+                    a.name = v.displayName + L(" (lyd)")
                     a.volumeDb = v.volumeDb; a.fadeIn = v.fadeIn; a.fadeOut = v.fadeOut; a.loop = v.loop; a.color = v.color
                     // Var videolyden slått av, får lyd-cuen standard routing.
                     a.routes = (v.routes?.isEmpty ?? true) ? nil : v.routes
@@ -798,7 +798,7 @@ final class AppModel: ObservableObject, ShowControl {
                     v.routes = []                   // og blir selv stum
                     self.insert([a], at: (self.index(of: v) ?? self.cues.count - 1) + 1)
                     self.select(v)
-                    self.statusText = "Lyden er lagret som \(wav.lastPathComponent) og lagt inn som cue \(a.number) (starter samtidig med videoen)."
+                    self.statusText = L("Lyden er lagret som {0} og lagt inn som cue {1} (starter samtidig med videoen).", wav.lastPathComponent, a.number)
                 }
             }
         }
@@ -808,6 +808,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     func applySettings(_ new: AppSettings) {
         let restartAudio = new.audioKey != settings.audioKey
+        if new.language != settings.language { statusText = L("Det nye språket brukes neste gang ShowCue startes.") }
         var s = new
         s.buses = settings.buses // patchen redigeres i eget vindu
         s.lastShowPath = settings.lastShowPath
@@ -827,7 +828,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Zoom inn (`direction` > 0), ut (< 0) eller tilbake til vanlig størrelse (0).
     func zoom(_ direction: Int) {
         settings.zoom = direction == 0 ? 1 : UIZoom.step(settings.zoom, direction)
-        statusText = "Zoom: \(UIZoom.percent(settings.zoom))"
+        statusText = L("Zoom: {0}", UIZoom.percent(settings.zoom))
     }
 
     func applyPatch() {
@@ -843,25 +844,25 @@ final class AppModel: ObservableObject, ShowControl {
             do {
                 try oscServer.start(port: settings.oscInPort)
                 let ips = UDP.localAddresses()
-                parts.append("OSC inn: port \(settings.oscInPort)" + (ips.isEmpty ? "" : "  (" + ips.joined(separator: ", ") + ")"))
+                parts.append(L("OSC inn: port {0}", settings.oscInPort) + (ips.isEmpty ? "" : "  (" + ips.joined(separator: ", ") + ")"))
             } catch {
-                parts.append("OSC inn: \(error.localizedDescription)")
+                parts.append(L("OSC inn: {0}", error.localizedDescription))
             }
         } else {
             oscServer.stop()
-            parts.append("OSC inn: av")
+            parts.append(L("OSC inn: av"))
         }
         do {
             try midi.openInput(named: settings.midiInDevice, channel: settings.midiInChannel)
-            parts.append(midi.isInputOpen ? "MIDI inn: \(settings.midiInDevice)" + (settings.midiInChannel == 0 ? " (alle kanaler)" : " (kanal \(settings.midiInChannel))") : "MIDI inn: av")
+            parts.append(midi.isInputOpen ? L("MIDI inn: {0}", settings.midiInDevice) + (settings.midiInChannel == 0 ? L(" (alle kanaler)") : L(" (kanal {0})", settings.midiInChannel)) : L("MIDI inn: av"))
         } catch {
-            parts.append("MIDI inn: \(error.localizedDescription)")
+            parts.append(L("MIDI inn: {0}", error.localizedDescription))
         }
         if settings.oscFeedbackEnabled {
             let f = OscFeedback.forTarget(host: settings.oscFeedbackHost, port: settings.oscFeedbackPort)
             f.format = settings.oscFeedbackFormat
             feedback = f
-            parts.append("Status ut: \(settings.oscFeedbackHost):\(settings.oscFeedbackPort)")
+            parts.append(L("Status ut: {0}:{1}", settings.oscFeedbackHost, settings.oscFeedbackPort))
         } else {
             feedback = nil
         }
@@ -876,16 +877,16 @@ final class AppModel: ObservableObject, ShowControl {
 
     func learnMidi(for c: Cue) {
         guard midi.isInputOpen else {
-            alert("Velg en MIDI-inngang under Innstillinger → MIDI inn først.")
+            alert(L("Velg en MIDI-inngang under Innstillinger → MIDI inn først."))
             return
         }
-        learnText = "Venter på MIDI … trykk en tast eller knapp på kontrolleren"
+        learnText = L("Venter på MIDI … trykk en tast eller knapp på kontrolleren")
         router.beginLearn { [weak self] t in
             guard let self else { return }
             self.learnText = ""
             let other = self.cues.first { $0 !== c && $0.midiTrigger == t }
             c.midiTrigger = t
-            self.statusText = "Cue \(c.number) startes nå av \(MidiTriggers.describe(t))" + (other.map { " (cue \($0.number) har samme trigger)" } ?? "")
+            self.statusText = L("Cue {0} startes nå av {1}", c.number, MidiTriggers.describe(t)) + (other.map { L(" (cue {0} har samme trigger)", $0.number) } ?? "")
         }
     }
 
@@ -921,7 +922,7 @@ final class AppModel: ObservableObject, ShowControl {
                        remaining: $0.duration > 0 ? max(0, $0.duration - $0.elapsed) : 0, hasDuration: $0.duration > 0,
                        preWaiting: !$0.started)
         }
-        return ShowStatus(showName: showURL?.deletingPathExtension().lastPathComponent ?? "Uten navn",
+        return ShowStatus(showName: showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn"),
                           nextNumber: next?.number ?? "", nextName: next?.displayName ?? "", nextNotes: next?.notes ?? "",
                           playheadPosition: next.flatMap(index(of:)).map { $0 + 1 } ?? 0, cueCount: cues.count, playing: playing)
     }
@@ -949,10 +950,10 @@ enum VideoAudioExtractor {
         let rate = 48000.0
         let dec = try AssetDecoder(url: video, outputRate: rate)
         var out = video.deletingPathExtension().appendingPathExtension("wav")
-        out = out.deletingLastPathComponent().appendingPathComponent(video.deletingPathExtension().lastPathComponent + " (lyd).wav")
+        out = out.deletingLastPathComponent().appendingPathComponent(video.deletingPathExtension().lastPathComponent + L(" (lyd).wav"))
         var n = 2
         while FileManager.default.fileExists(atPath: out.path) {
-            out = out.deletingLastPathComponent().appendingPathComponent(video.deletingPathExtension().lastPathComponent + " (lyd) \(n).wav"); n += 1
+            out = out.deletingLastPathComponent().appendingPathComponent(video.deletingPathExtension().lastPathComponent + L(" (lyd) {0}.wav", n)); n += 1
         }
         let ch = dec.channels
         var settings: [String: Any] = [
@@ -967,7 +968,7 @@ enum VideoAudioExtractor {
         let file = try AVAudioFile(forWriting: out, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: true)
         let chunk = 8192
         guard let buf = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(chunk)),
-              let data = buf.floatChannelData?[0] else { throw DecoderError.unsupported("Minnefeil") }
+              let data = buf.floatChannelData?[0] else { throw DecoderError.unsupported(L("Minnefeil")) }
         let total = max(1.0, dec.duration * rate)
         var written = 0.0
         while true {

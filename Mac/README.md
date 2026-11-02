@@ -1,5 +1,7 @@
 # ShowCue for Mac
 
+*[English](README.en.md)*
+
 Egen Mac-app skrevet i Swift. Den bruker Apples egne rammeverk (CoreAudio, AVFoundation, PDFKit og CoreMIDI) og trenger ingen tilleggsprogrammer.
 Den har de samme funksjonene som Windows-versjonen, og **showfilene (`.showcue`) kan åpnes på begge plattformene**.
 
@@ -54,7 +56,7 @@ Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres 
 | Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
 | Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
 
-Alt annet er likt: cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
+Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
 Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
 
 **Showfiler mellom Mac og Windows:** stiene til mediefilene er forskjellige på de to plattformene. ShowCue leter derfor etter mediefiler
@@ -98,7 +100,7 @@ og macOS spør om tilgang til mikrofonen første gang).
 
 ```
 Sources/ShowCue/
-  Core/    Modeller (samme JSON som Windows), OSC, status ut, fjernstyring,
+  Core/    Modeller (samme JSON som Windows), OSC, status ut, fjernstyring, språk (Loc),
            MIDI-tolking, mikser (PatchMixer, Voice, ringbuffer). Testes automatisk.
   Audio/   CoreAudio-utgang (AUHAL), enheter, dekoding i egen tråd (AVAudioFile / AVAssetReader)
   Engine/  Cue-motor, aktive cuer, video/bilde/PDF-utgang, CoreMIDI, app-modell

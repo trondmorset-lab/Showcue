@@ -28,7 +28,7 @@ class ActiveCue: ObservableObject, Identifiable {
     var progress: Double { duration > 0 ? min(1, max(0, elapsed / duration)) : 0 }
     var elapsedText: String { started ? TimeFormat.format(elapsed) : "-" + TimeFormat.format(max(0, startAt - engine.now)) }
     var remainingText: String { started ? (duration > 0 ? "-" + TimeFormat.format(max(0, duration - elapsed)) : "∞") : "" }
-    var stateText: String { !started ? "Pre-wait" : isStopping ? "Fader ut" : "Spiller" }
+    var stateText: String { !started ? L("Pre-wait") : isStopping ? L("Fader ut") : L("Spiller") }
 
     func begin() throws {
         started = true
@@ -150,7 +150,7 @@ final class AudioActive: PlaybackActive {
 enum CueError: LocalizedError {
     case fileMissing(String)
     var errorDescription: String? {
-        switch self { case .fileMissing(let p): return "Fila finnes ikke: \(p)" }
+        switch self { case .fileMissing(let p): return L("Fila finnes ikke: {0}", p) }
     }
 }
 
@@ -165,7 +165,7 @@ class VisualActive: ActiveCue {
 
     override func onBegin() throws {
         if cue.type == .web {
-            guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: "Ugyldig adresse: \(cue.url)"]) }
+            guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Ugyldig adresse: {0}", cue.url)]) }
         } else if !FileManager.default.fileExists(atPath: cue.filePath) { throw CueError.fileMissing(cue.filePath) }
         if cue.replaceOthers {
             // Krysstoning: de andre fades ut mens denne fades inn.
@@ -223,13 +223,13 @@ final class StillActive: VisualActive {
         if cue.type == .web, let url = cue.webURL {
             duration = cue.duration
             let c = cue
-            return engine.output.addWeb(url) { msg in c.error = "Nettside: " + msg }
+            return engine.output.addWeb(url) { msg in c.error = L("Nettside: ") + msg }
         }
         let page = cue.type == .pdf ? cue.page : 0
         var image = MediaCache.shared.cached(path: cue.filePath, page: page)
         if image == nil { image = MediaCache.shared.image(path: cue.filePath, page: page) }
         guard let img = image else {
-            throw CueError.fileMissing(cue.type == .pdf ? "\(cue.filePath) (side \(cue.page))" : cue.filePath)
+            throw CueError.fileMissing(cue.type == .pdf ? L("{0} (side {1})", cue.filePath, cue.page) : cue.filePath)
         }
         duration = cue.duration
         return engine.output.addImage(img, stretch: cue.stretch)
@@ -316,7 +316,7 @@ final class VideoActive: VisualActive {
                 startAudio() // bilde og lyd starter samtidig
             }
         case .failed:
-            cue.error = "Video: " + (item.error?.localizedDescription ?? "ukjent feil")
+            cue.error = "Video: " + (item.error?.localizedDescription ?? L("ukjent feil"))
             finish()
         default: break
         }
@@ -430,7 +430,7 @@ class TimedActive: ActiveCue {
 final class FadeActive: TimedActive {
     override func act() {
         let targets = engine.findActive(cue.target)
-        if targets.isEmpty { cue.error = cue.target.isEmpty ? "Mangler mål-cue" : "Cue \(cue.target) kjører ikke" }
+        if targets.isEmpty { cue.error = cue.target.isEmpty ? L("Mangler mål-cue") : L("Cue {0} kjører ikke", cue.target) }
         targets.forEach { $0.applyFade(cue) }
     }
 }
@@ -443,7 +443,7 @@ final class StopActive: TimedActive {
             : engine.findActive(cue.target)
         guard cue.release else { targets.forEach { $0.stop(fade: cue.fadeTime) }; return }
         if !targets.map({ $0.release() }).contains(true) {
-            cue.error = cue.target.isEmpty ? "Ingen cue looper" : "Cue \(cue.target) looper ikke"
+            cue.error = cue.target.isEmpty ? L("Ingen cue looper") : L("Cue {0} looper ikke", cue.target)
         }
     }
 }
@@ -467,7 +467,7 @@ final class PlaylistActive: ActiveCue {
 
     override func onBegin() throws {
         order = newOrder()
-        guard !order.isEmpty else { throw CueError.fileMissing("(spillelista har ingen filer som finnes)") }
+        guard !order.isEmpty else { throw CueError.fileMissing(L("(spillelista har ingen filer som finnes)")) }
         begin = engine.now
         subs = followLiveChanges { [weak self] in self?.current }
         try startNext(fadeIn: 0)
@@ -554,7 +554,7 @@ final class InstantActive: ActiveCue {
         case .osc:
             guard OscSender.shared.send(host: cue.host, port: cue.port, address: cue.address.isEmpty ? "/" : cue.address,
                                         args: Osc.parseArguments(cue.arguments)) else {
-                throw NSError(domain: "ShowCue.OSC", code: 1, userInfo: [NSLocalizedDescriptionKey: "Kunne ikke sende til \(cue.host):\(cue.port)"])
+                throw NSError(domain: "ShowCue.OSC", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke sende til {0}:{1}", cue.host, cue.port)])
             }
         case .midi:
             try engine.midi.send(MidiOut.bytes(for: cue), device: cue.device)
@@ -568,7 +568,7 @@ final class InstantActive: ActiveCue {
             let (p, host, port, msg, url, method) = (c.networkProtocol, c.host, c.port, c.message, c.url, c.method)
             Task { @MainActor in
                 if let err = await NetworkSender.send(protocol: p, host: host, port: port, message: msg, url: url, method: method) {
-                    c.error = "Nettverk: " + err
+                    c.error = L("Nettverk: ") + err
                 }
             }
         default: break
@@ -586,12 +586,12 @@ final class TimecodeActive: ActiveCue {
 
     override func onBegin() throws {
         guard cue.sendMtc || cue.sendLtc else {
-            throw NSError(domain: "ShowCue.TC", code: 1, userInfo: [NSLocalizedDescriptionKey: "Velg MTC og/eller LTC"])
+            throw NSError(domain: "ShowCue.TC", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Velg MTC og/eller LTC")])
         }
         let start = Timecode.fromSeconds(cue.startTimecode.toSeconds(cue.rate) + startOffset, cue.rate)
         if cue.sendLtc {
             guard let m = engine.audio.mixer else {
-                throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."])
+                throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")])
             }
             let src = LtcSource(busIndex: cue.ltcBus - 1, levelDb: cue.ltcLevelDb, start: start, rate: cue.rate, sampleRate: m.sampleRate)
             m.add(src)
@@ -627,7 +627,7 @@ final class LightActive: TimedActive {
     override func onBegin() throws {
         let levels = try DmxLevels.parse(cue.levels)
         guard !cue.host.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw NSError(domain: "ShowCue.DMX", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mangler IP-adresse for Art-Net"])
+            throw NSError(domain: "ShowCue.DMX", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Mangler IP-adresse for Art-Net")])
         }
         engine.dmx.fade(host: cue.host.trimmingCharacters(in: .whitespaces), universe: cue.universe, to: levels, seconds: cue.fadeTime)
         try super.onBegin()
@@ -640,11 +640,11 @@ final class InputActive: PlaybackActive {
 
     override func makePlayback() throws -> Playback {
         guard let m = engine.audio.mixer else {
-            throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."])
+            throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")])
         }
         let ring: LiveRing
         do { ring = try engine.input.open(deviceUID: engine.inputDeviceUID, outputRate: m.sampleRate) }
-        catch { throw NSError(domain: "ShowCue.Input", code: 1, userInfo: [NSLocalizedDescriptionKey: "Kunne ikke åpne inngangen: \(error.localizedDescription)"]) }
+        catch { throw NSError(domain: "ShowCue.Input", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke åpne inngangen: {0}", error.localizedDescription)]) }
         let input = engine.input
         begin = engine.now
         return try engine.audio.makePlayback(live: ring, for: cue) { [weak input] r in input?.close(r) }

@@ -44,7 +44,7 @@ struct TopBar: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(theme.go))
             }
             .buttonStyle(.plain)
-            .help("Mellomrom")
+            .help(L("Mellomrom"))
 
             NextCueInfo(cue: model.playhead)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -53,33 +53,33 @@ struct TopBar: View {
             VStack(alignment: .trailing, spacing: 2) {
                 ClockText(live: model.live)
                 let n = model.engine.active.count
-                Text(n == 0 ? " " : "\(n) aktive").uiFont(12).foregroundColor(theme.muted)
+                Text(n == 0 ? " " : L("{0} aktive", n)).uiFont(12).foregroundColor(theme.muted)
             }
             MeterView(live: model.live)
                 .frame(width: 26, height: 84)
-                .help("Utgangsnivå, utgang 1 og 2 (−60 til 0 dBFS)")
+                .help(L("Utgangsnivå, utgang 1 og 2 (−60 til 0 dBFS)"))
             Button(action: model.togglePause) {
                 VStack(spacing: 2) {
                     Text(model.engine.isPaused ? "▶" : "⏸").uiFont(22)
-                    Text(model.engine.isPaused ? "Fortsett" : "Pause").uiFont(12)
+                    Text(model.engine.isPaused ? L("Fortsett") : L("Pause")).uiFont(12)
                 }
                 .frame(width: 92, height: 92)
                 .background(RoundedRectangle(cornerRadius: 6).fill(model.engine.isPaused ? theme.wait.opacity(0.35) : theme.panel3))
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.line))
             }
             .buttonStyle(.plain)
-            .help("Pause / fortsett alt (⌘P). GO fortsetter også.")
+            .help(L("Pause / fortsett alt (⌘P). GO fortsetter også."))
             Button(action: model.panic) {
                 VStack(spacing: 2) {
-                    Text("STOPP ALT").uiFont(17, weight: .semibold)
-                    Text("Esc").uiFont(11).opacity(0.8)
+                    Text(L("STOPP ALT")).uiFont(17, weight: .semibold)
+                    Text(L("Esc")).uiFont(11).opacity(0.8)
                 }
                 .foregroundColor(.white)
                 .frame(width: 130, height: 92)
                 .background(RoundedRectangle(cornerRadius: 6).fill(theme.danger))
             }
             .buttonStyle(.plain)
-            .help("Stopp alt med kort fade. Trykk to ganger for umiddelbar stopp.")
+            .help(L("Stopp alt med kort fade. Trykk to ganger for umiddelbar stopp."))
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .background(theme.panel)
@@ -95,11 +95,11 @@ struct MemoBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("BESKJED").uiFont(11, weight: .semibold).foregroundColor(theme.wait)
+                Text(L("BESKJED")).uiFont(11, weight: .semibold).foregroundColor(theme.wait)
                 Text(model.memoText).uiFont(22, weight: .semibold).lineLimit(2)
             }
             Spacer(minLength: 0)
-            Button("✕") { model.closeMemo() }.buttonStyle(PanelButtonStyle()).help("Lukk beskjeden")
+            Button("✕") { model.closeMemo() }.buttonStyle(PanelButtonStyle()).help(L("Lukk beskjeden"))
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -117,8 +117,8 @@ struct NextCueInfo: View {
             NextCueContent(cue: c)
         } else {
             VStack(alignment: .leading, spacing: 2) {
-                SectionHeader("NESTE CUE")
-                Text("— slutt på lista —").uiFont(26, weight: .semibold).foregroundColor(theme.muted)
+                SectionHeader(L("NESTE CUE"))
+                Text(L("— slutt på lista —")).uiFont(26, weight: .semibold).foregroundColor(theme.muted)
             }
         }
     }
@@ -130,7 +130,7 @@ private struct NextCueContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            SectionHeader("NESTE CUE")
+            SectionHeader(L("NESTE CUE"))
             HStack(alignment: .firstTextBaseline, spacing: 14) {
                 Text(cue.number).uiFont(26, weight: .bold, design: .monospaced).foregroundColor(theme.playhead)
                 Text(cue.displayName).uiFont(26, weight: .semibold).lineLimit(1)
@@ -183,75 +183,75 @@ struct ToolbarRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            menu("Fil") {
-                Button("Nytt show") { model.newShow() }
-                Button("Åpne") { model.openDialog() }
-                Button("Lagre") { model.save(as: false) }
-                Button("Lagre som") { model.save(as: true) }
+            menu(L("Fil")) {
+                Button(L("Nytt show")) { model.newShow() }
+                Button(L("Åpne")) { model.openDialog() }
+                Button(L("Lagre")) { model.save(as: false) }
+                Button(L("Lagre som")) { model.save(as: true) }
                 Divider()
-                Button("Samle show og mediefiler i én mappe") { model.collectShow() }
-                Button("Finn manglende mediefiler") { model.relinkMenu() }.disabled(model.showMode)
+                Button(L("Samle show og mediefiler i én mappe")) { model.collectShow() }
+                Button(L("Finn manglende mediefiler")) { model.relinkMenu() }.disabled(model.showMode)
             }
-            Button("↶") { model.undo() }.disabled(!model.canUndo).help("Angre (⌘Z)")
-            Button("↷") { model.redo() }.disabled(!model.canRedo).help("Gjør om (⇧⌘Z)")
+            Button("↶") { model.undo() }.disabled(!model.canUndo).help(L("Angre (⌘Z)"))
+            Button("↷") { model.redo() }.disabled(!model.canRedo).help(L("Gjør om (⇧⌘Z)"))
             divider
             Group {
-                menu("＋ Media") {
-                    Button("♪  Lyd (⌘1)") { model.add(.audio) }
-                    Button("▶  Video (⌘2)") { model.add(.video) }
-                    Button("▣  Bilde (⌘3)") { model.add(.image) }
-                    Button("▤  PDF (⌘4)") { model.add(.pdf) }
-                    Button("◍  Nettside (⇧⌘W)") { model.add(.web) }
+                menu(L("＋ Media")) {
+                    Button(L("♪  Lyd (⌘1)")) { model.add(.audio) }
+                    Button(L("▶  Video (⌘2)")) { model.add(.video) }
+                    Button(L("▣  Bilde (⌘3)")) { model.add(.image) }
+                    Button(L("▤  PDF (⌘4)")) { model.add(.pdf) }
+                    Button(L("◍  Nettside (⇧⌘W)")) { model.add(.web) }
                     Divider()
-                    Button("☰  Spilleliste (⌘9)") { model.add(.playlist) }
-                    Button("◉  Live-inngang (⇧⌘I)") { model.add(.input) }
+                    Button(L("☰  Spilleliste (⌘9)")) { model.add(.playlist) }
+                    Button(L("◉  Live-inngang (⇧⌘I)")) { model.add(.input) }
                 }
-                .help("Legg til lyd, video, bilde, PDF, nettside og mer")
-                menu("Styring") {
-                    Button("◢  Fade – valgt cue (⌘5)") { model.add(.fade) }
-                    Button("■  Stopp (⌘6)") { model.add(.stop) }
-                    Button("↪  Gå til (⌘0)") { model.add(.goto) }
-                    Button("✎  Beskjed (⇧⌘M)") { model.add(.memo) }
+                .help(L("Legg til lyd, video, bilde, PDF, nettside og mer"))
+                menu(L("Styring")) {
+                    Button(L("◢  Fade – valgt cue (⌘5)")) { model.add(.fade) }
+                    Button(L("■  Stopp (⌘6)")) { model.add(.stop) }
+                    Button(L("↪  Gå til (⌘0)")) { model.add(.goto) }
+                    Button(L("✎  Beskjed (⇧⌘M)")) { model.add(.memo) }
                 }
-                .help("Fade, stopp, gå til og beskjed")
-                menu("Utstyr") {
-                    Button("⇢  OSC (⌘7)") { model.add(.osc) }
-                    Button("♫  MIDI (⌘8)") { model.add(.midi) }
-                    Button("⇄  Nettverk – UDP/TCP/HTTP (⇧⌘N)") { model.add(.network) }
-                    Button("⏱  Tidskode – MTC/LTC (⌥⌘T)") { model.add(.timecode) }
-                    Button("✺  Lys – DMX/Art-Net (⇧⌘L)") { model.add(.light) }
+                .help(L("Fade, stopp, gå til og beskjed"))
+                menu(L("Utstyr")) {
+                    Button(L("⇢  OSC (⌘7)")) { model.add(.osc) }
+                    Button(L("♫  MIDI (⌘8)")) { model.add(.midi) }
+                    Button(L("⇄  Nettverk – UDP/TCP/HTTP (⇧⌘N)")) { model.add(.network) }
+                    Button(L("⏱  Tidskode – MTC/LTC (⌥⌘T)")) { model.add(.timecode) }
+                    Button(L("✺  Lys – DMX/Art-Net (⇧⌘L)")) { model.add(.light) }
                 }
-                .help("Styr annet utstyr: lys, miksere, videoservere og andre programmer (OSC, MIDI, nettverk, tidskode, DMX)")
-                menu("Rediger") {
-                    Button("Dupliser (⌘D)") { model.duplicateSelected() }
-                    Button("Slett (⌫)") { model.deleteSelected() }
-                    Button("Flytt opp (⌘↑)") { model.moveSelected(-1) }
-                    Button("Flytt ned (⌘↓)") { model.moveSelected(1) }
-                    Button("Nummerer alle (1, 2, 3)") { model.renumber() }
+                .help(L("Styr annet utstyr: lys, miksere, videoservere og andre programmer (OSC, MIDI, nettverk, tidskode, DMX)"))
+                menu(L("Rediger")) {
+                    Button(L("Dupliser (⌘D)")) { model.duplicateSelected() }
+                    Button(L("Slett (⌫)")) { model.deleteSelected() }
+                    Button(L("Flytt opp (⌘↑)")) { model.moveSelected(-1) }
+                    Button(L("Flytt ned (⌘↓)")) { model.moveSelected(1) }
+                    Button(L("Nummerer alle (1, 2, 3)")) { model.renumber() }
                     Divider()
-                    Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }
-                    Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }
+                    Button(L("Normaliser lydstyrke for valgte lyd-cuer")) { model.normalizeSelected() }
+                    Button(L("Normaliser lydstyrke for alle lyd-cuer")) { model.normalizeAll() }
                 }
             }
             .disabled(model.showMode)
             Spacer(minLength: 8)
-            Button("▦ Knappepanel") { model.showButtonPanel() }.help("Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (⌘K)")
-            Button(model.showMode ? "🔓 Lås opp" : "🔒 Showmodus") { model.showMode.toggle() }
-                .help("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)")
-            menu("Oppsett") {
-                Button("Lydpatch") { openWindow(id: "patch") }
-                Button("Vis/skjul utgangsvinduet (⇧⌘U)") { model.output.toggle() }
+            Button(L("▦ Knappepanel")) { model.showButtonPanel() }.help(L("Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (⌘K)"))
+            Button(model.showMode ? L("🔓 Lås opp") : L("🔒 Showmodus")) { model.showMode.toggle() }
+                .help(L("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)"))
+            menu(L("Oppsett")) {
+                Button(L("Lydpatch")) { openWindow(id: "patch") }
+                Button(L("Vis/skjul utgangsvinduet (⇧⌘U)")) { model.output.toggle() }
                 SettingsButton()
-                Button("Bytt tema \(themeGlyph) (⇧⌘T)") { model.settings.theme = model.settings.theme.next }
+                Button(L("Bytt tema {0} (⇧⌘T)", themeGlyph)) { model.settings.theme = model.settings.theme.next }
                 Divider()
-                Button("Zoom inn (⌘+)") { model.zoom(1) }
-                Button("Zoom ut (⌘−)") { model.zoom(-1) }
-                Button("Vanlig størrelse (nå \(UIZoom.percent(model.settings.zoom)))") { model.zoom(0) }
-                Picker("Tekst i cuelista", selection: $model.settings.listTextScale) {
+                Button(L("Zoom inn (⌘+)")) { model.zoom(1) }
+                Button(L("Zoom ut (⌘−)")) { model.zoom(-1) }
+                Button(L("Vanlig størrelse (nå {0})", UIZoom.percent(model.settings.zoom))) { model.zoom(0) }
+                Picker(L("Tekst i cuelista"), selection: $model.settings.listTextScale) {
                     ForEach(UIZoom.listSizes.indices, id: \.self) { i in Text(UIZoom.listSizes[i].label).tag(UIZoom.listSizes[i].scale) }
                 }
                 Divider()
-                Button("Om ShowCue") { AboutPanel.show() }
+                Button(L("Om ShowCue")) { AboutPanel.show() }
             }
         }
         .buttonStyle(ToolButtonStyle())
@@ -287,9 +287,9 @@ struct ToolbarRow: View {
 struct SettingsButton: View {
     var body: some View {
         if #available(macOS 14.0, *) {
-            SettingsLink { Text("Innstillinger") }
+            SettingsLink { Text(L("Innstillinger")) }
         } else {
-            Button("Innstillinger") {
+            Button(L("Innstillinger")) {
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             }
         }
@@ -307,7 +307,7 @@ struct StatusBar: View {
             Text(model.statusText).foregroundColor(theme.muted).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 16)
             Text(model.remoteStatus).foregroundColor(theme.faint).lineLimit(1)
-                .help("Mellomrom = GO · Esc = stopp alt · ↑↓ = flytt markør · dra filer inn i lista")
+                .help(L("Mellomrom = GO · Esc = stopp alt · ↑↓ = flytt markør · dra filer inn i lista"))
         }
         .uiFont(11.5)
         .padding(.horizontal, 12).padding(.vertical, 4)

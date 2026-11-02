@@ -21,6 +21,8 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp ../LICENSE "$APP/Contents/Resources/LICENSE.txt"
 cp ../THIRD-PARTY-NOTICES.txt "$APP/Contents/Resources/THIRD-PARTY-NOTICES.txt"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+# Engelsk oversettelse av brukerflaten (felles med Windows).
+cp ../i18n/en.json "$APP/Contents/Resources/en.json"
 # Versjon fra VERSION i roten av repoet (felles for Windows og Mac).
 VERSION=$(tr -d '[:space:]' < ../VERSION)
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"

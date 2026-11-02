@@ -65,28 +65,28 @@ struct WaveformEditorView: View {
             }
 
             HStack(spacing: 6) {
-                Button("▶ Fra start") { play(from: cue.startTime) }.help("Lytt fra startpunktet (gjennom lydpatchen)")
-                Button("▶ Fra markør") { play(from: cursor) }.help("Lytt fra den blå markøren. Klikk i bølgeformen for å flytte den, dobbeltklikk for å lytte derfra.")
-                Button("▶ Slutten") { play(from: max(cue.startTime, effectiveEnd - 5)) }.help("Lytt til de siste 5 sekundene før sluttpunktet")
-                Button("■ Stopp") { preview.stop() }.disabled(!previewingThis)
-                Button("▶ Kjør herfra") {
+                Button(L("▶ Fra start")) { play(from: cue.startTime) }.help(L("Lytt fra startpunktet (gjennom lydpatchen)"))
+                Button(L("▶ Fra markør")) { play(from: cursor) }.help(L("Lytt fra den blå markøren. Klikk i bølgeformen for å flytte den, dobbeltklikk for å lytte derfra."))
+                Button(L("▶ Slutten")) { play(from: max(cue.startTime, effectiveEnd - 5)) }.help(L("Lytt til de siste 5 sekundene før sluttpunktet"))
+                Button(L("■ Stopp")) { preview.stop() }.disabled(!previewingThis)
+                Button(L("▶ Kjør herfra")) {
                     preview.stop()
                     model.engine.fire(cue, offset: max(0, currentPoint - cue.startTime))
-                }.help("Kjør cuen på de vanlige utgangene, fra markøren (start fra tid)")
+                }.help(L("Kjør cuen på de vanlige utgangene, fra markøren (start fra tid)"))
             }.buttonStyle(PanelButtonStyle())
             if preview.goesToShowOutputs {
-                Text("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd.")
+                Text(L("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd."))
                     .uiFont(11.5).foregroundColor(theme.wait).fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 6) {
-                Button("Start = markør") { setStart(currentPoint) }.help("Sett startpunktet der markøren (eller lyttingen) er nå")
-                Button("Slutt = markør") { setEnd(currentPoint) }.help("Sett sluttpunktet der markøren (eller lyttingen) er nå")
-                Button("Nullstill") { cue.startTime = 0; cue.endTime = 0 }.help("Hele fila: start 0, slutt = filslutt")
-                Button("−") { zoom(2, anchor: nil) }.help("Zoom ut (eller knip på styreflaten)")
-                Button("+") { zoom(0.5, anchor: nil) }.help("Zoom inn (eller knip på styreflaten)")
-                Button("Hele") { viewStart = 0; viewLength = 0 }.help("Vis hele fila")
+                Button(L("Start = markør")) { setStart(currentPoint) }.help(L("Sett startpunktet der markøren (eller lyttingen) er nå"))
+                Button(L("Slutt = markør")) { setEnd(currentPoint) }.help(L("Sett sluttpunktet der markøren (eller lyttingen) er nå"))
+                Button(L("Nullstill")) { cue.startTime = 0; cue.endTime = 0 }.help(L("Hele fila: start 0, slutt = filslutt"))
+                Button("−") { zoom(2, anchor: nil) }.help(L("Zoom ut (eller knip på styreflaten)"))
+                Button("+") { zoom(0.5, anchor: nil) }.help(L("Zoom inn (eller knip på styreflaten)"))
+                Button(L("Hele")) { viewStart = 0; viewLength = 0 }.help(L("Vis hele fila"))
                 if !large {
-                    Button("⤢ Stort vindu") { model.trimCue = cue; openWindow(id: "trim") }.help("Åpne et stort redigeringsvindu")
+                    Button(L("⤢ Stort vindu")) { model.trimCue = cue; openWindow(id: "trim") }.help(L("Åpne et stort redigeringsvindu"))
                 }
             }.buttonStyle(PanelButtonStyle())
         }
@@ -97,8 +97,8 @@ struct WaveformEditorView: View {
 
     private var infoText: String {
         let end = effectiveEnd
-        let endText = cue.endTime > 0 ? fmt(end) : fmt(end) + " (filslutt)"
-        return "Start \(fmt(cue.startTime))   Slutt \(endText)   Lengde \(fmt(max(0, end - cue.startTime)))   Markør \(fmt(cursor))"
+        let endText = cue.endTime > 0 ? fmt(end) : fmt(end) + L(" (filslutt)")
+        return L("Start {0}   Slutt {1}   Lengde {2}   Markør {3}", fmt(cue.startTime), endText, fmt(max(0, end - cue.startTime)), fmt(cursor))
     }
 
     private func canvas(size: CGSize) -> some View {
@@ -245,11 +245,11 @@ struct WaveformEditorView: View {
 
     private func play(from t: Double) {
         guard model.audio.isRunning else {
-            let a = NSAlert(); a.messageText = "Lydutgangen er ikke startet"; a.informativeText = "Sjekk Innstillinger → Lyd."; a.runModal()
+            let a = NSAlert(); a.messageText = L("Lydutgangen er ikke startet"); a.informativeText = L("Sjekk Innstillinger → Lyd."); a.runModal()
             return
         }
         if !preview.play(cue, from: t, to: cue.endTime) {
-            let a = NSAlert(); a.messageText = "Klarte ikke å spille av lyden i denne cuen."; a.runModal()
+            let a = NSAlert(); a.messageText = L("Klarte ikke å spille av lyden i denne cuen."); a.runModal()
         }
     }
 
@@ -284,12 +284,12 @@ struct WaveformEditorView: View {
         loadedKey = key
         data = nil
         cursor = cue.startTime
-        guard !path.isEmpty else { status = "Ingen fil valgt"; return }
-        status = "Leser bølgeform …"
+        guard !path.isEmpty else { status = L("Ingen fil valgt"); return }
+        status = L("Leser bølgeform …")
         WaveformCache.shared.get(path: path, isVideo: isVideo) { d in
             guard loadedKey == key else { return }
             data = d
-            status = d == nil ? (isVideo ? "Videoen har ikke noe lydspor – markørene virker likevel" : "Kunne ikke lese fila") : nil
+            status = d == nil ? (isVideo ? L("Videoen har ikke noe lydspor – markørene virker likevel") : L("Kunne ikke lese fila")) : nil
         }
     }
 
@@ -315,7 +315,7 @@ struct TrimWindowView: View {
             if let cue = model.trimCue {
                 TrimWindowContent(cue: cue, preview: model.engine.preview)
             } else {
-                Text("Velg en lyd- eller video-cue og trykk «Stort vindu».").foregroundColor(theme.muted)
+                Text(L("Velg en lyd- eller video-cue og trykk «Stort vindu».")).foregroundColor(theme.muted)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -335,10 +335,10 @@ private struct TrimWindowContent: View {
             WaveformEditorView(cue: cue, preview: preview, large: true).id(cue.id)
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    FieldLabel("Start (s)"); NumberInput(value: $cue.startTime, range: 0...86400)
+                    FieldLabel(L("Start (s)")); NumberInput(value: $cue.startTime, range: 0...86400)
                 }.frame(width: 200)
                 VStack(alignment: .leading, spacing: 0) {
-                    FieldLabel("Slutt (s, 0 = filslutt)"); NumberInput(value: $cue.endTime, range: 0...86400)
+                    FieldLabel(L("Slutt (s, 0 = filslutt)")); NumberInput(value: $cue.endTime, range: 0...86400)
                 }.frame(width: 200)
             }
             Spacer(minLength: 0)

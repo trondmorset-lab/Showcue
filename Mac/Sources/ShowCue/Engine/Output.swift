@@ -69,7 +69,7 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
     static func screenNames() -> [String] {
         NSScreen.screens.enumerated().map { i, s in
             let f = s.frame
-            return "Skjerm \(i + 1): \(s.localizedName) – \(Int(f.width))×\(Int(f.height))" + (i == 0 ? " (hovedskjerm)" : "")
+            return L("Skjerm {0}: {1} – {2}×{3}", i + 1, s.localizedName, Int(f.width), Int(f.height)) + (i == 0 ? L(" (hovedskjerm)") : "")
         }
     }
 
@@ -101,7 +101,7 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
                          styleMask: full ? [.borderless] : [.titled, .closable, .resizable, .miniaturizable],
                          backing: .buffered, defer: false)
         w.isReleasedWhenClosed = false
-        w.title = "ShowCue – utgang"
+        w.title = L("ShowCue – utgang")
         w.backgroundColor = .black
         w.delegate = self
         let container = NSView(frame: NSRect(origin: .zero, size: rect.size))

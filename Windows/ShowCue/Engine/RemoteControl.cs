@@ -56,8 +56,8 @@ public sealed class RemoteControl : IDisposable
     private AppSettings _settings;
     private Action<string>? _learn;
 
-    public string OscStatus { get; private set; } = "OSC inn: av";
-    public string MidiStatus { get; private set; } = "MIDI inn: av";
+    public string OscStatus { get; private set; } = Loc.T("OSC inn: av");
+    public string MidiStatus { get; private set; } = Loc.T("MIDI inn: av");
     /// <summary>Siste mottatte tidskode (tom = ingen).</summary>
     public string TimecodeStatus { get; private set; } = "";
     private long? _lastTcFrame;
@@ -85,23 +85,23 @@ public sealed class RemoteControl : IDisposable
             {
                 _osc.Start(s.OscInPort);
                 var ips = OscServer.LocalAddresses();
-                OscStatus = $"OSC inn: port {s.OscInPort}" + (ips.Count > 0 ? "  (" + string.Join(", ", ips) + ")" : "");
+                OscStatus = Loc.F("OSC inn: port {0}", s.OscInPort) + (ips.Count > 0 ? "  (" + string.Join(", ", ips) + ")" : "");
             }
             catch (Exception ex)
             {
-                OscStatus = $"OSC inn: kunne ikke åpne port {s.OscInPort} – {ex.Message}";
+                OscStatus = Loc.F("OSC inn: kunne ikke åpne port {0} – {1}", s.OscInPort, ex.Message);
             }
         }
-        else OscStatus = "OSC inn: av";
+        else OscStatus = Loc.T("OSC inn: av");
 
         try
         {
             _midi.Open(s.MidiInDevice, s.MidiInChannel);
-            MidiStatus = _midi.IsOpen ? $"MIDI inn: {s.MidiInDevice}" + (s.MidiInChannel == 0 ? " (alle kanaler)" : $" (kanal {s.MidiInChannel})") : "MIDI inn: av";
+            MidiStatus = _midi.IsOpen ? Loc.F("MIDI inn: {0}", s.MidiInDevice) + (s.MidiInChannel == 0 ? Loc.T(" (alle kanaler)") : Loc.F(" (kanal {0})", s.MidiInChannel)) : Loc.T("MIDI inn: av");
         }
         catch (Exception ex)
         {
-            MidiStatus = "MIDI inn: " + ex.Message;
+            MidiStatus = Loc.T("MIDI inn: ") + ex.Message;
         }
         StatusChanged?.Invoke();
     }
@@ -124,16 +124,16 @@ public sealed class RemoteControl : IDisposable
         var s = _settings;
         string what;
         if (trigger == s.MidiGo) { _show.Go(); what = "GO"; }
-        else if (trigger == s.MidiStopAll) { _show.Panic(); what = "stopp alt"; }
-        else if (trigger == s.MidiNext) { _show.MovePlayhead(1); what = "neste"; }
-        else if (trigger == s.MidiPrevious) { _show.MovePlayhead(-1); what = "forrige"; }
+        else if (trigger == s.MidiStopAll) { _show.Panic(); what = Loc.T("stopp alt"); }
+        else if (trigger == s.MidiNext) { _show.MovePlayhead(1); what = Loc.T("neste"); }
+        else if (trigger == s.MidiPrevious) { _show.MovePlayhead(-1); what = Loc.T("forrige"); }
         else
         {
             int n = _show.FireMidiTrigger(trigger);
-            if (n == 0) { _show.RemoteLog($"MIDI: {MidiTriggers.Describe(trigger)} (kanal {channel}) – ingen cue koblet til"); return; }
-            what = n == 1 ? "1 cue" : $"{n} cues";
+            if (n == 0) { _show.RemoteLog(Loc.F("MIDI: {0} (kanal {1}) – ingen cue koblet til", MidiTriggers.Describe(trigger), channel)); return; }
+            what = n == 1 ? Loc.T("1 cue") : Loc.F("{0} cues", n);
         }
-        _show.RemoteLog($"MIDI: {MidiTriggers.Describe(trigger)} → {what}");
+        _show.RemoteLog(Loc.F("MIDI: {0} → {1}", MidiTriggers.Describe(trigger), what));
     }
 
     /// <summary>Innkommende tidskode: start cuer med tidskode-trigger som passeres. Public for testing.</summary>
@@ -144,11 +144,11 @@ public sealed class RemoteControl : IDisposable
         if (_lastTcFrame is long prev && _lastTcRate == rate)
         {
             int n = _show.FireTimecodeTriggers(prev, frame, rate);
-            if (n > 0) _show.RemoteLog($"MTC {tc.Format(rate)} → {(n == 1 ? "1 cue" : $"{n} cues")}");
+            if (n > 0) _show.RemoteLog(Loc.F("MTC {0} → {1}", tc.Format(rate), (n == 1 ? "1 cue" : Loc.F("{0} cues", n))));
         }
         _lastTcFrame = frame;
         _lastTcRate = rate;
-        var text = "MTC inn: " + tc.Format(rate);
+        var text = Loc.T("MTC inn: ") + tc.Format(rate);
         if (text != TimecodeStatus) { TimecodeStatus = text; StatusChanged?.Invoke(); }
     }
 
@@ -177,14 +177,14 @@ public sealed class RemoteControl : IDisposable
             default:
                 return;
         }
-        _show.RemoteLog($"MSC: kommando {m.Command:X2} {m.CueNumber}" + (ok ? "" : " – fant ikke cuen"));
+        _show.RemoteLog(Loc.F("MSC: kommando {0:X2} {1}", m.Command, m.CueNumber) + (ok ? "" : Loc.T(" – fant ikke cuen")));
     }
 
     /// <summary>Utfører én OSC-melding. Public for testing.</summary>
     public void HandleOsc(OscMessage m, string from)
     {
         bool ok = Execute(m);
-        _show.RemoteLog($"OSC fra {from}: {m}" + (ok ? "" : "  – ukjent kommando eller cue"));
+        _show.RemoteLog(Loc.F("OSC fra {0}: {1}", from, m) + (ok ? "" : Loc.T("  – ukjent kommando eller cue")));
     }
 
     private bool Execute(OscMessage m)

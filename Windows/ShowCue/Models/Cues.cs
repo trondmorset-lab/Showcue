@@ -125,7 +125,7 @@ public abstract class Cue : ObservableObject
     }
 
     protected static string FileLabel(string path) =>
-        string.IsNullOrWhiteSpace(path) ? "(ingen fil)" : Path.GetFileName(path);
+        string.IsNullOrWhiteSpace(path) ? Loc.T("(ingen fil)") : Path.GetFileName(path);
 
     /// <summary>Filnavnet uten filtype, eller typenavnet hvis ingen fil er valgt.</summary>
     protected string NameFromFile(string path) =>
@@ -178,14 +178,16 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
     /// <summary>Brukes ved stopp, og automatisk mot slutten av fila når cuen ikke looper.</summary>
     public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
     /// <summary>Lengden på lydfila. Fylles inn automatisk.</summary>
-    public double FileDuration { get => _fileDuration; set => SetCue(ref _fileDuration, value); }
+    public double FileDuration { get => _fileDuration; set { if (SetCue(ref _fileDuration, value)) OnPropertyChanged(nameof(FileDurationText)); } }
+    [JsonIgnore] public string FileDurationText => Loc.F("Filens lengde: {0:0.0} s", FileDuration);
     private double? _loudness;
     /// <summary>Målt lydstyrke (LUFS, integrert) mellom start og slutt, før nivået. null = ikke målt.</summary>
-    public double? Loudness { get => _loudness; set => SetCue(ref _loudness, value); }
+    public double? Loudness { get => _loudness; set { if (SetCue(ref _loudness, value)) OnPropertyChanged(nameof(LoudnessText)); } }
+    [JsonIgnore] public string LoudnessText => Loudness is double l ? Loc.F("{0:0.0} LUFS (målt)", l) : Loc.T("Ikke målt");
     [JsonIgnore] public double MediaLength => FileDuration;
     [JsonIgnore] public bool IsVideo => false;
 
-    public override string TypeName => "Lyd";
+    public override string TypeName => Loc.T("Lyd");
     public override string TypeIcon => "♪";
     protected override string DefaultName => NameFromFile(FilePath);
     public override string Summary => FileLabel(FilePath) + (Loop ? "  ⟲" : "") + (VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "")
@@ -196,7 +198,7 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
         get
         {
             var buses = Routes!.Select(r => r.Bus).Distinct().OrderBy(b => b).ToList();
-            return buses.Count == 0 ? "av" : "ut " + string.Join(",", buses);
+            return buses.Count == 0 ? Loc.T("av") : Loc.T("ut ") + string.Join(",", buses);
         }
     }
     public override double Duration
@@ -273,7 +275,7 @@ public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
     public override string TypeName => "Video";
     public override string TypeIcon => "▶";
     public override string Summary => FileLabel(FilePath) + (Loop ? "  ⟲" : "")
-        + (FileChannels == 0 ? "  (ingen lyd)" : Routes is { Count: 0 } ? "  (lyd av)" : VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "");
+        + (FileChannels == 0 ? Loc.T("  (ingen lyd)") : Routes is { Count: 0 } ? Loc.T("  (lyd av)") : VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "");
     public override double Duration => Loop || EffectiveEnd <= 0 ? 0 : Math.Max(0, EffectiveEnd - StartTime);
 }
 
@@ -287,7 +289,7 @@ public abstract class StillCue : VisualCue
 
 public sealed class ImageCue : StillCue
 {
-    public override string TypeName => "Bilde";
+    public override string TypeName => Loc.T("Bilde");
     public override string TypeIcon => "▣";
     public override string Summary => FileLabel(FilePath);
 }
@@ -300,8 +302,8 @@ public sealed class PdfCue : StillCue
 
     public override string TypeName => "PDF";
     public override string TypeIcon => "▤";
-    public override string Summary => $"{FileLabel(FilePath)}  s. {Page}";
-    protected override string DefaultName => base.DefaultName + $" s.{Page}";
+    public override string Summary => Loc.F("{0}  s. {1}", FileLabel(FilePath), Page);
+    protected override string DefaultName => base.DefaultName + Loc.F(" s.{0}", Page);
 }
 
 /// <summary>Nettside på utgangen (f.eks. en klokke, resultatliste eller presentasjon i nettleseren).</summary>
@@ -323,9 +325,9 @@ public sealed class WebCue : StillCue
         }
     }
 
-    public override string TypeName => "Nettside";
+    public override string TypeName => Loc.T("Nettside");
     public override string TypeIcon => "◍";
-    protected override string DefaultName => ValidUri is { IsFile: false } u ? u.Host : "Nettside";
+    protected override string DefaultName => ValidUri is { IsFile: false } u ? u.Host : Loc.T("Nettside");
     public override string Summary => Url;
 }
 
@@ -357,14 +359,14 @@ public sealed class FadeCue : Cue
 
     public override string TypeName => "Fade";
     public override string TypeIcon => "◢";
-    protected override string DefaultName => string.IsNullOrEmpty(Target) ? "Fade" : $"Fade cue {Target}";
+    protected override string DefaultName => string.IsNullOrEmpty(Target) ? "Fade" : Loc.F("Fade cue {0}", Target);
     public override string Summary
     {
         get
         {
-            var t = string.IsNullOrEmpty(Target) ? "(mål mangler)" : "→ " + Target;
+            var t = string.IsNullOrEmpty(Target) ? Loc.T("(mål mangler)") : "→ " + Target;
             var lvl = FadeAudio ? (TargetDb <= -60 ? "  −∞ dB" : $"  {TargetDb:0.#} dB") : "";
-            return t + lvl + (StopWhenDone ? "  + stopp" : "");
+            return t + lvl + (StopWhenDone ? Loc.T("  + stopp") : "");
         }
     }
     public override double Duration => FadeTime;
@@ -383,11 +385,11 @@ public sealed class StopCue : Cue
     /// For spillelister: spill ferdig sporet som går, og stopp.</summary>
     public bool Release { get => _release; set => SetCue(ref _release, value); }
 
-    public override string TypeName => "Stopp";
+    public override string TypeName => Loc.T("Stopp");
     public override string TypeIcon => "■";
-    protected override string DefaultName => Release ? $"Slipp loop {Target}".TrimEnd() : string.IsNullOrEmpty(Target) ? "Stopp alt" : $"Stopp cue {Target}";
-    public override string Summary => (string.IsNullOrEmpty(Target) ? "Alle cues" : "→ " + Target)
-        + (Release ? "  slipp loop" : FadeTime > 0 ? $"  fade {FadeTime:0.#}s" : "");
+    protected override string DefaultName => Release ? Loc.F("Slipp loop {0}", Target).TrimEnd() : string.IsNullOrEmpty(Target) ? Loc.T("Stopp alt") : Loc.F("Stopp cue {0}", Target);
+    public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("Alle cues") : "→ " + Target)
+        + (Release ? Loc.T("  slipp loop") : FadeTime > 0 ? Loc.F("  fade {0:0.#}s", FadeTime) : "");
     public override double Duration => Release ? 0 : FadeTime;
 }
 
@@ -401,10 +403,10 @@ public sealed class GotoCue : Cue
     /// <summary>Kjør mål-cuen også (som GO), ikke bare flytt markøren.</summary>
     public bool Fire { get => _fire; set => SetCue(ref _fire, value); }
 
-    public override string TypeName => "Gå til";
+    public override string TypeName => Loc.T("Gå til");
     public override string TypeIcon => "↪";
-    protected override string DefaultName => string.IsNullOrEmpty(Target) ? "Gå til" : $"Gå til {Target}";
-    public override string Summary => (string.IsNullOrEmpty(Target) ? "(mål mangler)" : "→ " + Target) + (Fire ? "  + GO" : "");
+    protected override string DefaultName => string.IsNullOrEmpty(Target) ? Loc.T("Gå til") : Loc.F("Gå til {0}", Target);
+    public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("(mål mangler)") : "→ " + Target) + (Fire ? "  + GO" : "");
 }
 
 // ======================================================================
@@ -437,10 +439,10 @@ public sealed class PlaylistCue : Cue, IRoutedAudio
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
 
-    public override string TypeName => "Spilleliste";
+    public override string TypeName => Loc.T("Spilleliste");
     public override string TypeIcon => "☰";
-    public override string Summary => $"{Files.Count} spor" + (Shuffle ? "  tilfeldig" : "") + (Loop ? "  ⟲" : "")
-        + (Crossfade > 0 ? $"  krysstoning {Crossfade:0.#}s" : "");
+    public override string Summary => Loc.F("{0} spor", Files.Count) + (Shuffle ? Loc.T("  tilfeldig") : "") + (Loop ? "  ⟲" : "")
+        + (Crossfade > 0 ? Loc.F("  krysstoning {0:0.#}s", Crossfade) : "");
 }
 
 // ======================================================================
@@ -453,9 +455,9 @@ public sealed class MemoCue : Cue
 
     public string Text { get => _text; set => SetCue(ref _text, value ?? ""); }
 
-    public override string TypeName => "Beskjed";
+    public override string TypeName => Loc.T("Beskjed");
     public override string TypeIcon => "✎";
-    protected override string DefaultName => FirstLine is { Length: > 0 } l ? l : "Beskjed";
+    protected override string DefaultName => FirstLine is { Length: > 0 } l ? l : Loc.T("Beskjed");
     public override string Summary => FirstLine;
     private string FirstLine => Text.Split('\n', 2)[0].Trim();
 }
@@ -479,7 +481,7 @@ public sealed class NetworkCue : Cue
     /// <summary>GET, POST, PUT eller DELETE.</summary>
     public string Method { get => _method; set => SetCue(ref _method, string.IsNullOrWhiteSpace(value) ? "GET" : value.Trim().ToUpperInvariant()); }
 
-    public override string TypeName => "Nettverk";
+    public override string TypeName => Loc.T("Nettverk");
     public override string TypeIcon => "⇄";
     protected override string DefaultName => Protocol == NetworkProtocol.Http ? $"HTTP {Method}" : $"{Protocol.ToString().ToUpperInvariant()} {Host}";
     public override string Summary => Protocol == NetworkProtocol.Http
@@ -516,11 +518,11 @@ public sealed class TimecodeCue : Cue
 
     [JsonIgnore] public Timecode StartTimecode => Timecode.TryParse(Start, out var tc) ? tc : default;
 
-    public override string TypeName => "Tidskode";
+    public override string TypeName => Loc.T("Tidskode");
     public override string TypeIcon => "⏱";
-    protected override string DefaultName => "Tidskode " + Start;
-    public override string Summary => $"{Start} @ {Timecode.Label(Rate).Split(' ')[0]} fps"
-        + (SendMtc ? "  MTC" : "") + (SendLtc ? $"  LTC → ut {LtcBus}" : "");
+    protected override string DefaultName => Loc.T("Tidskode ") + Start;
+    public override string Summary => Loc.F("{0} @ {1} fps", Start, Timecode.Label(Rate).Split(' ')[0])
+        + (SendMtc ? "  MTC" : "") + (SendLtc ? Loc.F("  LTC → ut {0}", LtcBus) : "");
     public override double Duration => Length;
 }
 
@@ -540,9 +542,9 @@ public sealed class LightCue : Cue
     public string Levels { get => _levels; set => SetCue(ref _levels, value ?? ""); }
     public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Clamp(value, 0, 600)); }
 
-    public override string TypeName => "Lys";
+    public override string TypeName => Loc.T("Lys");
     public override string TypeIcon => "✺";
-    public override string Summary => $"Univers {Universe}  {DmxLevels.Summary(Levels)}" + (FadeTime > 0 ? $"  fade {FadeTime:0.#}s" : "");
+    public override string Summary => Loc.F("Univers {0}  {1}", Universe, DmxLevels.Summary(Levels)) + (FadeTime > 0 ? Loc.F("  fade {0:0.#}s", FadeTime) : "");
     public override double Duration => FadeTime;
 }
 
@@ -563,11 +565,11 @@ public sealed class InputCue : Cue, IRoutedAudio
     public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Math.Max(0, value)); }
     public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
 
-    public override string TypeName => "Inngang";
+    public override string TypeName => Loc.T("Inngang");
     public override string TypeIcon => "◉";
-    protected override string DefaultName => "Live-inngang";
-    public override string Summary => $"{FileChannels} kanal(er)" + (VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "")
-        + (Routes != null ? "  → ut " + string.Join(",", Routes.Select(r => r.Bus).Distinct().OrderBy(b => b)) : "");
+    protected override string DefaultName => Loc.T("Live-inngang");
+    public override string Summary => Loc.F("{0} kanal(er)", FileChannels) + (VolumeDb != 0 ? $"  {VolumeDb:+0.#;-0.#} dB" : "")
+        + (Routes != null ? Loc.T("  → ut ") + string.Join(",", Routes.Select(r => r.Bus).Distinct().OrderBy(b => b)) : "");
 }
 
 public sealed class OscCue : Cue
@@ -617,11 +619,11 @@ public sealed class MidiCue : Cue
     public override string TypeIcon => "♫";
     public override string Summary => MessageType switch
     {
-        MidiMessageType.NoteOn => $"Note on  ch{Channel}  {Data1} / {Data2}",
-        MidiMessageType.NoteOff => $"Note off  ch{Channel}  {Data1}",
-        MidiMessageType.ProgramChange => $"Program  ch{Channel}  {Data1}",
+        MidiMessageType.NoteOn => Loc.F("Note on  ch{0}  {1} / {2}", Channel, Data1, Data2),
+        MidiMessageType.NoteOff => Loc.F("Note off  ch{0}  {1}", Channel, Data1),
+        MidiMessageType.ProgramChange => Loc.F("Program  ch{0}  {1}", Channel, Data1),
         MidiMessageType.ControlChange => $"CC  ch{Channel}  {Data1} = {Data2}",
-        MidiMessageType.MscGo => $"MSC GO  cue {MscCueNumber}",
+        MidiMessageType.MscGo => Loc.F("MSC GO  cue {0}", MscCueNumber),
         _ => ""
     } + (string.IsNullOrEmpty(Device) ? "" : $"  [{Device}]");
 }

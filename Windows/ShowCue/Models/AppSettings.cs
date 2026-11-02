@@ -21,7 +21,7 @@ public sealed class PatchBus
     {
         var list = new List<PatchBus>();
         for (int i = 1; i <= count; i++)
-            list.Add(new PatchBus { Name = i switch { 1 => "Main L", 2 => "Main R", _ => $"Utgang {i}" }, Channels = { i } });
+            list.Add(new PatchBus { Name = i switch { 1 => "Main L", 2 => "Main R", _ => Loc.F("Utgang {0}", i) }, Channels = { i } });
         return list;
     }
 }
@@ -54,6 +54,8 @@ public sealed class AppSettings
     public OscFeedbackFormat OscFeedbackFormat { get; set; } = OscFeedbackFormat.Companion;
 
     // ---- Utseende ----
+    /// <summary>Språk i brukerflaten: «nb», «en» eller tom (systemets språk). Tar effekt ved neste oppstart.</summary>
+    public string Language { get; set; } = "";
     public AppTheme Theme { get; set; } = AppTheme.Dark;
     /// <summary>Størrelse på hele hovedvinduet (1 = vanlig), se <see cref="UiZoom"/>.</summary>
     public double Zoom { get; set; } = 1.0;
@@ -139,7 +141,7 @@ public sealed class AppSettings
 public static class UiZoom
 {
     public static readonly double[] Steps = { 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0 };
-    public static readonly (string Label, double Scale)[] ListSizes = { ("Vanlig", 1.0), ("Stor", 1.25), ("Ekstra stor", 1.5) };
+    public static readonly (string Label, double Scale)[] ListSizes = { (Loc.T("Vanlig"), 1.0), (Loc.T("Stor"), 1.25), (Loc.T("Ekstra stor"), 1.5) };
 
     public static double Clamp(double z) => double.IsFinite(z) ? Math.Clamp(z, Steps[0], Steps[^1]) : 1;
     public static double ClampList(double s) => double.IsFinite(s) ? Math.Clamp(s, 1, 2) : 1;

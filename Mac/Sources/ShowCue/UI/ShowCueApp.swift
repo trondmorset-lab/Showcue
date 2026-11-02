@@ -16,14 +16,14 @@ struct ShowCueApp: App {
         .defaultSize(width: 1400, height: 880)
         .commands { ShowCommands(model: delegate.model) }
 
-        Window("Lydpatch", id: "patch") {
+        Window(L("Lydpatch"), id: "patch") {
             Themed { PatchView() }
                 .environmentObject(delegate.model)
                 .environmentObject(delegate.model.audio)
         }
         .defaultSize(width: 1000, height: 620)
 
-        Window("Rediger start og slutt", id: "trim") {
+        Window(L("Rediger start og slutt"), id: "trim") {
             Themed { TrimWindowView() }
                 .environmentObject(delegate.model)
                 .environmentObject(delegate.model.audio)
@@ -39,7 +39,11 @@ struct ShowCueApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let model = AppModel()
+    /// Språket velges før noe annet lages, så alle tekster kommer på riktig språk.
+    let model: AppModel = {
+        Loc.use(AppSettings.load().language)
+        return AppModel()
+    }()
     private var monitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -68,9 +72,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if !model.engine.active.isEmpty {
             let a = NSAlert()
-            a.messageText = "Cuer spiller fortsatt. Vil du avslutte?"
-            a.addButton(withTitle: "Avslutt")
-            a.addButton(withTitle: "Avbryt")
+            a.messageText = L("Cuer spiller fortsatt. Vil du avslutte?")
+            a.addButton(withTitle: L("Avslutt"))
+            a.addButton(withTitle: L("Avbryt"))
             if a.runModal() != .alertFirstButtonReturn { return .terminateCancel }
         }
         guard model.confirmDiscard() else { return .terminateCancel }
@@ -107,7 +111,7 @@ enum KeyHandler {
         guard let win = NSApp.keyWindow else { return false }
         // Hovedvinduet = alt som ikke er lydpatch, innstillinger eller utgangsvinduet.
         let wid = win.identifier?.rawValue.lowercased() ?? ""
-        let isMain = !wid.hasPrefix("patch") && !wid.contains("settings") && win.title != "ShowCue – utgang" && !(win is NSPanel)
+        let isMain = !wid.hasPrefix("patch") && !wid.contains("settings") && win.title != L("ShowCue – utgang") && !(win is NSPanel)
         let flags = e.modifierFlags.intersection([.command, .control, .option])
         let editing = (win.firstResponder as? NSTextView)?.isEditable ?? false
 
@@ -121,7 +125,7 @@ enum KeyHandler {
                 if let name = keyName(e) {
                     if let other = m.cues.first(where: { $0 !== c && $0.hotkey == name }) {
                         other.hotkey = ""
-                        m.statusText = "Hurtigtast \(name) flyttet fra cue \(other.number)."
+                        m.statusText = L("Hurtigtast {0} flyttet fra cue {1}.", name, other.number)
                     }
                     c.hotkey = name
                 }
@@ -162,71 +166,71 @@ struct ShowCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("Om ShowCue") { AboutPanel.show() }
+            Button(L("Om ShowCue")) { AboutPanel.show() }
         }
         CommandGroup(replacing: .newItem) {
-            Button("Nytt show") { model.newShow() }.keyboardShortcut("n")
-            Button("Åpne") { model.openDialog() }.keyboardShortcut("o")
+            Button(L("Nytt show")) { model.newShow() }.keyboardShortcut("n")
+            Button(L("Åpne")) { model.openDialog() }.keyboardShortcut("o")
         }
         CommandGroup(replacing: .saveItem) {
-            Button("Lagre") { model.save(as: false) }.keyboardShortcut("s")
-            Button("Lagre som") { model.save(as: true) }.keyboardShortcut("s", modifiers: [.command, .shift])
+            Button(L("Lagre")) { model.save(as: false) }.keyboardShortcut("s")
+            Button(L("Lagre som")) { model.save(as: true) }.keyboardShortcut("s", modifiers: [.command, .shift])
         }
         CommandGroup(replacing: .undoRedo) {
             // I et tekstfelt angrer ⌘Z skrivingen; ellers angres endringer i showet.
-            Button("Angre") {
+            Button(L("Angre")) {
                 if let tv = NSApp.keyWindow?.firstResponder as? NSTextView, tv.isEditable { tv.undoManager?.undo() } else { model.undo() }
             }.keyboardShortcut("z")
-            Button("Gjør om") {
+            Button(L("Gjør om")) {
                 if let tv = NSApp.keyWindow?.firstResponder as? NSTextView, tv.isEditable { tv.undoManager?.redo() } else { model.redo() }
             }.keyboardShortcut("z", modifiers: [.command, .shift])
         }
-        CommandMenu("Verktøy") {
-            Button("Finn manglende mediefiler") { model.relinkMenu() }
-            Button("Samle show og mediefiler i én mappe") { model.collectShow() }
+        CommandMenu(L("Verktøy")) {
+            Button(L("Finn manglende mediefiler")) { model.relinkMenu() }
+            Button(L("Samle show og mediefiler i én mappe")) { model.collectShow() }
             Divider()
-            Button("Normaliser lydstyrke for valgte lyd-cuer") { model.normalizeSelected() }
-            Button("Normaliser lydstyrke for alle lyd-cuer") { model.normalizeAll() }
+            Button(L("Normaliser lydstyrke for valgte lyd-cuer")) { model.normalizeSelected() }
+            Button(L("Normaliser lydstyrke for alle lyd-cuer")) { model.normalizeAll() }
         }
-        CommandMenu("Cue") {
-            Button("GO (Mellomrom)") { model.go() }
-            Button("Stopp alt (Esc)") { model.panic() }
+        CommandMenu(L("Cue")) {
+            Button(L("GO (Mellomrom)")) { model.go() }
+            Button(L("Stopp alt (Esc)")) { model.panic() }
             Divider()
-            Button("Ny lyd-cue") { model.add(.audio) }.keyboardShortcut("1")
-            Button("Ny video-cue") { model.add(.video) }.keyboardShortcut("2")
-            Button("Ny bilde-cue") { model.add(.image) }.keyboardShortcut("3")
-            Button("Ny PDF-cue") { model.add(.pdf) }.keyboardShortcut("4")
-            Button("Ny fade-cue") { model.add(.fade) }.keyboardShortcut("5")
-            Button("Ny stopp-cue") { model.add(.stop) }.keyboardShortcut("6")
-            Button("Ny OSC-cue") { model.add(.osc) }.keyboardShortcut("7")
-            Button("Ny MIDI-cue") { model.add(.midi) }.keyboardShortcut("8")
-            Button("Ny spilleliste") { model.add(.playlist) }.keyboardShortcut("9")
-            Button("Ny «gå til»-cue") { model.add(.goto) }.keyboardShortcut("0")
-            Button("Ny beskjed-cue") { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
-            Button("Ny nettverks-cue") { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])
-            Button("Ny tidskode-cue") { model.add(.timecode) }.keyboardShortcut("t", modifiers: [.command, .option])
-            Button("Ny lys-cue (Art-Net)") { model.add(.light) }.keyboardShortcut("l", modifiers: [.command, .shift])
-            Button("Ny live-inngang-cue") { model.add(.input) }.keyboardShortcut("i", modifiers: [.command, .shift])
-            Button("Ny nettside-cue") { model.add(.web) }.keyboardShortcut("w", modifiers: [.command, .shift])
+            Button(L("Ny lyd-cue")) { model.add(.audio) }.keyboardShortcut("1")
+            Button(L("Ny video-cue")) { model.add(.video) }.keyboardShortcut("2")
+            Button(L("Ny bilde-cue")) { model.add(.image) }.keyboardShortcut("3")
+            Button(L("Ny PDF-cue")) { model.add(.pdf) }.keyboardShortcut("4")
+            Button(L("Ny fade-cue")) { model.add(.fade) }.keyboardShortcut("5")
+            Button(L("Ny stopp-cue")) { model.add(.stop) }.keyboardShortcut("6")
+            Button(L("Ny OSC-cue")) { model.add(.osc) }.keyboardShortcut("7")
+            Button(L("Ny MIDI-cue")) { model.add(.midi) }.keyboardShortcut("8")
+            Button(L("Ny spilleliste")) { model.add(.playlist) }.keyboardShortcut("9")
+            Button(L("Ny «gå til»-cue")) { model.add(.goto) }.keyboardShortcut("0")
+            Button(L("Ny beskjed-cue")) { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
+            Button(L("Ny nettverks-cue")) { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])
+            Button(L("Ny tidskode-cue")) { model.add(.timecode) }.keyboardShortcut("t", modifiers: [.command, .option])
+            Button(L("Ny lys-cue (Art-Net)")) { model.add(.light) }.keyboardShortcut("l", modifiers: [.command, .shift])
+            Button(L("Ny live-inngang-cue")) { model.add(.input) }.keyboardShortcut("i", modifiers: [.command, .shift])
+            Button(L("Ny nettside-cue")) { model.add(.web) }.keyboardShortcut("w", modifiers: [.command, .shift])
             Divider()
-            Button("Dupliser") { model.duplicateSelected() }.keyboardShortcut("d")
-            Button("Slett") { model.deleteSelected() }.keyboardShortcut(.delete)
-            Button("Flytt opp") { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
-            Button("Flytt ned") { model.moveSelected(1) }.keyboardShortcut(.downArrow)
-            Button("Nummerer alle (1, 2, 3)") { model.renumber() }
+            Button(L("Dupliser")) { model.duplicateSelected() }.keyboardShortcut("d")
+            Button(L("Slett")) { model.deleteSelected() }.keyboardShortcut(.delete)
+            Button(L("Flytt opp")) { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
+            Button(L("Flytt ned")) { model.moveSelected(1) }.keyboardShortcut(.downArrow)
+            Button(L("Nummerer alle (1, 2, 3)")) { model.renumber() }
             Divider()
-            Button("Pause / fortsett alt") { model.togglePause() }.keyboardShortcut("p")
-            Button("Slipp loop (devamp) i valgt cue") { model.releaseSelected() }
+            Button(L("Pause / fortsett alt")) { model.togglePause() }.keyboardShortcut("p")
+            Button(L("Slipp loop (devamp) i valgt cue")) { model.releaseSelected() }
             Divider()
-            Button("Showmodus (lås/lås opp redigering)") { model.showMode.toggle() }.keyboardShortcut("l")
+            Button(L("Showmodus (lås/lås opp redigering)")) { model.showMode.toggle() }.keyboardShortcut("l")
             Divider()
-            Button("Vis/skjul utgang") { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
-            Button("Knappepanel") { model.showButtonPanel() }.keyboardShortcut("k")
-            Button("Bytt tema") { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])
+            Button(L("Vis/skjul utgang")) { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
+            Button(L("Knappepanel")) { model.showButtonPanel() }.keyboardShortcut("k")
+            Button(L("Bytt tema")) { model.settings.theme = model.settings.theme.next }.keyboardShortcut("t", modifiers: [.command, .shift])
             Divider()
-            Button("Zoom inn") { model.zoom(1) }.keyboardShortcut("+")
-            Button("Zoom ut") { model.zoom(-1) }.keyboardShortcut("-")
-            Button("Vanlig størrelse (100 %)") { model.zoom(0) }
+            Button(L("Zoom inn")) { model.zoom(1) }.keyboardShortcut("+")
+            Button(L("Zoom ut")) { model.zoom(-1) }.keyboardShortcut("-")
+            Button(L("Vanlig størrelse (100 %)")) { model.zoom(0) }
         }
     }
 }
@@ -237,12 +241,9 @@ enum AboutPanel {
     static let source = "https://github.com/trondmorset-lab/Showcue-"
 
     static func show() {
-        var text = """
-        ShowCue er fri programvare: du kan dele det videre og endre det under vilkårene i GNU General Public License versjon 3. \
-        Programmet leveres UTEN NOEN FORM FOR GARANTI, heller ikke underforstått garanti for salgbarhet eller egnethet for et bestemt formål.
-
-        Kildekode: \(source)
-        """
+        var text = L("ShowCue er fri programvare: du kan dele det videre og endre det under vilkårene i GNU General Public License versjon 3. ")
+            + L("Programmet leveres UTEN NOEN FORM FOR GARANTI, heller ikke underforstått garanti for salgbarhet eller egnethet for et bestemt formål.")
+            + "\n\n" + L("Kildekode: {0}", source)
         if let url = Bundle.main.url(forResource: "THIRD-PARTY-NOTICES", withExtension: "txt"),
            let notices = try? String(contentsOf: url, encoding: .utf8) {
             text += "\n\n" + notices

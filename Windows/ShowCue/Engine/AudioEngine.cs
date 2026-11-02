@@ -16,7 +16,7 @@ public sealed class AudioEngine : IDisposable
     private PatchMixer? _mixer;
     private readonly Dictionary<int, TestToneSource> _testTones = new();
 
-    public string Status { get; private set; } = "Lyd ikke startet";
+    public string Status { get; private set; } = Loc.T("Lyd ikke startet");
     public bool IsRunning => _output != null && _mixer != null;
     public int DeviceChannels => _mixer?.DeviceChannels ?? 0;
     /// <summary>Navn på kanalene på lydkortet (ASIO-drivere kan ha egne kanalnavn).</summary>
@@ -39,7 +39,7 @@ public sealed class AudioEngine : IDisposable
         catch (Exception ex) when (!fallbackToDefault)
         {
             StopOutput();
-            SetStatus("Kunne ikke åpne lydenheten: " + ex.Message);
+            SetStatus(Loc.T("Kunne ikke åpne lydenheten: ") + ex.Message);
         }
         catch (Exception ex)
         {
@@ -49,12 +49,12 @@ public sealed class AudioEngine : IDisposable
             try
             {
                 CreateOutput(new AppSettings { AudioDriver = AudioDriverType.Wasapi, LatencyMs = Math.Max(s.LatencyMs, 60), Buses = s.Buses });
-                SetStatus($"Kunne ikke åpne valgt lydenhet ({reason}). Bruker Windows standardenhet.");
+                SetStatus(Loc.F("Kunne ikke åpne valgt lydenhet ({0}). Bruker Windows standardenhet.", reason));
             }
             catch (Exception ex2)
             {
                 StopOutput();
-                SetStatus("Ingen lydutgang: " + ex2.Message);
+                SetStatus(Loc.T("Ingen lydutgang: ") + ex2.Message);
             }
         }
         Restarted?.Invoke();
@@ -65,28 +65,28 @@ public sealed class AudioEngine : IDisposable
         if (s.AudioDriver == AudioDriverType.Asio)
         {
             if (string.IsNullOrEmpty(s.AsioDriverName))
-                throw new InvalidOperationException("Ingen ASIO-driver valgt");
+                throw new InvalidOperationException(Loc.T("Ingen ASIO-driver valgt"));
             var asio = new AsioOut(s.AsioDriverName);
             try
             {
                 int channels = Math.Min(asio.DriverOutputChannelCount, Math.Clamp(s.AsioMaxChannels, 2, 128));
-                if (channels < 1) throw new InvalidOperationException("ASIO-driveren har ingen utganger");
+                if (channels < 1) throw new InvalidOperationException(Loc.T("ASIO-driveren har ingen utganger"));
 
                 // Nettverkslydkort har ofte fast samplingsfrekvens satt i sitt eget kontrollprogram.
                 var rate = new[] { s.SampleRate, 48000, 44100, 96000, 88200 }.FirstOrDefault(asio.IsSampleRateSupported);
-                if (rate == 0) throw new InvalidOperationException("Fant ingen støttet samplingsfrekvens");
+                if (rate == 0) throw new InvalidOperationException(Loc.T("Fant ingen støttet samplingsfrekvens"));
 
                 var names = new List<string>();
                 for (int i = 0; i < channels; i++)
                 {
-                    try { names.Add(asio.AsioOutputChannelName(i)); } catch { names.Add($"Ut {i + 1}"); }
+                    try { names.Add(asio.AsioOutputChannelName(i)); } catch { names.Add(Loc.F("Ut {0}", i + 1)); }
                 }
                 ChannelNames = names;
 
                 _mixer = new PatchMixer(rate, channels, s.Buses);
                 asio.Init(new SampleToWaveProvider(_mixer));
                 _output = asio;
-                SetStatus($"ASIO: {s.AsioDriverName} · {channels} kanaler · {rate / 1000.0:0.#} kHz");
+                SetStatus(Loc.F("ASIO: {0} · {1} kanaler · {2:0.#} kHz", s.AsioDriverName, channels, rate / 1000.0));
             }
             catch
             {
@@ -108,19 +108,19 @@ public sealed class AudioEngine : IDisposable
                 channels = client.MixFormat.Channels;
                 rate = client.MixFormat.SampleRate;
             }
-            ChannelNames = Enumerable.Range(1, channels).Select(i => channels == 2 ? (i == 1 ? "Venstre" : "Høyre") : $"Ut {i}").ToList();
+            ChannelNames = Enumerable.Range(1, channels).Select(i => channels == 2 ? (i == 1 ? Loc.T("Venstre") : Loc.T("Høyre")) : Loc.F("Ut {0}", i)).ToList();
 
             _mixer = new PatchMixer(rate, channels, s.Buses);
             var wasapi = new WasapiOut(dev, AudioClientShareMode.Shared, true, s.LatencyMs);
             wasapi.Init(new SampleToWaveProvider(_mixer));
             _output = wasapi;
-            SetStatus($"WASAPI: {dev.FriendlyName} · {channels} kanaler · {rate / 1000.0:0.#} kHz");
+            SetStatus(Loc.F("WASAPI: {0} · {1} kanaler · {2:0.#} kHz", dev.FriendlyName, channels, rate / 1000.0));
         }
 
         _mixer.SourceFinished += src => { if (src is TestToneSource t) lock (_testTones) _testTones.Remove(t.Bus); };
         _output.PlaybackStopped += (_, e) =>
         {
-            if (e.Exception != null) SetStatus("Lydutgangen stoppet: " + e.Exception.Message);
+            if (e.Exception != null) SetStatus(Loc.T("Lydutgangen stoppet: ") + e.Exception.Message);
         };
         _output.Play();
     }
@@ -133,7 +133,7 @@ public sealed class AudioEngine : IDisposable
 
     public CuePlayback Play(AudioCue cue, double offset = 0)
     {
-        if (_mixer == null) throw new InvalidOperationException("Lydutgangen er ikke startet. Sjekk innstillinger.");
+        if (_mixer == null) throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
         var pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate, offset);
         _mixer.Add(pb);
         return pb;
@@ -194,14 +194,14 @@ public sealed class AudioEngine : IDisposable
 
     private static List<KeyValuePair<string, string>> Devices(DataFlow flow)
     {
-        var list = new List<KeyValuePair<string, string>> { new("", "Windows standardenhet") };
+        var list = new List<KeyValuePair<string, string>> { new("", Loc.T("Windows standardenhet")) };
         try
         {
             using var en = new MMDeviceEnumerator();
             foreach (var d in en.EnumerateAudioEndPoints(flow, DeviceState.Active))
             {
                 string extra = "";
-                try { using var c = d.AudioClient; extra = $"  ({c.MixFormat.Channels} kanaler)"; } catch { }
+                try { using var c = d.AudioClient; extra = Loc.F("  ({0} kanaler)", c.MixFormat.Channels); } catch { }
                 list.Add(new(d.ID, d.FriendlyName + extra));
             }
         }
