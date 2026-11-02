@@ -117,7 +117,7 @@ struct WaveformEditorView: View {
                 if px >= 0 {
                     var p = Path(); p.move(to: CGPoint(x: px, y: 0)); p.addLine(to: CGPoint(x: px, y: ruler))
                     ctx.stroke(p, with: .color(theme.line), lineWidth: 1)
-                    ctx.draw(Text(fmt(tt)).uiFont(9.5).foregroundColor(theme.muted), at: CGPoint(x: px + 3, y: 1), anchor: .topLeading)
+                    ctx.draw(Text(fmt(tt)).font(.system(size: 9.5)).foregroundColor(theme.muted), at: CGPoint(x: px + 3, y: 1), anchor: .topLeading)
                 }
                 tt += step
             }
