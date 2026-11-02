@@ -11,17 +11,17 @@ Det finnes i to utgaver som deler showformat:
 | `Mac/` | macOS 13+ | Swift / SwiftUI / CoreAudio / AVFoundation | Åpne `Package.swift` i Xcode, eller `./build-app.sh` |
 
 Begge har:
-- Cuer for lyd, video, bilde, PDF, fade, stopp, OSC, MIDI, spilleliste, «gå til», memo og nettverk (UDP/TCP/HTTP)
+- Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, «gå til», memo og nettverk (UDP/TCP/HTTP)
 - **Tidskode** (MTC/LTC ut, MTC-triggere inn), **lys over Art-Net** og **live-inngang** gjennom lydpatchen
 - **Cart-vindu** for berøringsskjerm, **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
 - **Pause/fortsett alt**, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
 - Hurtigtaster og MIDI-triggere per cue
-- **Lydpatch** for flerkanals lydkort og Dante, med routingmatrise per cue, testtone og nivåmålere
+- **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
 - **Fjernstyring** med OSC inn, MIDI inn og MSC
-- **Status til Companion** over OSC: neste cue, hva som spiller og tid igjen
+- **Status ut over OSC** (f.eks. til Companion): neste cue, hva som spiller og tid igjen
 - **Lys, mørk og nattmodus**, og fargemerking av cuer
 
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,
@@ -66,7 +66,7 @@ ShowCue er fri programvare: du kan distribuere og endre den under vilkårene i G
 versjon 3 (GPL-3.0), slik den er utgitt av Free Software Foundation. Se `LICENSE` for hele teksten.
 Programmet leveres uten noen form for garanti.
 
-Komponenter fra andre og lisensene deres står i `THIRD-PARTY-NOTICES.txt`: [NAudio](https://github.com/naudio/NAudio)
-og .NET-kjøretiden (begge MIT-lisens, i Windows-versjonen), og merknaden for Art-Net™. Fila følger med i
+Komponenter fra andre og lisensene deres står i `THIRD-PARTY-NOTICES.txt`: [NAudio](https://github.com/naudio/NAudio),
+.NET-kjøretiden (MIT) og Microsoft WebView2 SDK (BSD) i Windows-versjonen, og merknaden for Art-Net™. Fila følger med i
 installasjonsprogrammet, i Mac-appen og i hver utgivelse, og vises under *Om ShowCue* i programmet.
 Lyd- og videokodeker leveres av operativsystemet; ShowCue har ingen egne.

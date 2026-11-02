@@ -55,7 +55,7 @@ final class OscTests: XCTestCase {
     }
 }
 
-// MARK: - Status til Companion
+// MARK: - Status ut over OSC
 
 final class FeedbackTests: XCTestCase {
     let status = ShowStatus(showName: "Konsert", nextNumber: "3", nextName: "Walk-in", nextNotes: "Vent på lys",
@@ -80,7 +80,7 @@ final class FeedbackTests: XCTestCase {
         XCTAssertEqual(v("remaining"), "-0:05")
         XCTAssertEqual(v("remaining_name"), "Jingle")
         XCTAssertEqual(v("state"), "spiller")
-        XCTAssertTrue(sent.allSatisfy { $0.1.isString }, "Companion får alltid tekst")
+        XCTAssertTrue(sent.allSatisfy { $0.1.isString }, "variabler sendes alltid som tekst")
 
         let n = sent.count
         sent.removeAll()

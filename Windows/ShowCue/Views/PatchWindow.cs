@@ -12,7 +12,7 @@ namespace ShowCue.Views;
 /// <summary>
 /// Lydpatch: rader = utganger (busser) som cuene sender til, kolonner = kanaler på lydkortet.
 /// Kryss av for å sende en utgang til en kanal. Endringer høres med en gang.
-/// Med Dante Virtual Soundcard (ASIO) vises Dante-kanalnavnene som verktøytips.
+/// Har driveren egne kanalnavn (ASIO), vises de som verktøytips.
 /// </summary>
 public sealed class PatchWindow : Window
 {
@@ -83,7 +83,7 @@ public sealed class PatchWindow : Window
         var hint = new TextBlock
         {
             Text = "Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. " +
-                   "«Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot Dante/PA. Patchen lagres på denne maskinen, ikke i showfila.",
+                   "«Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot PA. Patchen lagres på denne maskinen, ikke i showfila.",
             FontSize = 11.5,
             TextWrapping = TextWrapping.Wrap,
         };

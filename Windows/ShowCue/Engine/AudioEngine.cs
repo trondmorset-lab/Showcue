@@ -7,7 +7,7 @@ namespace ShowCue.Engine;
 
 /// <summary>
 /// Én felles flerkanals mikser (<see cref="PatchMixer"/>) som alltid kjører, koblet til WASAPI eller ASIO.
-/// Med ASIO åpnes alle kanalene på lydkortet (f.eks. 64 på Dante Virtual Soundcard),
+/// Med ASIO åpnes alle kanalene på lydkortet (f.eks. 64 på et nettverkslydkort),
 /// og lydpatchen bestemmer hvilke busser som går hvor.
 /// </summary>
 public sealed class AudioEngine : IDisposable
@@ -19,7 +19,7 @@ public sealed class AudioEngine : IDisposable
     public string Status { get; private set; } = "Lyd ikke startet";
     public bool IsRunning => _output != null && _mixer != null;
     public int DeviceChannels => _mixer?.DeviceChannels ?? 0;
-    /// <summary>Navn på kanalene på lydkortet (ASIO gir navn, f.eks. Dante-kanaler).</summary>
+    /// <summary>Navn på kanalene på lydkortet (ASIO-drivere kan ha egne kanalnavn).</summary>
     public IReadOnlyList<string> ChannelNames { get; private set; } = Array.Empty<string>();
     public PatchMixer? Mixer => _mixer;
 
@@ -72,7 +72,7 @@ public sealed class AudioEngine : IDisposable
                 int channels = Math.Min(asio.DriverOutputChannelCount, Math.Clamp(s.AsioMaxChannels, 2, 128));
                 if (channels < 1) throw new InvalidOperationException("ASIO-driveren har ingen utganger");
 
-                // Dante Virtual Soundcard o.l. har fast samplingsfrekvens satt i Dante Controller.
+                // Nettverkslydkort har ofte fast samplingsfrekvens satt i sitt eget kontrollprogram.
                 var rate = new[] { s.SampleRate, 48000, 44100, 96000, 88200 }.FirstOrDefault(asio.IsSampleRateSupported);
                 if (rate == 0) throw new InvalidOperationException("Fant ingen støttet samplingsfrekvens");
 
@@ -101,7 +101,7 @@ public sealed class AudioEngine : IDisposable
                 ? en.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia)
                 : en.GetDevice(s.WasapiDeviceId);
 
-            // Bruk enhetens egne kanaler og samplingsfrekvens (Dante i WDM-modus, flerkanals USB-kort osv.).
+            // Bruk enhetens egne kanaler og samplingsfrekvens (nettverkslydkort i WDM-modus, flerkanals USB-kort osv.).
             int channels, rate;
             using (var client = dev.AudioClient)
             {
@@ -189,7 +189,7 @@ public sealed class AudioEngine : IDisposable
 
     public static List<KeyValuePair<string, string>> GetWasapiDevices() => Devices(DataFlow.Render);
 
-    /// <summary>Opptaksenheter (mikrofon, linje inn, Dante WDM-innganger) for live-inngang-cuer.</summary>
+    /// <summary>Opptaksenheter (mikrofon, linje inn, nettverkslydkort) for live-inngang-cuer.</summary>
     public static List<KeyValuePair<string, string>> GetCaptureDevices() => Devices(DataFlow.Capture);
 
     private static List<KeyValuePair<string, string>> Devices(DataFlow flow)

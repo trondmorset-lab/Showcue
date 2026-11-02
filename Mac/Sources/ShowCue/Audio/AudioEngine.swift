@@ -1,20 +1,21 @@
 import Foundation
 import AVFoundation
 
-/// Én avspilling (lyd-cue eller lydsporet i en video).
+/// Én avspilling: en lydfil (lyd-cue, spor i en spilleliste, lydsporet i en video) eller en live-inngang.
 final class Playback {
     let voice: Voice
-    let stream: StreamingSource
+    /// Fila som dekodes i bakgrunnen (nil for live-inngang).
+    let stream: StreamingSource?
     weak var engine: AudioEngine?
     var onFinished: (() -> Void)?
     private(set) var started = false
 
-    init(voice: Voice, stream: StreamingSource) {
+    init(voice: Voice, stream: StreamingSource?) {
         self.voice = voice
         self.stream = stream
     }
 
-    var fileChannels: Int { stream.channels }
+    var fileChannels: Int { voice.source.channels }
     var passPosition: Double { voice.passPosition }
     var passLength: Double? { voice.passLength }
     var elapsed: Double { voice.elapsed }
@@ -23,8 +24,10 @@ final class Playback {
     func start() {
         guard !started, let e = engine, let m = e.mixer else { return }
         started = true
-        stream.fill(minimumFrames: Int(0.3 * stream.sampleRate))
-        AudioFeeder.shared.add(stream)
+        if let s = stream {
+            s.fill(minimumFrames: Int(0.3 * s.sampleRate))
+            AudioFeeder.shared.add(s)
+        }
         m.add(voice)
     }
 
@@ -33,11 +36,11 @@ final class Playback {
     }
     func adjustLevel(_ db: Double) { voice.adjustLevel(db) }
     func setRouting(_ routes: [AudioRoute]) { voice.setRouting(routes) }
-    func requestRewind() { stream.requestRewind() }
+    func requestRewind() { stream?.requestRewind() }
     func pause() { voice.pause() }
     func resume() { voice.resume() }
-    var isLooping: Bool { stream.isLooping }
-    func releaseLoop() { stream.releaseLoop() }
+    var isLooping: Bool { stream?.isLooping ?? false }
+    func releaseLoop() { stream?.releaseLoop() }
 
     func stop(fade: Double) {
         voice.stop(fade: fade)
@@ -47,7 +50,7 @@ final class Playback {
     /// Fjern fra mikser og dekoder (trygt å kalle flere ganger).
     func cleanup() {
         engine?.mixer?.remove(voice)
-        AudioFeeder.shared.remove(stream)
+        if let s = stream { AudioFeeder.shared.remove(s) }
     }
 }
 
@@ -148,7 +151,17 @@ final class AudioEngine: ObservableObject {
         return wire(voice, stream)
     }
 
-    private func wire(_ voice: Voice, _ stream: StreamingSource) -> Playback {
+    /// Live-inngang med cuens nivå, fades og routing. Ringbufferen lukkes når stemmen er borte.
+    func makePlayback(live ring: LiveRing, for cue: Cue, onClose: @escaping (LiveRing) -> Void) throws -> Playback {
+        guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."]) }
+        let src = LiveSource(ring: ring)
+        src.onClose = onClose
+        let voice = Voice(source: src, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: cue.fadeIn, fadeOut: cue.fadeOut,
+                          loop: true, routes: cue.effectiveRoutes(fileChannels: ring.channels))
+        return wire(voice, nil)
+    }
+
+    private func wire(_ voice: Voice, _ stream: StreamingSource?) -> Playback {
         let p = Playback(voice: voice, stream: stream)
         p.engine = self
         voice.onFinished = { [weak p] in

@@ -110,7 +110,7 @@ public sealed class LoudnessMeter
             return y;
         }
 
-        // Koeffisientene regnes ut for hver samplingsfrekvens (samme formler som libebur128),
+        // K-vektingen (ITU-R BS.1770) regnes om til hver samplingsfrekvens med bilineær transformasjon,
         // og gir nøyaktig BS.1770-verdiene ved 48 kHz.
         public static Biquad Shelf(double rate)
         {

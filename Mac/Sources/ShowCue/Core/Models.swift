@@ -4,7 +4,7 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input, web
 }
 
 /// Hvordan en nettverks-cue sender.
@@ -271,6 +271,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             host = "255.255.255.255"; fadeTime = 2
         case .input:
             fadeIn = 0.5; fadeOut = 1; fileChannels = 2
+        case .web:
+            fadeIn = 0.5; fadeOut = 0.5; url = "https://"
         default: break
         }
     }
@@ -278,7 +280,16 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // MARK: Egenskaper
 
     var isFileCue: Bool { [.audio, .video, .image, .pdf].contains(type) }
-    var isVisual: Bool { [.video, .image, .pdf].contains(type) }
+    var isVisual: Bool { [.video, .image, .pdf, .web].contains(type) }
+
+    /// Nettside-cue: adressen som gyldig http(s)- eller fil-adresse. «www.x.no» får https:// foran.
+    var webURL: URL? {
+        let u = url.trimmingCharacters(in: .whitespaces)
+        if !u.isEmpty, !u.contains("://"), FileManager.default.fileExists(atPath: u) { return URL(fileURLWithPath: u) }
+        guard let parsed = URL(string: u.contains("://") ? u : "https://" + u), let scheme = parsed.scheme?.lowercased() else { return nil }
+        if scheme == "file" { return parsed }
+        return (scheme == "http" || scheme == "https") && !(parsed.host ?? "").isEmpty ? parsed : nil
+    }
     var hasNoAudio: Bool { type == .video && fileChannels == 0 }
 
     var typeName: String {
@@ -298,6 +309,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .timecode: return "Tidskode"
         case .light: return "Lys"
         case .input: return "Inngang"
+        case .web: return "Nettside"
         }
     }
 
@@ -318,6 +330,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .timecode: return "⏱"
         case .light: return "✺"
         case .input: return "◉"
+        case .web: return "◍"
         }
     }
 
@@ -354,6 +367,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .timecode: return "Tidskode " + tcStart
         case .light: return "Lys"
         case .input: return "Live-inngang"
+        case .web: return webURL.flatMap { $0.isFileURL ? nil : $0.host } ?? "Nettside"
         }
     }
 
@@ -395,6 +409,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             return "\(tcStart) @ \(rate.label.split(separator: " ")[0]) fps" + (sendMtc ? "  MTC" : "") + (sendLtc ? "  LTC → ut \(ltcBus)" : "")
         case .light:
             return "Univers \(universe)  \(DmxLevels.summary(levels))" + (fadeTime > 0 ? "  fade \(Cue.fmt(fadeTime))s" : "")
+        case .web:
+            return url
         case .input:
             var s = "\(fileChannels) kanal(er)"
             if volumeDb != 0 { s += "  " + Cue.signedDb(volumeDb) + " dB" }
@@ -440,7 +456,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .video:
             let end = videoEnd
             return loop || end <= 0 ? 0 : max(0, end - startTime)
-        case .image, .pdf: return holdTime > 0 ? fadeIn + holdTime + fadeOut : 0
+        case .image, .pdf, .web: return holdTime > 0 ? fadeIn + holdTime + fadeOut : 0
         case .fade: return fadeTime
         case .stop: return release ? 0 : fadeTime
         case .light: return fadeTime
@@ -529,7 +545,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
         cart = v(.Cart, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
         text = v(.Text, ""); networkProtocol = v(.protocolKey, NetworkProtocol.udp); message = v(.Message, "")
-        url = v(.Url, "http://"); method = v(.Method, "GET").uppercased()
+        url = v(.Url, t == .web ? "https://" : "http://"); method = v(.Method, "GET").uppercased()
         if t == .network { port = v(.Port, 9000) }
         if t == .light { host = v(.Host, "255.255.255.255") }
         timecodeTrigger = Timecode.normalize(v(.TimecodeTrigger, ""))
@@ -609,6 +625,13 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(fadeOut, forKey: .FadeOut)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
+        case .web:
+            try c.encode(url, forKey: .Url)
+            try c.encode(fadeIn, forKey: .FadeIn)
+            try c.encode(fadeOut, forKey: .FadeOut)
+            try c.encode(replaceOthers, forKey: .ReplaceOthers)
+            try c.encode(stretch, forKey: .Stretch)
+            try c.encode(holdTime, forKey: .HoldTime)
         case .timecode:
             try c.encode(tcStart, forKey: .Start)
             try c.encode(rate, forKey: .Rate)

@@ -39,10 +39,10 @@ enum FeedbackValue: Equatable, CustomStringConvertible {
     }
 }
 
-/// Sender status tilbake til Companion (eller annet) over OSC. Bare endrede verdier sendes,
-/// pluss alt hvert 5. sekund (i tilfelle Companion er startet på nytt).
+/// Sender status tilbake til et kontrollpanel over OSC. Bare endrede verdier sendes,
+/// pluss alt hvert 5. sekund (i tilfelle mottakeren er startet på nytt).
 ///
-/// Companion-format:  /custom-variable/sc_next_name/value "Intro"
+/// Variabel-format (f.eks. Companion):  /custom-variable/sc_next_name/value "Intro"
 /// Generisk format:   /showcue/next/name "Intro"   og   /showcue/cue/12/running 1
 final class OscFeedback {
     static let fullRefreshSeconds = 5.0
@@ -104,7 +104,7 @@ final class OscFeedback {
             if !full, last[key] == value { continue }
             last[key] = value
             if format == .companion {
-                raw("/custom-variable/\(prefix)\(key)/value", .string(value.description)) // Companion forventer tekst
+                raw("/custom-variable/\(prefix)\(key)/value", .string(value.description)) // variabler sendes som tekst
             } else {
                 raw("/showcue/" + key.replacingOccurrences(of: "_", with: "/"), value.osc)
             }

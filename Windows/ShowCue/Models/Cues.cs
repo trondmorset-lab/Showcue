@@ -304,6 +304,31 @@ public sealed class PdfCue : StillCue
     protected override string DefaultName => base.DefaultName + $" s.{Page}";
 }
 
+/// <summary>Nettside på utgangen (f.eks. en klokke, resultatliste eller presentasjon i nettleseren).</summary>
+public sealed class WebCue : StillCue
+{
+    private string _url = "https://";
+
+    public string Url { get => _url; set => SetCue(ref _url, value?.Trim() ?? ""); }
+
+    /// <summary>Adressen som en gyldig http(s)- eller fil-adresse, ellers null. «www.x.no» får https:// foran.</summary>
+    [JsonIgnore] public Uri? ValidUri
+    {
+        get
+        {
+            var u = Url;
+            if (u.Length > 0 && !u.Contains("://") && File.Exists(u)) return new Uri(Path.GetFullPath(u));
+            if (u.Length > 0 && !u.Contains("://")) u = "https://" + u;
+            return Uri.TryCreate(u, UriKind.Absolute, out var uri) && (uri.Scheme is "http" or "https" or "file") && (uri.IsFile || uri.Host.Length > 0) ? uri : null;
+        }
+    }
+
+    public override string TypeName => "Nettside";
+    public override string TypeIcon => "◍";
+    protected override string DefaultName => ValidUri is { IsFile: false } u ? u.Host : "Nettside";
+    public override string Summary => Url;
+}
+
 // ======================================================================
 //  KONTROLL
 // ======================================================================

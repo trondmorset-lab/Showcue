@@ -77,28 +77,24 @@ class ActiveCue: ObservableObject, Identifiable {
     }
 }
 
-// MARK: - Lyd
+// MARK: - Lyd og live-inngang
 
-final class AudioActive: ActiveCue {
-    private var playback: Playback?
+/// Felles for cuer som spilles som én avspilling gjennom lydpatchen (lyd og live-inngang):
+/// stopp med fade, fade-cuer, pause, endringer i nivå/routing mens den spiller, og opprydding.
+class PlaybackActive: ActiveCue {
+    var playback: Playback?
     private var subs: Set<AnyCancellable> = []
 
+    /// Lag avspillingen (startes av onBegin).
+    func makePlayback() throws -> Playback { fatalError("overstyres") }
+
     override func onBegin() throws {
-        guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
-        let pb = try engine.audio.makePlayback(audio: cue, offset: startOffset)
+        let pb = try makePlayback()
         playback = pb
         pb.onFinished = { [weak self] in self?.complete() }
-        duration = cue.loop ? 0 : (pb.passLength ?? 0)
         if cue.fileChannels != pb.fileChannels { cue.fileChannels = pb.fileChannels }
-        if cue.fileDuration <= 0, let len = pb.passLength, cue.endTime <= 0 { cue.fileDuration = cue.startTime + len }
         pb.start()
         subs = followLiveChanges { [weak self] in self?.playback }
-    }
-
-    override func tick() {
-        super.tick()
-        guard let pb = playback, started, !done else { return }
-        elapsed = cue.loop ? pb.elapsed : pb.passPosition
     }
 
     override func stop(fade: Double) {
@@ -122,16 +118,32 @@ final class AudioActive: ActiveCue {
     override func pause() { playback?.pause() }
     override func resume() { playback?.resume() }
 
+    override func onComplete() {
+        subs.removeAll()
+        playback?.cleanup()
+    }
+}
+
+final class AudioActive: PlaybackActive {
+    override func makePlayback() throws -> Playback {
+        guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
+        let pb = try engine.audio.makePlayback(audio: cue, offset: startOffset)
+        duration = cue.loop ? 0 : (pb.passLength ?? 0)
+        if cue.fileDuration <= 0, let len = pb.passLength, cue.endTime <= 0 { cue.fileDuration = cue.startTime + len }
+        return pb
+    }
+
+    override func tick() {
+        super.tick()
+        guard let pb = playback, started, !done else { return }
+        elapsed = cue.loop ? pb.elapsed : pb.passPosition
+    }
+
     override func release() -> Bool {
         guard let pb = playback, pb.isLooping else { return false }
         pb.releaseLoop()
         duration = 0 // ukjent til fila er ferdig
         return true
-    }
-
-    override func onComplete() {
-        subs.removeAll()
-        playback?.cleanup()
     }
 }
 
@@ -145,14 +157,16 @@ enum CueError: LocalizedError {
 // MARK: - Visuelt (felles)
 
 class VisualActive: ActiveCue {
-    var layers: LayerPair?
+    var layers: VisualLayers?
     var startedAt: Double = 0
     private var finishAt: Double?
 
-    func makeLayers() throws -> LayerPair { fatalError("overstyres") }
+    func makeLayers() throws -> VisualLayers { fatalError("overstyres") }
 
     override func onBegin() throws {
-        guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
+        if cue.type == .web {
+            guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: "Ugyldig adresse: \(cue.url)"]) }
+        } else if !FileManager.default.fileExists(atPath: cue.filePath) { throw CueError.fileMissing(cue.filePath) }
         if cue.replaceOthers {
             // Krysstoning: de andre fades ut mens denne fades inn.
             for other in engine.active.compactMap({ $0 as? VisualActive }) where other !== self && other.started && !other.done && !other.isStopping {
@@ -205,7 +219,12 @@ class VisualActive: ActiveCue {
 // MARK: - Bilde og PDF
 
 final class StillActive: VisualActive {
-    override func makeLayers() throws -> LayerPair {
+    override func makeLayers() throws -> VisualLayers {
+        if cue.type == .web, let url = cue.webURL {
+            duration = cue.duration
+            let c = cue
+            return engine.output.addWeb(url) { msg in c.error = "Nettside: " + msg }
+        }
         let page = cue.type == .pdf ? cue.page : 0
         var image = MediaCache.shared.cached(path: cue.filePath, page: page)
         if image == nil { image = MediaCache.shared.image(path: cue.filePath, page: page) }
@@ -230,7 +249,7 @@ final class StillActive: VisualActive {
 // MARK: - Video
 
 /// Bildet spilles av AVPlayer (dempet). Lyden pakkes ut og spilles gjennom lydpatchen, og er «master»:
-/// glir bildet mer enn 0,12 s fra lyden (f.eks. fordi Dante-klokka og Mac-klokka går litt ulikt), justeres bildet.
+/// glir bildet mer enn 0,12 s fra lyden (f.eks. fordi lydkortets klokke og Mac-klokka går litt ulikt), justeres bildet.
 final class VideoActive: VisualActive {
     private var player: AVPlayer?
     private var audio: Playback?
@@ -247,7 +266,7 @@ final class VideoActive: VisualActive {
     private var subs: Set<AnyCancellable> = []
     static let maxDrift = 0.12
 
-    override func makeLayers() throws -> LayerPair {
+    override func makeLayers() throws -> VisualLayers {
         let item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath))
         startTime = max(0, cue.startTime) + startOffset
         endTime = cue.endTime > startTime ? cue.endTime : 0
@@ -441,11 +460,6 @@ final class PlaylistActive: ActiveCue {
     private var begin: Double = 0
     private var subs: Set<AnyCancellable> = []
 
-    /// Navnet på sporet som spiller nå.
-    var currentTrack: String {
-        index >= 0 && index < order.count ? URL(fileURLWithPath: order[index]).deletingPathExtension().lastPathComponent : ""
-    }
-
     private func newOrder() -> [String] {
         let files = cue.files.filter { FileManager.default.fileExists(atPath: $0) }
         return cue.shuffle ? files.shuffled() : files
@@ -570,11 +584,6 @@ final class TimecodeActive: ActiveCue {
     private var mtc: MtcSender?
     private var begin = 0.0
 
-    /// Tidskoden som sendes nå.
-    var current: String {
-        Timecode.fromSeconds(cue.startTimecode.toSeconds(cue.rate) + elapsed, cue.rate).format(cue.rate)
-    }
-
     override func onBegin() throws {
         guard cue.sendMtc || cue.sendLtc else {
             throw NSError(domain: "ShowCue.TC", code: 1, userInfo: [NSLocalizedDescriptionKey: "Velg MTC og/eller LTC"])
@@ -626,72 +635,23 @@ final class LightActive: TimedActive {
 }
 
 /// Live-inngang gjennom lydpatchen (mikrofon, linje inn).
-final class InputActive: ActiveCue {
-    private var voice: Voice?
+final class InputActive: PlaybackActive {
     private var begin = 0.0
-    private var subs: Set<AnyCancellable> = []
 
-    override func onBegin() throws {
+    override func makePlayback() throws -> Playback {
         guard let m = engine.audio.mixer else {
             throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: "Lydutgangen er ikke startet. Sjekk innstillinger."])
         }
         let ring: LiveRing
         do { ring = try engine.input.open(deviceUID: engine.inputDeviceUID, outputRate: m.sampleRate) }
         catch { throw NSError(domain: "ShowCue.Input", code: 1, userInfo: [NSLocalizedDescriptionKey: "Kunne ikke åpne inngangen: \(error.localizedDescription)"]) }
-        if cue.fileChannels != ring.channels { cue.fileChannels = ring.channels }
-        let src = LiveSource(ring: ring)
         let input = engine.input
-        src.onClose = { [weak input] r in input?.close(r) }
-        let v = Voice(source: src, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: cue.fadeIn, fadeOut: cue.fadeOut,
-                      loop: true, routes: cue.effectiveRoutes(fileChannels: ring.channels))
-        v.onFinished = { [weak self, weak m] in
-            DispatchQueue.main.async {
-                if let self, let v = self.voice { m?.remove(v) }
-                self?.complete()
-            }
-        }
-        m.add(v)
-        voice = v
         begin = engine.now
-        subs = [
-            cue.$routes.dropFirst().sink { [weak self] _ in
-                DispatchQueue.main.async { guard let self, let v = self.voice else { return }
-                    v.setRouting(self.cue.effectiveRoutes(fileChannels: self.cue.fileChannels)) }
-            },
-            cue.$volumeDb.dropFirst().sink { [weak self] db in
-                guard let self, !self.isStopping else { return }
-                self.voice?.adjustLevel(db)
-            },
-        ]
+        return try engine.audio.makePlayback(live: ring, for: cue) { [weak input] r in input?.close(r) }
     }
 
     override func tick() {
         super.tick()
         if started && !done { elapsed = engine.now - begin }
-    }
-
-    override func stop(fade: Double) {
-        super.stop(fade: fade)
-        guard let v = voice, !done else { return }
-        isStopping = true
-        v.stop(fade: fade)
-        if fade <= 0 { complete() }
-    }
-
-    override func applyFade(_ f: Cue) {
-        guard let v = voice else { return }
-        if f.fadeAudio {
-            if f.stopWhenDone { wasStopped = true; isStopping = true }
-            v.fadeTo(f.targetDb, seconds: f.fadeTime, stopWhenDone: f.stopWhenDone, curve: f.curve)
-        } else if f.stopWhenDone { stop(fade: 0) }
-    }
-
-    override func pause() { voice?.pause() }
-    override func resume() { voice?.resume() }
-
-    override func onComplete() {
-        subs.removeAll()
-        if let v = voice { engine.audio.mixer?.remove(v) }
-        voice = nil
     }
 }

@@ -37,7 +37,7 @@
                         <StackPanel x:Name="WasapiPanel">
                             <TextBlock Style="{StaticResource Label}" Text="Lydenhet" />
                             <ComboBox x:Name="WasapiBox" DisplayMemberPath="Value" SelectedValuePath="Key" />
-                            <TextBlock Style="{StaticResource Hint}" Text="Bruker enhetens egne kanaler og samplingsfrekvens. Dante Virtual Soundcard i WDM-modus og flerkanals USB-kort vises her." />
+                            <TextBlock Style="{StaticResource Hint}" Text="Bruker enhetens egne kanaler og samplingsfrekvens. Nettverkslydkort i WDM-modus (f.eks. Dante Virtual Soundcard) og flerkanals USB-kort vises her." />
                             <TextBlock Style="{StaticResource Label}" Text="Buffer (ms)" />
                             <TextBox x:Name="LatencyBox" />
                             <TextBlock Style="{StaticResource Hint}" Text="Lavere gir raskere respons på GO, men kan gi knaking. 40–80 ms er trygt for de fleste." />
@@ -49,7 +49,7 @@
                             <TextBlock Style="{StaticResource Label}" Text="Maks antall kanaler" />
                             <TextBox x:Name="AsioChannelsBox" />
                             <TextBlock Style="{StaticResource Hint}"
-                                       Text="Alle kanalene på kortet åpnes, opptil dette tallet (Dante Virtual Soundcard: 64). Hvilke kanaler lyden går til bestemmes i Lydpatch. Bufferstørrelse og samplingsfrekvens for Dante stilles i Dante Virtual Soundcard / Dante Controller." />
+                                       Text="Alle kanalene på kortet åpnes, opptil dette tallet (f.eks. 64 på et nettverkslydkort). Hvilke kanaler lyden går til bestemmes i Lydpatch. Bufferstørrelse og samplingsfrekvens for Dante stilles i Dante Virtual Soundcard / Dante Controller." />
                             <TextBlock Style="{StaticResource Label}" Text="Ønsket samplingsfrekvens" />
                             <ComboBox x:Name="RateBox" />
                             <TextBlock Style="{StaticResource Hint}" Text="Hvis kortet ikke støtter valgt frekvens, brukes den første som virker (48, 44,1, 96 eller 88,2 kHz)." />
@@ -80,7 +80,7 @@
             <TabItem Header="OSC">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Style="{StaticResource Page}">
-                        <CheckBox x:Name="OscEnabledBox" Content="Ta imot OSC (fjernstyring fra Companion, TouchOSC, lysbord …)" Margin="0,4,0,0" />
+                        <CheckBox x:Name="OscEnabledBox" Content="Ta imot OSC (fjernstyring fra kontrollpaneler og lysbord, f.eks. Companion eller TouchOSC)" Margin="0,4,0,0" />
                         <TextBlock Style="{StaticResource Label}" Text="UDP-port" />
                         <TextBox x:Name="OscPortBox" />
                         <TextBlock Style="{StaticResource Hint}" x:Name="OscAddressText" />

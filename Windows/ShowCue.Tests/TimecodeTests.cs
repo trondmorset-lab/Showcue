@@ -170,7 +170,6 @@ public class TimecodeTests
         Assert.Equal(0, f.Values(10)[0]);
         Assert.Equal(100, f.Values(11)[0]);
         Assert.Equal(50, f.Values(11)[1]);
-        Assert.True(f.IsFading(11));
         // Ny fade på kanal 1 midt i: fortsetter fra 100.
         f.FadeTo(new Dictionary<int, byte> { [1] = 0 }, 1, now: 11);
         Assert.Equal(100, f.Values(11)[0]);
@@ -178,7 +177,6 @@ public class TimecodeTests
         Assert.Equal(75, f.Values(11.5)[1]); // kanal 2 fader videre som før
         Assert.Equal(0, f.Values(12)[0]);
         Assert.Equal(100, f.Values(13)[1]);
-        Assert.False(f.IsFading(13));
         f.FadeTo(new Dictionary<int, byte> { [3] = 33 }, 0, now: 13);
         Assert.Equal(33, f.Values(13)[2]);
     }

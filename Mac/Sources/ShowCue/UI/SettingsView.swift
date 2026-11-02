@@ -56,7 +56,7 @@ struct SettingsView: View {
                 Text("Systemets standard utgang").tag("")
                 ForEach(devices) { Text($0.label).tag($0.uid) }
             }.labelsHidden()
-            Hint("Dante Virtual Soundcard, flerkanals USB/Thunderbolt-kort og aggregerte enheter vises her. Alle kanalene åpnes (opptil maks nedenfor), og lydpatchen bestemmer hvor hver utgang går.")
+            Hint("Nettverkslydkort (f.eks. Dante Virtual Soundcard), flerkanals USB/Thunderbolt-kort og aggregerte enheter vises her. Alle kanalene åpnes (opptil maks nedenfor), og lydpatchen bestemmer hvor hver utgang går.")
             Pair {
                 FieldLabel("Maks antall kanaler"); IntInput(value: $draft.maxChannels, range: 2...512)
             } _: {
@@ -66,7 +66,7 @@ struct SettingsView: View {
                 }.labelsHidden()
             }
             Hint("Lavere buffer gir raskere respons på GO. 256 er trygt for de fleste; øk ved knaking.")
-            Hint("Samplingsfrekvensen følger enheten (for Dante: settes i Dante Controller). Filer med annen frekvens konverteres automatisk.")
+            Hint("Samplingsfrekvensen følger enheten (for nettverkslydkort: settes i kortets eget kontrollprogram). Filer med annen frekvens konverteres automatisk.")
             Button("Oppdater liste") { devices = CoreAudioDevices.outputDevices() }.buttonStyle(PanelButtonStyle()).padding(.top, 10)
 
             SectionHeader("FORHÅNDSLYTTING (BØLGEFORMEN)").padding(.top, 18)
@@ -85,7 +85,7 @@ struct SettingsView: View {
                 Text("Systemets standard inngang").tag("")
                 ForEach(CoreAudioDevices.inputDevices(), id: \.uid) { Text($0.label).tag($0.uid) }
             }.labelsHidden()
-            Hint("Mikrofon, linje inn eller Dante Virtual Soundcard. macOS spør om tilgang til mikrofonen første gang.")
+            Hint("Mikrofon, linje inn eller nettverkslydkort. macOS spør om tilgang til mikrofonen første gang.")
         }
     }
 
@@ -106,7 +106,7 @@ struct SettingsView: View {
 
     private var oscTab: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Toggle("Ta imot OSC (fjernstyring fra Companion, TouchOSC, lysbord …)", isOn: $draft.oscInEnabled)
+            Toggle("Ta imot OSC (fjernstyring fra kontrollpaneler og lysbord, f.eks. Companion eller TouchOSC)", isOn: $draft.oscInEnabled)
             FieldLabel("UDP-port"); IntInput(value: $draft.oscInPort, range: 1...65535)
             let ips = UDP.localAddresses()
             Hint(ips.isEmpty ? "Fant ingen nettverksadresser." : "Send til: \(ips.joined(separator: "  eller  "))  (port \(draft.oscInPort)). Fra samme maskin: 127.0.0.1.")

@@ -210,7 +210,7 @@ public partial class SettingsWindow : Window
 
         if (Result.AudioDriver == AudioDriverType.Asio && string.IsNullOrEmpty(Result.AsioDriverName))
         {
-            MessageBox.Show(this, "Fant ingen ASIO-drivere på denne maskinen. Installer lydkortets ASIO-driver (eller Dante Virtual Soundcard i ASIO-modus), eller velg WASAPI.",
+            MessageBox.Show(this, "Fant ingen ASIO-drivere på denne maskinen. Installer lydkortets ASIO-driver (f.eks. et nettverkslydkort i ASIO-modus), eller velg WASAPI.",
                 "Innstillinger", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

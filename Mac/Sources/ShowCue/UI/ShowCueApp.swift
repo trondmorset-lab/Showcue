@@ -207,6 +207,7 @@ struct ShowCommands: Commands {
             Button("Ny tidskode-cue") { model.add(.timecode) }.keyboardShortcut("t", modifiers: [.command, .option])
             Button("Ny lys-cue (Art-Net)") { model.add(.light) }.keyboardShortcut("l", modifiers: [.command, .shift])
             Button("Ny live-inngang-cue") { model.add(.input) }.keyboardShortcut("i", modifiers: [.command, .shift])
+            Button("Ny nettside-cue") { model.add(.web) }.keyboardShortcut("w", modifiers: [.command, .shift])
             Divider()
             Button("Dupliser") { model.duplicateSelected() }.keyboardShortcut("d")
             Button("Slett") { model.deleteSelected() }.keyboardShortcut(.delete)

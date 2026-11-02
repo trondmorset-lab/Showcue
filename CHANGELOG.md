@@ -4,6 +4,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.11.0 – 2026-11-02
+
+### Nytt
+- **Nettside-cue** (◍, Ctrl+Shift+W / ⇧⌘W): viser en nettside eller lokal .html-fil fullskjerm på utgangen,
+  med fade inn/ut og visningstid som et bilde. Windows bruker Microsoft Edge WebView2 (innebygd i Windows 10/11).
+
+### Endret
+- **Ryddigere verktøylinje:** knappene er samlet i nedtrekksmenyer – *Fil*, *＋ Media*, *Styring*, *Signal ut*,
+  *Rediger* og *Oppsett*. Angre/gjør om, Cart og Showmodus er fortsatt egne knapper. Alle hurtigtaster er de samme.
+
 ## 0.10.1 – 2026-11-02
 
 ### Nytt

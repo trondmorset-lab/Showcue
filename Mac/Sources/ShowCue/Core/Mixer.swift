@@ -190,7 +190,7 @@ final class TestToneSource: BusSource {
         if stopped { return false }
         guard busIndex < busCount else { return true }
         for f in 0..<frames {
-            // Paul Kellett sitt rosa støy-filter
+            // Rosa støy: hvit støy gjennom sju parallelle lavpassfiltre (−3 dB per oktav)
             let w = white()
             b0 = 0.99886 * b0 + w * 0.0555179
             b1 = 0.99332 * b1 + w * 0.0750759

@@ -69,8 +69,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
         + (_settings.OscFeedbackEnabled ? $"   ·   Status ut: {_settings.OscFeedbackHost}:{_settings.OscFeedbackPort}" : "");
-    /// <summary>Ikon for temaknappen: viser hvilket tema man bytter til.</summary>
-    public string ThemeGlyph => ThemeManager.Current switch { AppTheme.Dark => "☀", AppTheme.Light => "☾", _ => "◐" };
     private string _learnText = "";
     /// <summary>Vises i inspector mens vi venter på en MIDI-melding.</summary>
     public string LearnText { get => _learnText; set { _learnText = value; Raise(); } }
@@ -148,7 +146,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _settings = AppSettings.Load();
         ThemeManager.Apply(_settings.Theme);
         ThemeManager.Register(this);
-        ThemeManager.Changed += () => Raise(nameof(ThemeGlyph));
         Engine = new CueEngine(_settings, () => Cues);
         WaveformEditor.Engine = Engine;
         Remote = new RemoteControl(this, Dispatcher, _settings);
@@ -465,6 +462,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.T: AddCue("timecode"); e.Handled = true; return;
                 case Key.L: AddCue("light"); e.Handled = true; return;
                 case Key.I: AddCue("input"); e.Handled = true; return;
+                case Key.W: AddCue("web"); e.Handled = true; return;
             }
         }
 
@@ -679,6 +677,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
             "memo" => new() { new MemoCue() },
+            "web" => new() { new WebCue() },
             "timecode" => new() { new TimecodeCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
             "light" => new() { new LightCue() },
             "input" => new() { new InputCue { FileChannels = Math.Max(1, AudioInput.ProbeChannels(_settings.InputDeviceId)) } },
@@ -919,7 +918,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _cartWindow.Show();
     }
 
-    private void Tools_Click(object sender, RoutedEventArgs e)
+    private void Menu_Click(object sender, RoutedEventArgs e)
     {
         var b = (Button)sender;
         b.ContextMenu.PlacementTarget = b;
@@ -1317,7 +1316,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         MeterLScale.ScaleY = _meterL;
         MeterRScale.ScaleY = _meterR;
 
-        // Status til Companion ca. 10 ganger i sekundet (bare endringer sendes).
+        // Status ut over OSC ca. 10 ganger i sekundet (bare endringer sendes).
         if (_feedback != null && ++_feedbackTick % 6 == 0)
         {
             try { _feedback.Update(BuildStatus(), Engine.Now); }

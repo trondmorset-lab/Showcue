@@ -2,9 +2,20 @@ import AppKit
 import AVFoundation
 import QuartzCore
 import PDFKit
+import WebKit
+
+/// Et synlig lag på utgangen som kan fades og fjernes (bilde, video, nettside).
+protocol VisualLayers: AnyObject {
+    func setOpacity(_ value: Float, duration: Double, curve: FadeCurve)
+    func remove()
+}
+
+extension VisualLayers {
+    func setOpacity(_ value: Float, duration: Double) { setOpacity(value, duration: duration, curve: .db) }
+}
 
 /// To like lag: ett i utgangsvinduet (projektor) og ett i forhåndsvisningen i hovedvinduet.
-final class LayerPair {
+final class LayerPair: VisualLayers {
     let output: CALayer
     let preview: CALayer
 
@@ -13,7 +24,7 @@ final class LayerPair {
         self.preview = preview
     }
 
-    func setOpacity(_ value: Float, duration: Double, curve: FadeCurve = .db) {
+    func setOpacity(_ value: Float, duration: Double, curve: FadeCurve) {
         for l in [output, preview] {
             CATransaction.begin()
             if duration <= 0 {
@@ -42,6 +53,8 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
     private let outputRoot = CALayer()
     private var window: NSWindow?
     private var screenIndex = -1
+    /// Nettsider ligger som egne visninger over bildelagene i utgangsvinduet.
+    private var webViews: [WKWebView] = []
     @Published private(set) var isVisible = false
 
     override init() {
@@ -91,11 +104,16 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
         w.title = "ShowCue – utgang"
         w.backgroundColor = .black
         w.delegate = self
-        let view = NSView(frame: NSRect(origin: .zero, size: rect.size))
+        let container = NSView(frame: NSRect(origin: .zero, size: rect.size))
+        container.wantsLayer = true
+        let view = NSView(frame: container.bounds)
         view.layer = outputRoot
         view.wantsLayer = true
+        view.autoresizingMask = [.width, .height]
         outputRoot.frame = view.bounds
-        w.contentView = view
+        container.addSubview(view)
+        for web in webViews { web.frame = container.bounds; container.addSubview(web) }
+        w.contentView = container
         if full {
             w.setFrame(screens[screenIndex].frame, display: true)
             w.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 1)
@@ -156,6 +174,29 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
         }
     }
 
+    /// Nettside: vises direkte i utgangsvinduet, og som et bilde (oppdatert fire ganger i sekundet) i forhåndsvisningen.
+    func addWeb(_ url: URL, onError: @escaping (String) -> Void) -> WebLayers {
+        ensureVisible()
+        let web = WKWebView(frame: window?.contentView?.bounds ?? .zero)
+        web.autoresizingMask = [.width, .height]
+        web.alphaValue = 0
+        if let c = window?.contentView { c.addSubview(web) }
+        webViews.append(web)
+        let preview = CALayer()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        preview.frame = previewRoot.bounds
+        preview.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        preview.contentsGravity = .resizeAspect
+        preview.opacity = 0
+        previewRoot.addSublayer(preview)
+        CATransaction.commit()
+        let layers = WebLayers(web: web, preview: preview, onError: onError) { [weak self] w in self?.webViews.removeAll { $0 === w } }
+        if url.isFileURL { web.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent()) }
+        else { web.load(URLRequest(url: url)) }
+        return layers
+    }
+
     func addVideo(_ player: AVPlayer, stretch: VisualStretch) -> LayerPair {
         attach {
             let l = AVPlayerLayer(player: player)
@@ -164,6 +205,60 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
             return l
         }
     }
+}
+
+/// En nettside på utgangen: fades med vinduets gjennomsiktighet, forhåndsvisningen er et øyeblikksbilde.
+final class WebLayers: NSObject, VisualLayers, WKNavigationDelegate {
+    private let web: WKWebView
+    private let preview: CALayer
+    private let onError: (String) -> Void
+    private let onRemove: (WKWebView) -> Void
+    private var timer: Timer?
+
+    init(web: WKWebView, preview: CALayer, onError: @escaping (String) -> Void, onRemove: @escaping (WKWebView) -> Void) {
+        self.web = web; self.preview = preview; self.onError = onError; self.onRemove = onRemove
+        super.init()
+        web.navigationDelegate = self
+        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in self?.snapshot() }
+    }
+
+    private func snapshot() {
+        web.takeSnapshot(with: nil) { [weak self] image, _ in
+            guard let self, let img = image else { return }
+            var rect = NSRect(origin: .zero, size: img.size)
+            let cg = img.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+            CATransaction.begin(); CATransaction.setDisableActions(true)
+            self.preview.contents = cg
+            CATransaction.commit()
+        }
+    }
+
+    func setOpacity(_ value: Float, duration: Double, curve: FadeCurve) {
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = max(0, duration)
+            ctx.timingFunction = CAMediaTimingFunction(name: curve == .sCurve ? .easeInEaseOut : .linear)
+            web.animator().alphaValue = CGFloat(value)
+        }
+        CATransaction.begin()
+        if duration <= 0 { CATransaction.setDisableActions(true) } else { CATransaction.setAnimationDuration(duration) }
+        preview.opacity = value
+        CATransaction.commit()
+    }
+
+    func remove() {
+        timer?.invalidate()
+        timer = nil
+        web.stopLoading()
+        web.navigationDelegate = nil
+        web.removeFromSuperview()
+        onRemove(web)
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        preview.removeFromSuperlayer()
+        CATransaction.commit()
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { onError(error.localizedDescription) }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { onError(error.localizedDescription) }
 }
 
 /// Laster og cacher bilder og PDF-sider, så GO blir umiddelbar.

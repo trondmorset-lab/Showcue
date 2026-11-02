@@ -148,6 +148,7 @@ struct CueInspector: View {
         case .timecode: timecodeSection
         case .light: lightSection
         case .input: inputSection
+        case .web: webSection
         }
     }
 
@@ -238,7 +239,7 @@ struct CueInspector: View {
             FieldLabel("Lydspor → utganger (dB)").padding(.top, 6)
             if cue.hasNoAudio { Hint("Videoen har ikke noe lydspor.") }
             RoutingMatrixView(cue: cue)
-            Hint("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen (Dante o.l.) og holdes i synk med bildet. «Alt av» gjør videoen stum.")
+            Hint("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.")
             Button("Pakk ut lyd til egen lyd-cue …") { model.extractVideoAudio(cue) }
                 .buttonStyle(PanelButtonStyle()).padding(.top, 10)
                 .help("Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum.")
@@ -285,6 +286,17 @@ struct CueInspector: View {
             Toggle("Slipp loop (devamp) i stedet for å stoppe", isOn: $cue.release).padding(.top, 8)
             Hint("Mål-cuen spiller ferdig loopen og fortsetter til slutten av fila.")
             FieldLabel("Fade-tid (s)"); NumberInput(value: $cue.fadeTime, range: 0...600).disabled(cue.release)
+        }
+    }
+
+    private var webSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel("Adresse (URL eller fil)"); TextInput($cue.url, mono: true)
+            if cue.webURL == nil { Text("Ugyldig adresse").foregroundColor(theme.danger).font(.system(size: 12)).padding(.top, 2) }
+            Hint("F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter og vises fullskjerm på utgangen, over bilder og video. Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.")
+            FieldLabel("Vis i (s, 0 = til stoppet)")
+            NumberInput(value: $cue.holdTime, range: 0...86400)
+            visualCommon
         }
     }
 
@@ -336,7 +348,7 @@ struct CueInspector: View {
 
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Hint("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn, Dante).")
+            Hint("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort).")
             Pair {
                 FieldLabel("Nivå (dB)"); NumberInput(value: $cue.volumeDb, range: -60...12)
             } _: {

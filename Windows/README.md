@@ -44,7 +44,7 @@ Lyd- og video-cuer har en bølgeform i inspektøren der start- og sluttpunktet r
 - **⤢ Stort vindu** åpner en stor redigeringsvisning. Slutt helt til slutten av fila lagres som «0 = filslutt».
 - For video starter bildet og lyden på startpunktet, og med loop hopper videoen tilbake til startpunktet.
 
-## Lydpatch og flerkanals lydkort (Dante, ASIO)
+## Lydpatch og flerkanals lydkort
 
 Lyden går i tre ledd:
 
@@ -54,7 +54,7 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
 
 - **Utganger** (busser) er logiske, f.eks. «Main L», «Main R», «Monitor», «Opptak». Showfila refererer bare
   til utgangene, så showet kan flyttes til en annen maskin med et annet lydkort – bare patchen må endres.
-- **Lydpatch** (knapp i verktøylinja): én rad per utgang og én kolonne per kanal på lydkortet. Kryss av for
+- **Lydpatch** (*Oppsett → Lydpatch*): én rad per utgang og én kolonne per kanal på lydkortet. Kryss av for
   hvor hver utgang skal ut. En utgang kan gå til flere kanaler. Nivå per utgang i dB.
   **Test** spiller rosa støy (−18 dBFS) på utgangen for linjesjekk, og nivåmålere vises per utgang og per kanal.
   Med ASIO vises kanalnavnene fra driveren (f.eks. Dante-kanalene) når du holder musa over kolonneoverskriften.
@@ -63,13 +63,13 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
   Endringer i routing og nivå høres med en gang mens cuen spiller.
 
 **Lyd i video («de-embedding»):** lydsporet i videofiler dekodes av Windows (Media Foundation: AAC, PCM, WMA …)
-og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen og ASIO/Dante akkurat som en lyd-cue, med
+og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen akkurat som en lyd-cue, med
 routingmatrise, nivå i dB, fader og fade-cuer. Lyden styrer tiden: hvis bildet glir mer enn 0,12 s
-(f.eks. fordi Dante-klokka og PC-klokka går litt ulikt), justeres bildet. Knappen **«Pakk ut lyd til egen lyd-cue»**
+(f.eks. fordi lydkortets klokke og PC-klokka går litt ulikt), justeres bildet. Knappen **«Pakk ut lyd til egen lyd-cue»**
 lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Da kan lyden redigeres
 for seg (start/slutt, loop) eller byttes ut med en egen miks.
 
-**Dante Virtual Soundcard:**
+**Eksempel – Dante Virtual Soundcard:**
 1. Start DVS i **ASIO-modus** og velg antall kanaler (f.eks. 64×64) og samplingsfrekvens i Dante Controller.
 2. ShowCue → *Innstillinger → Lyd*: velg **ASIO** og driveren «Dante Virtual Soundcard (x64)».
 3. *Lydpatch*: kryss av hvilke Dante-kanaler hver utgang skal på. Rut kanalene videre i Dante Controller.
@@ -105,9 +105,9 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 **Bitfocus Companion / Stream Deck:** bruk modulen «Generic OSC», sett mål-IP til show-PC-en (porten 8000 er allerede modulens standard),
 og send f.eks. `/go` eller `/cue/5/start`.
 
-### Status tilbake til Companion (OSC ut)
+### Status ut over OSC
 
-*Innstillinger → OSC → Status ut*: skriv inn IP-adressen til Companion-maskinen og port **12321**
+*Innstillinger → OSC → Status ut*: skriv inn IP-adressen til mottakeren og porten. For Companion er det port **12321**
 (Companions OSC-port; slå på OSC under *Settings → Protocols* i Companion).
 
 **Format «Companion»** setter egendefinerte variabler. Opprett disse under *Variables → Custom Variables* i Companion
@@ -156,7 +156,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+P** | Pause / fortsett alt |
 | **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til memo / nettverks-cue |
 | **Ctrl+K** | Cart-vindu |
-| **Ctrl+Shift+T / L / I** | Legg til tidskode-, lys-, inngang-cue |
+| **Ctrl+Shift+T / L / I / W** | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
 | **Delete** | Slett valgte cues |
@@ -183,6 +183,23 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
   *lineær amplitude* (som en fysisk fader).
 
+## Verktøylinja
+
+| Meny | Innhold |
+|---|---|
+| **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler |
+| **＋ Media** | Lyd, video, bilde, PDF, nettside, spilleliste, live-inngang |
+| **Styring** | Fade, stopp, gå til, memo |
+| **Signal ut** | OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
+| **Rediger** | Dupliser, slett, flytt, nummerer, normaliser lydstyrke |
+| **Oppsett** | Lydpatch, utgangsvinduet, innstillinger, tema, om ShowCue |
+
+Angre/gjør om, **▦ Cart** og **🔒 Showmodus** er egne knapper. Hurtigtastene står i menyene.
+
+**Nettside-cue** (◍): viser en nettside (f.eks. `https://time.is`) eller en lokal .html-fil fullskjerm på utgangen,
+med fade og visningstid som et bilde. Windows bruker Microsoft Edge WebView2, som er innebygd i Windows 10 og 11.
+Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
+
 ## Cart, nettverk, memo og lydstyrke
 
 - **Cart-vindu** (▦ Cart eller Ctrl+K): store knapper for berøringsskjerm. Viser cuer med hurtigtast og cuer merket
@@ -191,7 +208,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
   og `\xHH` i meldingen gir linjeskift, tab og enkeltbytes. Eksempel PJLink-projektor av: TCP, port 4352, `%1POWR 0\r`.
   Feil (f.eks. ingen kontakt) vises på cuen; GO venter aldri på nettverket.
 - **Memo-cue** (✎ Memo): en beskjed til operatøren («Vent på applaus») som vises stort øverst til den lukkes.
-- **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Verktøy → Normaliser lydstyrke*, måler
+- **Normaliser lydstyrke:** *Normaliser* i panelet for en lyd-cue, eller *Rediger → Normaliser lydstyrke*, måler
   lydstyrken (integrert LUFS etter EBU R128) mellom start og slutt og setter nivået så cuen treffer målet
   (standard −23 LUFS, endres under *Innstillinger → Sikkerhet*).
 
@@ -204,14 +221,14 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Lys-cue** (✺ Lys): sender DMX over Art-Net (UDP 6454) til en node eller som kringkasting. Nivåer skrives
   `kanal@verdi`, f.eks. `1@255 2-4@50% 10@0`, og fades over valgt tid. Kanaler som ikke nevnes, beholder nivået.
 - **Live-inngang** (◉ Inn): lyden fra inngangen valgt under *Innstillinger → Lyd* (WASAPI: mikrofon, linje inn,
-  Dante WDM) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
-  ASIO-innganger støttes ikke ennå – bruk Dante i WDM-modus.
+  nettverkslydkort i WDM-modus) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
+  ASIO-innganger støttes ikke ennå – bruk nettverkslydkortet i WDM-modus.
 
 ## Mediefiler: finn og samle
 
 - Mangler det filer når et show åpnes, tilbyr ShowCue å lete i en mappe du velger (med undermapper), på filnavn.
-  Det samme finnes under *Verktøy → Finn manglende mediefiler*.
-- *Verktøy → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
+  Det samme finnes under *Fil → Finn manglende mediefiler*.
+- *Fil → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
   `Media/`. Kopier mappa til en minnepinne eller en annen maskin (også Mac), så finner showet filene selv.
 
 ## Trygt under forestillingen
@@ -230,7 +247,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 
 ## Utseende
 
-Tre fargetemaer, som byttes med en gang via ☀-knappen i verktøylinja eller *Innstillinger → Utseende*:
+Tre fargetemaer, som byttes med en gang via *Oppsett → Bytt tema* eller *Innstillinger → Utseende*:
 **Mørk** (grafitt), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
 Tittellinja i Windows følger temaet.
 
@@ -240,7 +257,7 @@ Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i lys).
 
 ## Innstillinger
 
-- **Lyd:** WASAPI (vanlige lydkort/USB/Dante WDM) eller **ASIO** (Dante Virtual Soundcard, RME, Focusrite …).
+- **Lyd:** WASAPI (vanlige lydkort, USB og nettverkslydkort i WDM-modus) eller **ASIO** (proffe lydkort og nettverkslydkort).
   Faller automatisk tilbake til Windows standardenhet hvis valgt kort mangler. Se *Lydpatch* over.
 - **OSC inn / MIDI inn:** se *Fjernstyring* over.
 - **Video/bilde/PDF-utgang:** velg skjerm/projektor for fullskjerm, eller «Vindu» for testing på én skjerm.
