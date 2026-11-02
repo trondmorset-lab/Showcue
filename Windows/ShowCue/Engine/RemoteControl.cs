@@ -131,7 +131,7 @@ public sealed class RemoteControl : IDisposable
         {
             int n = _show.FireMidiTrigger(trigger);
             if (n == 0) { _show.RemoteLog(Loc.F("MIDI: {0} (kanal {1}) – ingen cue koblet til", MidiTriggers.Describe(trigger), channel)); return; }
-            what = n == 1 ? Loc.T("1 cue") : Loc.F("{0} cues", n);
+            what = n == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", n);
         }
         _show.RemoteLog(Loc.F("MIDI: {0} → {1}", MidiTriggers.Describe(trigger), what));
     }
@@ -144,7 +144,7 @@ public sealed class RemoteControl : IDisposable
         if (_lastTcFrame is long prev && _lastTcRate == rate)
         {
             int n = _show.FireTimecodeTriggers(prev, frame, rate);
-            if (n > 0) _show.RemoteLog(Loc.F("MTC {0} → {1}", tc.Format(rate), (n == 1 ? "1 cue" : Loc.F("{0} cues", n))));
+            if (n > 0) _show.RemoteLog(Loc.F("MTC {0} → {1}", tc.Format(rate), (n == 1 ? "1 cue" : Loc.F("{0} cuer", n))));
         }
         _lastTcFrame = frame;
         _lastTcRate = rate;

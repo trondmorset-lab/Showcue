@@ -130,7 +130,7 @@ struct SettingsView: View {
             Hint(L("Argument 0 ignoreres (knapp sluppet). macOS kan spørre om tilgang til lokalt nettverk første gang – tillat det."))
 
             Rectangle().fill(theme.line).frame(height: 1).padding(.vertical, 14)
-            SectionHeader(L("STATUS UT (TIL COMPANION)"))
+            SectionHeader(L("STATUS UT (F.EKS. TIL COMPANION)"))
             Toggle(L("Send status: neste cue, hva som spiller, tid igjen"), isOn: $draft.oscFeedbackEnabled).padding(.top, 6)
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 0) { FieldLabel(L("Mottaker (IP)")); TextInput($draft.oscFeedbackHost) }
@@ -221,7 +221,7 @@ struct SettingsView: View {
             }
             .labelsHidden()
             .pickerStyle(.radioGroup)
-            Hint(L("Mørk passer de fleste kontrollrom. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang (også med ☀︎-knappen i verktøylinja eller ⇧⌘T)."))
+            Hint(L("Mørk passer de fleste kontrollrom. Grå er et dempet, lyst tema som er mindre hvitt enn Lys. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang, også fra Oppsett-menyen eller med ⇧⌘T."))
 
             FieldLabel(L("Zoom"))
             Picker("", selection: Binding(get: { model.settings.zoom }, set: { z in model.settings.zoom = z; draft.zoom = z })) {

@@ -50,10 +50,10 @@
                             <TextBlock Style="{StaticResource Label}" Text="{local:T 'Maks antall kanaler'}" />
                             <TextBox x:Name="AsioChannelsBox" />
                             <TextBlock Style="{StaticResource Hint}"
-                                       Text="{local:T 'Alle kanalene på kortet åpnes, opptil dette tallet (f.eks. 64 på et nettverkslydkort). Hvilke kanaler lyden går til bestemmes i Lydpatch. Bufferstørrelse og samplingsfrekvens for Dante stilles i Dante Virtual Soundcard / Dante Controller.'}" />
+                                       Text="{local:T 'Alle kanalene på lydkortet åpnes, opptil dette tallet (f.eks. 64 på et nettverkslydkort). Lydpatchen bestemmer hvilke kanaler lyden går til. Buffer og samplingsfrekvens for nettverkslydkort stilles i kortets eget kontrollprogram.'}" />
                             <TextBlock Style="{StaticResource Label}" Text="{local:T 'Ønsket samplingsfrekvens'}" />
                             <ComboBox x:Name="RateBox" />
-                            <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Hvis kortet ikke støtter valgt frekvens, brukes den første som virker (48, 44,1, 96 eller 88,2 kHz).'}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Hvis lydkortet ikke støtter valgt frekvens, brukes den første som virker (48, 44,1, 96 eller 88,2 kHz).'}" />
                         </StackPanel>
 
                         <TextBlock Style="{StaticResource Label}" Text="{local:T 'Forhåndslytting (bølgeformen) – egen lydenhet'}" Margin="0,18,0,3" />
@@ -102,7 +102,7 @@
                                    Text="{local:T 'Argument 0 ignoreres (knapp sluppet). Windows-brannmuren spør første gang – tillat ShowCue på private nettverk.'}" />
 
                         <Rectangle Height="1" Fill="{DynamicResource Line}" Margin="0,18,0,10" />
-                        <TextBlock Text="{local:T 'STATUS UT (TIL COMPANION)'}" Style="{StaticResource SectionHeader}" />
+                        <TextBlock Text="{local:T 'STATUS UT (F.EKS. TIL COMPANION)'}" Style="{StaticResource SectionHeader}" />
                         <CheckBox x:Name="FbEnabledBox" Content="{local:T 'Send status: neste cue, hva som spiller, tid igjen'}" Margin="0,4,0,0" />
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
@@ -169,7 +169,7 @@
                     <ComboBox x:Name="ThemeBox" ItemsSource="{x:Static local:EnumValues.Themes}" ItemTemplate="{StaticResource EnumItem}"
                               SelectionChanged="Theme_Changed" />
                     <TextBlock Style="{StaticResource Hint}"
-                               Text="{local:T 'Mørk passer de fleste kontrollrom. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang (også med ☀-knappen i verktøylinja).'}" />
+                               Text="{local:T 'Mørk passer de fleste kontrollrom. Grå er et dempet, lyst tema som er mindre hvitt enn Lys. Lys er lettest å lese i dagslys og på prøver. Nattmodus er ekstra dempet for mørke scener og sidescene. Temaet byttes med en gang, også fra Oppsett-menyen.'}" />
 
                     <TextBlock Style="{StaticResource Label}" Text="{local:T 'Zoom'}" />
                     <ComboBox x:Name="ZoomBox" Width="120" HorizontalAlignment="Left" />

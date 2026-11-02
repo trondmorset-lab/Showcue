@@ -72,7 +72,7 @@ struct WaveformEditorView: View {
                 Button(L("▶ Kjør herfra")) {
                     preview.stop()
                     model.engine.fire(cue, offset: max(0, currentPoint - cue.startTime))
-                }.help(L("Kjør cuen på de vanlige utgangene, fra markøren (start fra tid)"))
+                }.help(L("Kjør cuen fra markøren, på de vanlige utgangene"))
             }.buttonStyle(PanelButtonStyle())
             if preview.goesToShowOutputs {
                 Text(L("⚠ Lyttingen går ut på cuens vanlige utganger (salen). Velg hodetelefoner eller en lytteutgang under Innstillinger → Lyd."))

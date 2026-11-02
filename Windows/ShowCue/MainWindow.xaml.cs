@@ -343,7 +343,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         CommitFocusedTextBox();
         if (Engine.Active.Count > 0 &&
-            MessageBox.Show(this, Loc.T("Cues spiller fortsatt. Vil du avslutte?"), "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            MessageBox.Show(this, Loc.T("Cuer spiller fortsatt. Vil du avslutte?"), "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             e.Cancel = true;
             return;
@@ -732,7 +732,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
         if (selected.Count == 0) return;
-        var text = selected.Count == 1 ? Loc.F("Slette cue {0} «{1}»?", selected[0].Number, selected[0].DisplayName) : Loc.F("Slette {0} cues?", selected.Count);
+        var text = selected.Count == 1 ? Loc.F("Slette cue {0} «{1}»?", selected[0].Number, selected[0].DisplayName) : Loc.F("Slette {0} cuer?", selected.Count);
         if (MessageBox.Show(this, text, "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         int idx = selected.Min(c => Cues.IndexOf(c));
         foreach (var c in selected)
@@ -760,7 +760,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, Loc.T("Gi alle cues nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cues oppdateres automatisk."), "ShowCue",
+        if (MessageBox.Show(this, Loc.T("Gi alle cuer nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cuer oppdateres automatisk."), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < Cues.Count; i++)
@@ -938,7 +938,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (MessageBox.Show(this, text + Loc.T("\n\nVil du velge en mappe å lete i (undermapper tas med)?"), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             Relink();
-        else StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.", missing.Count);
+        else StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. Fil → Finn manglende mediefiler.", missing.Count);
     }
 
     private void Relink_Click(object sender, RoutedEventArgs e)

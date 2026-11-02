@@ -307,7 +307,7 @@ final class OscServer {
     func start(port: Int) throws {
         stop()
         let s = socket(AF_INET, SOCK_DGRAM, 0)
-        guard s >= 0 else { throw NSError(domain: "OSC", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke lage socket")]) }
+        guard s >= 0 else { throw NSError(domain: "OSC", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: L("Kunne ikke åpne nettverkstilkoblingen")]) }
         var on: Int32 = 1
         setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, socklen_t(MemoryLayout<Int32>.size))
         var addr = sockaddr_in()

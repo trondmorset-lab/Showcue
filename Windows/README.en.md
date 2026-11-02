@@ -252,8 +252,8 @@ Audio from the page goes to the system audio output, not through the audio patch
 
 ## Appearance
 
-Three colour themes, switched immediately via *Setup → Switch theme* or *Settings → Appearance*:
-**Dark** (graphite), **Light** (daylight and rehearsals) and **Night mode** (extra dimmed for dark scenes).
+Four colour themes, switched immediately via *Setup → Switch theme* or *Settings → Appearance*:
+**Dark** (graphite), **Grey** (soft and less white than Light), **Light** (daylight and rehearsals) and **Night mode** (extra dimmed for dark scenes).
 The Windows title bar follows the theme.
 
 **Zoom and text size:** *Setup → Zoom in / Zoom out* (Ctrl + and Ctrl −) makes the whole main window 80–200 % in size.
@@ -265,7 +265,7 @@ Both are also under *Settings → Appearance* and are remembered until next time
 
 **Cue colours:** give cues a colour (red, orange, yellow, green, blue, purple, grey) in the panel on the right. The row is tinted,
 and the quick button gets a colour stripe. Select several cues to colour them all at once.
-The colours are adapted to each theme (muted in dark and night, pastel in light).
+The colours are adapted to each theme (muted in dark and night, pastel in grey and light).
 
 ## Settings
 

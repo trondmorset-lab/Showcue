@@ -662,7 +662,7 @@ final class AppModel: ObservableObject, ShowControl {
         a.addButton(withTitle: L("Velg mappe"))
         a.addButton(withTitle: L("Ikke nå"))
         if a.runModal() == .alertFirstButtonReturn { relink() }
-        else { statusText = L("Advarsel: {0} mediefil(er) mangler. Verktøy → Finn manglende mediefiler.", missing.count) }
+        else { statusText = L("Advarsel: {0} mediefil(er) mangler. Fil → Finn manglende mediefiler.", missing.count) }
     }
 
     func relinkMenu() {

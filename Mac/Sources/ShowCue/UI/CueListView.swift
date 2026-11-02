@@ -40,7 +40,7 @@ struct CueListView: View {
                 if model.cues.isEmpty {
                     VStack(spacing: 6) {
                         Text(L("Dra lyd-, video-, bilde- eller PDF-filer hit")).uiFont(18).foregroundColor(theme.muted)
-                        Text(L("eller bruk «Legg til» i verktøylinja")).uiFont(13).foregroundColor(theme.faint)
+                        Text(L("eller bruk «＋ Media» i verktøylinja")).uiFont(13).foregroundColor(theme.faint)
                     }
                     .allowsHitTesting(false)
                 }

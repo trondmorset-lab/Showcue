@@ -28,7 +28,8 @@ public static class ThemeManager
 
     public static AppTheme Next(AppTheme t) => t switch
     {
-        AppTheme.Dark => AppTheme.Light,
+        AppTheme.Dark => AppTheme.Gray,
+        AppTheme.Gray => AppTheme.Light,
         AppTheme.Light => AppTheme.Night,
         _ => AppTheme.Dark,
     };
@@ -45,7 +46,7 @@ public static class ThemeManager
         {
             var hwnd = new WindowInteropHelper(w).Handle;
             if (hwnd == IntPtr.Zero) return;
-            int dark = Current == AppTheme.Light ? 0 : 1;
+            int dark = Current is AppTheme.Light or AppTheme.Gray ? 0 : 1;
             // 20 = DWMWA_USE_IMMERSIVE_DARK_MODE (Windows 10 20H1+), 19 på eldre Windows 10.
             if (DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int)) != 0)
                 DwmSetWindowAttribute(hwnd, 19, ref dark, sizeof(int));

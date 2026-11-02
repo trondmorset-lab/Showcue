@@ -145,7 +145,7 @@ final class RemoteRouter {
                 show.remoteLog(L("MIDI: {0} (kanal {1}) – ingen cue koblet til", MidiTriggers.describe(trigger), channel))
                 return
             }
-            what = n == 1 ? L("1 cue") : L("{0} cues", n)
+            what = n == 1 ? L("1 cue") : L("{0} cuer", n)
         }
         show.remoteLog(L("MIDI: {0} → {1}", MidiTriggers.describe(trigger), what))
     }

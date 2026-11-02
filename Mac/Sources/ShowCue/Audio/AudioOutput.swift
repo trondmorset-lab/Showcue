@@ -32,7 +32,7 @@ final class AudioOutput {
                                              componentManufacturer: kAudioUnitManufacturer_Apple,
                                              componentFlags: 0, componentFlagsMask: 0)
         guard let comp = AudioComponentFindNext(nil, &desc) else {
-            throw NSError(domain: "ShowCue.Audio", code: -1, userInfo: [NSLocalizedDescriptionKey: L("Fant ikke CoreAudio-utgang")])
+            throw NSError(domain: "ShowCue.Audio", code: -1, userInfo: [NSLocalizedDescriptionKey: L("Fant ingen lydutgang (CoreAudio)")])
         }
         var au: AudioUnit?
         try check(AudioComponentInstanceNew(comp, &au), L("Åpne lydutgang"))

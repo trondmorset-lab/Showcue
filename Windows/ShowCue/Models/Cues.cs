@@ -388,7 +388,7 @@ public sealed class StopCue : Cue
     public override string TypeName => Loc.T("Stopp");
     public override string TypeIcon => "■";
     protected override string DefaultName => Release ? Loc.F("Slipp loop {0}", Target).TrimEnd() : string.IsNullOrEmpty(Target) ? Loc.T("Stopp alt") : Loc.F("Stopp cue {0}", Target);
-    public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("Alle cues") : "→ " + Target)
+    public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("Alle cuer") : "→ " + Target)
         + (Release ? Loc.T("  slipp loop") : FadeTime > 0 ? Loc.F("  fade {0:0.#}s", FadeTime) : "");
     public override double Duration => Release ? 0 : FadeTime;
 }

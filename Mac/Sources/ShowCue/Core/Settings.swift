@@ -1,17 +1,19 @@
 import Foundation
 
 enum AppTheme: String, Codable, CaseIterable {
-    case dark = "Dark", light = "Light", night = "Night"
+    case dark = "Dark", gray = "Gray", light = "Light", night = "Night"
     var label: String {
         switch self {
         case .dark: return L("Mørk")
+        case .gray: return L("Grå (dempet lys)")
         case .light: return L("Lys")
         case .night: return L("Nattmodus (ekstra dempet)")
         }
     }
     var next: AppTheme {
         switch self {
-        case .dark: return .light
+        case .dark: return .gray
+        case .gray: return .light
         case .light: return .night
         case .night: return .dark
         }

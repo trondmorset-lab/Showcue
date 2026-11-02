@@ -38,6 +38,19 @@ struct ShowCueApp: App {
     }
 }
 
+/// Programikonet i Dock. Settes også mens appen kjører, så det vises selv om macOS har et gammelt ikon i hurtigbufferen
+/// eller appen startes rett fra Xcode (uten app-pakke).
+enum AppIcon {
+    static var image: NSImage? {
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"), let img = NSImage(contentsOf: url) { return img }
+        // Fra Xcode / swift run: ressurspakken ligger ved siden av programfila.
+        guard let dir = Bundle.main.executableURL?.deletingLastPathComponent(),
+              let bundle = Bundle(url: dir.appendingPathComponent("ShowCue_ShowCue.bundle")),
+              let url = bundle.url(forResource: "AppIcon", withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Språket velges før noe annet lages, så alle tekster kommer på riktig språk.
     let model: AppModel = {
@@ -48,6 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
+        if let icon = AppIcon.image { NSApp.applicationIconImage = icon }
         NSApp.activate(ignoringOtherApps: true)
         model.startup()
         launched = true

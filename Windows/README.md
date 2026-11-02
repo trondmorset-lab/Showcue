@@ -252,8 +252,8 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
 
 ## Utseende
 
-Tre fargetemaer, som byttes med en gang via *Oppsett → Bytt tema* eller *Innstillinger → Utseende*:
-**Mørk** (grafitt), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
+Fire fargetemaer, som byttes med en gang via *Oppsett → Bytt tema* eller *Innstillinger → Utseende*:
+**Mørk** (grafitt), **Grå** (dempet og mindre hvitt enn Lys), **Lys** (dagslys og prøver) og **Nattmodus** (ekstra dempet for mørke scener).
 Tittellinja i Windows følger temaet.
 
 **Zoom og tekststørrelse:** *Oppsett → Zoom inn / Zoom ut* (Ctrl + og Ctrl −) gjør hele hovedvinduet 80–200 % stort.
@@ -265,7 +265,7 @@ Begge finnes også under *Innstillinger → Utseende* og huskes til neste gang.
 
 **Cuefarger:** gi cuer en farge (rød, oransje, gul, grønn, blå, lilla, grå) i panelet til høyre. Raden blir tonet,
 og hurtigknappen får en fargestripe. Velg flere cuer for å farge alle på én gang.
-Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i lys).
+Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i grå og lys).
 
 ## Innstillinger
 

@@ -12,6 +12,8 @@ let package = Package(
         .executableTarget(
             name: "ShowCue",
             path: "Sources/ShowCue",
+            // Programikonet for kjøring fra Xcode (den ferdige appen bruker AppIcon.icns).
+            resources: [.copy("Resources/AppIcon.png")],
             linkerSettings: [
                 .linkedFramework("CoreAudio"),
                 .linkedFramework("AudioToolbox"),

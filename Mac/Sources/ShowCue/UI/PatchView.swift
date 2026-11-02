@@ -15,7 +15,7 @@ struct PatchView: View {
             Text(audio.isRunning ? audio.status : L("Lydutgangen er ikke startet. Velg lydkort under Innstillinger."))
                 .foregroundColor(audio.isRunning ? theme.text : theme.danger)
                 .padding(.bottom, 6)
-            Text(L("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. «Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot Dante/PA. Patchen lagres på denne maskinen, ikke i showfila."))
+            Text(L("Lyd-cuer sender til utganger (rader). Kryss av for hvilke kanaler på lydkortet hver utgang skal ut på. «Test» spiller rosa støy (−18 dBFS) på utgangen – fin for linjesjekk mot PA. Patchen lagres på denne maskinen, ikke i showfila."))
                 .uiFont(11.5).foregroundColor(theme.faint).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 Button(L("+ Utgang")) {

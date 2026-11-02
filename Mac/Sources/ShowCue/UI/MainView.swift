@@ -272,7 +272,8 @@ struct ToolbarRow: View {
 
     private var themeGlyph: String {
         switch model.settings.theme {
-        case .dark: return "☀︎"
+        case .dark: return "◑"
+        case .gray: return "☀︎"
         case .light: return "☾"
         case .night: return "◐"
         }

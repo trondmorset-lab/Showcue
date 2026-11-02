@@ -396,7 +396,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             if stopWhenDone { s += L("  + stopp") }
             return s
         case .stop:
-            return (target.isEmpty ? L("Alle cues") : "→ " + target)
+            return (target.isEmpty ? L("Alle cuer") : "→ " + target)
                 + (release ? L("  slipp loop") : fadeTime > 0 ? L("  fade {0}s", Cue.fmt(fadeTime)) : "")
         case .playlist:
             return L("{0} spor", files.count) + (shuffle ? L("  tilfeldig") : "") + (loop ? "  ⟲" : "")

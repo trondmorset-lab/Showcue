@@ -239,7 +239,7 @@ struct CueInspector: View {
             FieldLabel(L("Lydspor → utganger (dB)")).padding(.top, 6)
             if cue.hasNoAudio { Hint(L("Videoen har ikke noe lydspor.")) }
             RoutingMatrixView(cue: cue)
-            Hint(L("Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum."))
+            Hint(L("Lyden i videoen pakkes ut og spilles av ShowCues lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum."))
             Button(L("Pakk ut lyd til egen lyd-cue")) { model.extractVideoAudio(cue) }
                 .buttonStyle(PanelButtonStyle()).padding(.top, 10)
                 .help(L("Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum."))

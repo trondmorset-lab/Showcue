@@ -12,6 +12,11 @@ The full history of earlier versions is in the Norwegian changelog.
 - **English language:** the whole user interface is available in Norwegian and English. Choose under *Settings → Appearance → Language*;
   the default follows the language of the operating system. The new language is used the next time ShowCue starts.
 - English versions of the READMEs and the changelog (`README.en.md`, `CHANGELOG.en.md`).
+- **Grey theme** (“Grey (soft light)”): light, but less white than Light – easier on the eyes in long sessions.
+
+### Changed
+- The program texts have been reviewed in both languages; outdated hints (the ☀ button, menu locations) are fixed.
+- Mac: the program icon always shows in the Dock, also when the app is started from Xcode or macOS has an old icon cached.
 
 ## 0.12.0 – 2026-11-02
 

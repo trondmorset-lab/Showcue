@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace ShowCue.Models;
 
 public enum AudioDriverType { Wasapi, Asio }
-public enum AppTheme { Dark, Light, Night }
+public enum AppTheme { Dark, Light, Night, Gray }
 public enum OscFeedbackFormat { Companion, Generic }
 
 /// <summary>En logisk utgang i lydpatchen.</summary>

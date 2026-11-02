@@ -12,6 +12,11 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
 - **Engelsk språk:** hele brukerflaten finnes på norsk og engelsk. Velg under *Innstillinger → Utseende → Språk*;
   standard følger språket i operativsystemet. Det nye språket brukes neste gang ShowCue startes.
 - Engelske versjoner av README-ene og endringsloggen (`README.en.md`, `CHANGELOG.en.md`).
+- **Grått tema** («Grå (dempet lys)»): lyst, men mindre hvitt enn Lys – skånsomt for øynene i lange økter.
+
+### Endret
+- Tekstene i programmet er gått over på begge språk: «cuer» brukes overalt, utdaterte hint (☀-knappen, menyplassering) er rettet.
+- Mac: programikonet vises alltid i Dock, også når appen startes fra Xcode eller macOS har et gammelt ikon lagret.
 
 ## 0.12.0 – 2026-11-02
 

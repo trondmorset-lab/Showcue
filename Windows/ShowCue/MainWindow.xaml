@@ -158,7 +158,7 @@
                            Visibility="{Binding HasNoAudio, Converter={StaticResource BoolVis}}" />
                 <local:RoutingMatrix Cue="{Binding}" Buses="{Binding DataContext.Buses, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="{local:T 'Lyden i videoen pakkes ut og spilles av ShowCue sin lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.'}" />
+                           Text="{local:T 'Lyden i videoen pakkes ut og spilles av ShowCues lydmotor, så den går gjennom lydpatchen og holdes i synk med bildet. «Alt av» gjør videoen stum.'}" />
                 <Button Content="{local:T 'Pakk ut lyd til egen lyd-cue'}" HorizontalAlignment="Left" Margin="0,10,0,0" Click="ExtractVideoAudio_Click"
                         ToolTip="{local:T 'Lagrer lydsporet som WAV ved siden av videoen og lager en lyd-cue som starter samtidig. Videoen gjøres stum.'}" />
             </StackPanel>
@@ -659,7 +659,7 @@
                                 <MenuItem Header="{local:T 'Lydpatch'}" Click="Patch_Click" />
                                 <MenuItem Header="{local:T 'Vis/skjul utgangsvinduet'}" Click="ToggleOutput_Click" />
                                 <MenuItem Header="{local:T 'Innstillinger'}" Click="Settings_Click" />
-                                <MenuItem Header="{local:T 'Bytt tema (mørk → lys → natt)'}" Click="ThemeToggle_Click" />
+                                <MenuItem Header="{local:T 'Bytt tema (mørk → grå → lys → natt)'}" Click="ThemeToggle_Click" />
                                 <Separator />
                                 <MenuItem Header="{local:T 'Zoom inn'}" InputGestureText="Ctrl++" Tag="1" Click="Zoom_Click" />
                                 <MenuItem Header="{local:T 'Zoom ut'}" InputGestureText="Ctrl+−" Tag="-1" Click="Zoom_Click" />
@@ -805,7 +805,7 @@
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
                             Visibility="{Binding IsEmpty, Converter={StaticResource BoolVis}}">
                     <TextBlock Text="{local:T 'Dra lyd-, video-, bilde- eller PDF-filer hit'}" FontSize="18" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" />
-                    <TextBlock Text="{local:T 'eller bruk «Legg til» i verktøylinja'}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                    <TextBlock Text="{local:T 'eller bruk «＋ Media» i verktøylinja'}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                 </StackPanel>
             </Grid>
 
@@ -922,7 +922,7 @@
 
             <Border Background="{DynamicResource Panel}" Padding="12,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="{local:T 'AKTIVE CUES'}" Style="{StaticResource SectionHeader}" />
+                    <TextBlock DockPanel.Dock="Top" Text="{local:T 'AKTIVE CUER'}" Style="{StaticResource SectionHeader}" />
                     <Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding Engine.Active}" ItemTemplate="{StaticResource ActiveTemplate}" />

@@ -26,7 +26,7 @@ Both have:
 - **Audio in video** that goes through the audio patch and stays in sync with the picture
 - **Remote control** with OSC in, MIDI in and MSC
 - **Status out over OSC** (e.g. to Companion): next cue, what is playing and time remaining
-- **Light, dark and night mode**, **zoom** and larger text in the cue list, and colour coding of cues
+- **Dark, grey, light and night themes**, **zoom** and larger text in the cue list, and colour coding of cues
 - **Norwegian and English** user interface (chosen under *Settings → Appearance*)
 
 Show files (`.showcue`) can be moved freely between Mac and Windows. Put the media files in the same folder as the show,
