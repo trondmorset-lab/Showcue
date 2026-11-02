@@ -143,7 +143,7 @@ struct WaveformEditorView: View {
                 }
                 ctx.fill(wave, with: .color(theme.muted))
             } else if let s = status {
-                ctx.draw(Text(s).uiFont(11).foregroundColor(theme.muted), at: CGPoint(x: 8, y: mid), anchor: .leading)
+                ctx.draw(Text(s).font(.system(size: 11)).foregroundColor(theme.muted), at: CGPoint(x: 8, y: mid), anchor: .leading)
             }
 
             // Skygge utenfor start–slutt
