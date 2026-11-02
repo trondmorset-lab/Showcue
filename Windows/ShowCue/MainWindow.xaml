@@ -308,7 +308,7 @@
                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Melding / innhold'}" />
                 <TextBox Text="{Binding Message}" FontFamily="{StaticResource MonoFont}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" />
                 <TextBlock Style="{StaticResource Hint}"
-                           Text="{local:T '\\r \\n og \\t gir linjeskift og tab, \\xHH gir en byte (f.eks. \\x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med { eller [).'}" />
+                           Text="{local:T '\\r \\n og \\t gir linjeskift og tab, \\xHH gir en byte (f.eks. \\x0D). For HTTP sendes meldingen som innhold (JSON hvis den starter med \{ eller [).'}" />
                 <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Eksempel PJLink-projektor av: TCP port 4352, melding %1POWR 0\\r'}" />
             </StackPanel>
         </DataTemplate>

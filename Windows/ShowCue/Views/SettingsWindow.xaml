@@ -120,7 +120,7 @@
                         <TextBlock Style="{StaticResource Hint}"
                                    Text="{local:T 'Companion: setter egendefinerte variabler (Custom Variables) via Companions OSC-port (standard 12321, slås på under Settings → Protocols). Opprett variablene i Companion først: sc_next_name, sc_next_number, sc_playing, sc_remaining, sc_state m.fl. – se README. Bruk dem i knappetekst som $(internal:custom_sc_next_name).'}" />
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="{local:T 'Generisk: /showcue/next/name, /showcue/remaining … og /showcue/cue/{nr}/running 1/0 – for moduler/programmer som lytter på OSC.'}" />
+                                   Text="{local:T 'Generisk: /showcue/next/name, /showcue/remaining … og /showcue/cue/\{nr\}/running 1/0 – for moduler/programmer som lytter på OSC.'}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
