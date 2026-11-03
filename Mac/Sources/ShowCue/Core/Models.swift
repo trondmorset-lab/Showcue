@@ -187,6 +187,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // Visuelt
     @Published var replaceOthers = true
     @Published var stretch: VisualStretch = .uniform
+    /// Skjermen cuen vises på: −2 = standard (innstillingene), −1 = eget vindu, 0… = skjerm.
+    @Published var outputScreen = -2
     @Published var knownDuration: Double = 0 { didSet { if !(knownDuration >= 0 && knownDuration.isFinite) { knownDuration = 0 } } }
     @Published var holdTime: Double = 0
     @Published var page = 1
@@ -511,7 +513,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     enum K: String, CodingKey {
         case type, Number, Name, Notes, PreWait, ContinueMode, Hotkey, Disabled, Color, MidiTrigger
         case FilePath, VolumeDb, Volume, StartTime, EndTime, Loop, FadeIn, FadeOut, FileDuration, FileChannels, Routes
-        case ReplaceOthers, Stretch, KnownDuration, HoldTime, Page
+        case ReplaceOthers, Stretch, OutputScreen, KnownDuration, HoldTime, Page
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
@@ -543,6 +545,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         fileDuration = v(.FileDuration, 0.0); fileChannels = v(.FileChannels, fileChannels)
         routes = (try? c.decodeIfPresent([AudioRoute].self, forKey: .Routes)) ?? nil
         replaceOthers = v(.ReplaceOthers, true); stretch = v(.Stretch, VisualStretch.uniform)
+        outputScreen = min(15, max(-2, v(.OutputScreen, -2)))
         knownDuration = v(.KnownDuration, 0.0); holdTime = v(.HoldTime, 0.0); page = max(1, v(.Page, 1))
         target = v(.Target, ""); fadeTime = v(.FadeTime, fadeTime); fadeAudio = v(.FadeAudio, true)
         targetDb = v(.TargetDb, -60.0); fadeVisual = v(.FadeVisual, true); targetOpacity = v(.TargetOpacity, 0.0)
@@ -598,6 +601,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
             try c.encode(replaceOthers, forKey: .ReplaceOthers)
             try c.encode(stretch, forKey: .Stretch)
+            try c.encode(outputScreen, forKey: .OutputScreen)
             if type == .video {
                 try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
                 try c.encode(Cue.finite(startTime), forKey: .StartTime)
@@ -641,6 +645,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
             try c.encode(replaceOthers, forKey: .ReplaceOthers)
             try c.encode(stretch, forKey: .Stretch)
+            try c.encode(outputScreen, forKey: .OutputScreen)
             try c.encode(Cue.finite(holdTime), forKey: .HoldTime)
         case .timecode:
             try c.encode(tcStart, forKey: .Start)

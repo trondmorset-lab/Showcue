@@ -235,6 +235,8 @@ public sealed class AudioActive : PlaybackActive
 /// <summary>Felles logikk for video, bilde og PDF: lag i utgangsvinduet, opacity-fade.</summary>
 public abstract class VisualActive : ActiveCue
 {
+    /// <summary>Utgangen (skjermen) cuen vises på.</summary>
+    public Grid? Host { get; private set; }
     protected FrameworkElement? Element;
     protected double StartedAt;
     private double? _finishAt;
@@ -249,12 +251,12 @@ public abstract class VisualActive : ActiveCue
         if (VCue is WebCue w) { if (w.ValidUri == null) throw new InvalidOperationException(Loc.T("Ugyldig adresse: ") + w.Url); }
         else if (string.IsNullOrEmpty(VCue.FilePath)) throw new InvalidOperationException(Loc.T("Ingen fil valgt"));
         else if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException(Loc.T("Fila finnes ikke: ") + VCue.FilePath);
-        var host = Engine.EnsureOutput();
+        var host = Host = Engine.EnsureOutput(VCue.OutputScreen);
 
         if (VCue.ReplaceOthers)
         {
-            // Krysstoning: de andre fades ut på samme tid som denne fades inn.
-            foreach (var other in Engine.Active.OfType<VisualActive>().Where(v => v != this && v.Started && !v.Done && !v.IsStopping).ToList())
+            // Krysstoning: de andre på samme utgang fades ut på samme tid som denne fades inn.
+            foreach (var other in Engine.Active.OfType<VisualActive>().Where(v => v != this && v.Host == host && v.Started && !v.Done && !v.IsStopping).ToList())
                 other.Stop(VCue.FadeIn > 0 ? VCue.FadeIn : other.VCue.FadeOut);
         }
 

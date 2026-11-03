@@ -2,6 +2,15 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.15.0 – skjerm per cue og avslutning
+- Skjermvalg ligger på cuen (følger showfila), med «Standard» som peker til innstillingene, så et show kan flyttes til en maskin med
+  andre skjermer uten å endre hver cue. Finnes ikke skjermen, vises cuen i et vanlig vindu.
+- **Mac: lukking av hovedvinduet avslutter appen.** Utgangsvinduet skjules bare når det lukkes, så appen ble stående uten synlig vindu.
+  Lukkeknappen spør om avslutning før vinduet lukkes; ⌘W avslutter etterpå (og åpner hovedvinduet igjen hvis man avbryter).
+  Utgangsvinduer skjules mens avslutningsspørsmålene vises (fullskjerm ligger over alt).
+- **Windows:** `ShutdownMode=OnMainWindowClose`, hvert oppryddingssteg i egen `try`, og en vakttråd som avslutter prosessen etter 8 s
+  hvis en driver henger.
+
 ## 0.14.0 – spoling og tomme media-cuer
 - **Spoling i lydtråden/dekodertråden**, ikke fra UI: UI legger inn et ønske (`Seek`), tråden som eier fila utfører det.
   Ingen låser mot lydtråden, ingen klikk, GO påvirkes ikke. Virker under pause (behandles før pause-sjekken).

@@ -276,6 +276,7 @@ Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i grå og lys).
   Faller automatisk tilbake til Windows standardenhet hvis valgt kort mangler. Se *Lydpatch* over.
 - **OSC inn / MIDI inn:** se *Fjernstyring* over.
 - **Video/bilde/PDF-utgang:** velg skjerm/projektor for fullskjerm, eller «Vindu» for testing på én skjerm.
+  Hver visuell cue kan også få sin egen skjerm (*Skjerm* i panelet til høyre); *Standard* bruker skjermen herfra.
   Utgangen vises også som forhåndsvisning nede til høyre.
 - Innstillinger og lydpatch lagres per maskin i `%AppData%\ShowCue\settings.json`.
 

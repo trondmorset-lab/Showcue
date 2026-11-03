@@ -119,6 +119,17 @@ public static class EnumValues
     public static Array NetworkProtocols { get; } = Enum.GetValues(typeof(NetworkProtocol));
     public static Array TimecodeRates { get; } = Enum.GetValues(typeof(TimecodeRate));
     public static string[] HttpMethods { get; } = { "GET", "POST", "PUT", "DELETE" };
+
+    /// <summary>Valg for skjerm per cue (leses på nytt hver gang panelet vises, så nye skjermer kommer med).</summary>
+    public static List<KeyValuePair<int, string>> OutputScreens
+    {
+        get
+        {
+            var list = new List<KeyValuePair<int, string>> { new(-2, Loc.T("Standard (fra innstillingene)")), new(-1, Loc.T("Eget vindu")) };
+            list.AddRange(ShowCue.Engine.Monitors.GetAll().Select(m => new KeyValuePair<int, string>(m.Index, m.ToString())));
+            return list;
+        }
+    }
 }
 
 public sealed class MidiTriggerTextConverter : IValueConverter

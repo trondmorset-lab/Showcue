@@ -17,6 +17,8 @@ public sealed class CueEngine : IDisposable
     private readonly DispatcherTimer _timer;
     private readonly Func<IList<Cue>> _cueList;
     private OutputWindow? _output;
+    /// <summary>Utganger for cuer som har valgt en annen skjerm enn standard, per skjerm.</summary>
+    private readonly Dictionary<int, OutputWindow> _extraOutputs = new();
 
     public AudioEngine Audio { get; } = new();
     /// <summary>Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.</summary>
@@ -33,6 +35,8 @@ public sealed class CueEngine : IDisposable
 
     /// <summary>Utgangsvinduet ble opprettet (brukes til forhåndsvisning og tastevideresending).</summary>
     public event Action<OutputWindow>? OutputCreated;
+    /// <summary>En utgang på en annen skjerm enn standard er laget (tastetrykk derfra skal også nå hovedvinduet).</summary>
+    public event Action<OutputWindow>? ExtraOutputCreated;
     public event Action? Ticked;
     public event Action<string>? Log;
     /// <summary>En «gå til»-cue vil flytte GO-markøren (cuenummer, og om mål-cuen skal kjøres).</summary>
@@ -83,6 +87,8 @@ public sealed class CueEngine : IDisposable
                 AudioDriver = AudioDriverType.Wasapi, WasapiDeviceId = _previewDevice, LatencyMs = s.LatencyMs, Buses = PatchBus.DefaultPatch(2),
             }, fallbackToDefault: false);
         }
+        // En ekstra utgang på samme skjerm som den nye standarden trengs ikke lenger.
+        if (_extraOutputs.Remove(s.VideoScreen, out var dup)) { dup.AllowClose = true; dup.Close(); }
         if (_output != null)
         {
             _output.Configure(s.VideoScreen);
@@ -230,16 +236,31 @@ public sealed class CueEngine : IDisposable
     }
 
     // ------------------------------------------------------------------
-    public Grid EnsureOutput()
+    public Grid EnsureOutput() => EnsureOutput(-2);
+
+    /// <summary>Utgangen for en cue: −2 = standard (innstillingene), −1 = eget vindu, 0… = skjerm.</summary>
+    public Grid EnsureOutput(int screen)
     {
-        if (_output == null)
+        if (screen < -1 || screen == Settings.VideoScreen)
         {
-            _output = new OutputWindow();
-            _output.Configure(Settings.VideoScreen);
-            OutputCreated?.Invoke(_output);
+            if (_output == null)
+            {
+                _output = new OutputWindow();
+                _output.Configure(Settings.VideoScreen);
+                OutputCreated?.Invoke(_output);
+            }
+            if (!_output.IsVisible) _output.Show();
+            return _output.LayerHost;
         }
-        if (!_output.IsVisible) _output.Show();
-        return _output.LayerHost;
+        if (!_extraOutputs.TryGetValue(screen, out var w))
+        {
+            w = new OutputWindow { Title = Loc.F("ShowCue – utgang {0}", screen < 0 ? Loc.T("vindu") : (screen + 1).ToString()) };
+            w.Configure(screen);
+            _extraOutputs[screen] = w;
+            ExtraOutputCreated?.Invoke(w);
+        }
+        if (!w.IsVisible) w.Show();
+        return w.LayerHost;
     }
 
     public void ToggleOutput()
@@ -262,15 +283,18 @@ public sealed class CueEngine : IDisposable
         Ticked?.Invoke();
     }
 
+    /// <summary>Ved avslutning. Hvert steg for seg, så én feil aldri hindrer resten (og programmet i å lukkes).</summary>
     public void Dispose()
     {
+        static void Try(Action a) { try { a(); } catch { /* avslutter uansett */ } }
         _timer.Stop();
-        StopAll(0);
-        Audio.Dispose();
-        PreviewAudio.Dispose();
-        Midi.Dispose();
-        Dmx.Dispose();
-        Input.Dispose();
-        if (_output != null) { _output.AllowClose = true; _output.Close(); }
+        Try(() => StopAll(0));
+        foreach (var w in _extraOutputs.Values.Append(_output).OfType<OutputWindow>())
+            Try(() => { w.AllowClose = true; w.Close(); });
+        Try(Audio.Dispose);
+        Try(PreviewAudio.Dispose);
+        Try(Midi.Dispose);
+        Try(Dmx.Dispose);
+        Try(Input.Dispose);
     }
 }

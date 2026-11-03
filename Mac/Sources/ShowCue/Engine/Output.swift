@@ -89,6 +89,11 @@ final class OutputCompositor: NSObject, ObservableObject, NSWindowDelegate {
         isVisible = true
     }
 
+    func hide() {
+        window?.orderOut(nil)
+        isVisible = false
+    }
+
     func toggle() {
         if let w = window, w.isVisible { w.orderOut(nil); isVisible = false } else { ensureVisible() }
     }

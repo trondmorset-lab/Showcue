@@ -13,6 +13,11 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - **Ødelagte OSC-pakker:** les aldri utenfor pakken (lengdefelt kan lyve, blob-lengde kan være negativ). Mac krasjet på `d[s..<s]` utenfor tabellen.
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
 
+## Avslutning
+- Mac: et vindu som bare skjules når det lukkes (utgangsvinduet), hindrer «avslutt når siste vindu lukkes». Hovedvinduet må avslutte appen selv.
+- Fullskjerm-utgang ligger over vanlige vinduer: skjul den før `NSAlert`/`MessageBox`, ellers ser programmet ut til å henge.
+- Windows: skjulte vinduer holder WPF-prosessen i gang med standard `ShutdownMode`; én feil i oppryddingen kan hindre resten.
+
 ## WPF / XAML
 - `{local:T '…'}`: krøllparenteser i teksten må escapes (`\{ \}`), ellers byggefeil «Unexpected closing brace».
 - `Loc.T(...)` kan ikke brukes i `is`-mønstre, `case` eller `const` (må være konstant).

@@ -52,6 +52,44 @@ enum AppIcon {
     }
 }
 
+/// Å lukke hovedvinduet avslutter ShowCue (med de vanlige spørsmålene). Uten dette ville appen fortsatt å kjøre
+/// når et utgangsvindu fantes, uten noe synlig vindu å avslutte fra.
+final class MainWindowCloser: NSObject {
+    static let shared = MainWindowCloser()
+    private weak var window: NSWindow?
+    private var closeObserver: NSObjectProtocol?
+    /// Åpner hovedvinduet igjen (hvis det ble lukket med ⌘W og avslutningen ble avbrutt).
+    var reopen: (() -> Void)?
+
+    var isMainWindowVisible: Bool { window?.isVisible ?? false }
+
+    func attach(_ w: NSWindow) {
+        guard w !== window else { return }
+        window = w
+        // Lukkeknappen: spør om avslutning i stedet for å lukke vinduet, så det blir stående hvis man avbryter.
+        if let b = w.standardWindowButton(.closeButton) { b.target = self; b.action = #selector(closeClicked) }
+        if let o = closeObserver { NotificationCenter.default.removeObserver(o) }
+        // ⌘W og andre måter å lukke på: avslutt etterpå.
+        closeObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { _ in
+            DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
+    }
+
+    @objc private func closeClicked() { NSApp.terminate(nil) }
+}
+
+/// Finner NSWindow-et som hovedvisningen ligger i.
+struct MainWindowHook: NSViewRepresentable {
+    final class HookView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let w = window { MainWindowCloser.shared.attach(w) }
+        }
+    }
+    func makeNSView(context: Context) -> NSView { HookView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Språket velges før noe annet lages, så alle tekster kommer på riktig språk.
     let model: AppModel = {
@@ -90,14 +128,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Utgangsvinduer i fullskjerm ligger over alt annet; skjul dem så spørsmålene under ikke havner bak dem.
+        let hidden = model.hideOutputsForDialog()
+        func cancel() -> NSApplication.TerminateReply {
+            model.restoreOutputs(hidden)
+            if !MainWindowCloser.shared.isMainWindowVisible { MainWindowCloser.shared.reopen?() }
+            return .terminateCancel
+        }
         if !model.engine.active.isEmpty {
             let a = NSAlert()
             a.messageText = L("Cuer spiller fortsatt. Vil du avslutte?")
             a.addButton(withTitle: L("Avslutt"))
             a.addButton(withTitle: L("Avbryt"))
-            if a.runModal() != .alertFirstButtonReturn { return .terminateCancel }
+            if a.runModal() != .alertFirstButtonReturn { return cancel() }
         }
-        guard model.confirmDiscard() else { return .terminateCancel }
+        guard model.confirmDiscard() else { return cancel() }
         ShowSafety.deleteAutosave(for: model.showURL)
         model.engine.stopAll(fade: 0)
         model.audio.stop()

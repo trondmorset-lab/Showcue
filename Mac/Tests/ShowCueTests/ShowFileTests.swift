@@ -232,6 +232,17 @@ final class ShowFileTests: XCTestCase {
         XCTAssertEqual(try doc.jsonData(), data, "stabil rekkefølge")
     }
 
+    func testOutputScreenIsSavedPerVisualCue() throws {
+        let v = Cue(type: .video); v.filePath = "a.mp4"; v.outputScreen = 1
+        let i = Cue(type: .image)
+        var doc = ShowDocument(); doc.cues = [v, i]
+        let back = try JSONDecoder().decode(ShowDocument.self, from: try doc.jsonData())
+        XCTAssertEqual(back.cues[0].outputScreen, 1)
+        XCTAssertEqual(back.cues[1].outputScreen, -2, "standard")
+        let old = try JSONDecoder().decode(ShowDocument.self, from: Data(#"{"Cues":[{"type":"video","OutputScreen":-99}]}"#.utf8))
+        XCTAssertEqual(old.cues[0].outputScreen, -2)
+    }
+
     func testLegacyVideoVolumePercent() throws {
         let json = #"{"Cues":[{"type":"video","FilePath":"a.mp4","Volume":50},{"type":"video","Volume":0},{"type":"video","VolumeDb":-2,"Volume":10}]}"#
         let doc = try JSONDecoder().decode(ShowDocument.self, from: Data(json.utf8))

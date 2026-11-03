@@ -216,6 +216,14 @@ struct CueInspector: View {
                 ForEach(VisualStretch.allCases, id: \.self) { Text($0.label).tag($0) }
             }.labelsHidden()
             Toggle(L("Erstatt andre bilder/videoer (krysstoning)"), isOn: $cue.replaceOthers).padding(.top, 8)
+            FieldLabel(L("Skjerm"))
+            Picker("", selection: $cue.outputScreen) {
+                Text(L("Standard (fra innstillingene)")).tag(-2)
+                Text(L("Eget vindu")).tag(-1)
+                ForEach(Array(OutputCompositor.screenNames().enumerated()), id: \.offset) { i, name in Text(name).tag(i) }
+            }
+            .labelsHidden()
+            .help(L("Hvilken skjerm cuen vises på. Standard er skjermen under Innstillinger → Video."))
         }
     }
 

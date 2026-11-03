@@ -6,6 +6,20 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.15.0 – 2026-11-03
+
+### New
+- **Screen per cue:** video, image, PDF and web page cues can be shown on a different screen than the default (or in a separate window).
+  Choose under *Screen* in the panel on the right; *Default* uses the screen from *Settings → Video*.
+  Crossfade (“Replace other images/videos”) only applies to cues on the same screen.
+
+### Fixed
+- **Mac: the program could not be closed after a video had played.** The output window kept the app running when the main window
+  was closed, and questions on quit could end up behind a full-screen output window. Closing the main window now quits the program
+  (with the usual questions), and the output windows are hidden while the questions are shown.
+- **Windows: safer shutdown.** Each clean-up step runs on its own, all output windows are closed, the program exits when the main
+  window is closed, and a safety net ends the process if an audio or video driver should hang.
+
 ## 0.14.0 – 2026-11-03
 
 ### New
