@@ -6,6 +6,15 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.14.0 – 2026-11-03
+
+### New
+- **Real-time scrubbing:** audio and video cues that are playing have a scrub bar under *Active cues*. Drag to scrub,
+  or jump 5 seconds with ⏪ / ⏩. Picture and sound in video follow each other, and it also works while paused.
+  Scrubbing back out of the automatic fade-out near the end brings the level back.
+- **Media cues without a file:** *＋ Media* creates an empty audio, video, image, PDF or playlist cue straight away.
+  Choose the file later with *Browse*, or drop a file on the cue. A cue without a file shows “No file selected” if it is run.
+
 ## 0.13.1 – 2026-11-03
 
 ### Fixed

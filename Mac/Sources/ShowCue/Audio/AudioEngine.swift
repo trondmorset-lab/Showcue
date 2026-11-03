@@ -37,6 +37,14 @@ final class Playback {
     func adjustLevel(_ db: Double) { voice.adjustLevel(db) }
     func setRouting(_ routes: [AudioRoute]) { voice.setRouting(routes) }
     func requestRewind() { stream?.requestRewind() }
+    /// Lengden som kan spoles i (sekunder), 0 = kan ikke spoles (f.eks. live-inngang).
+    var seekLength: Double { stream.map { Double($0.seekLength) / $0.sampleRate } ?? 0 }
+    /// Spol til en posisjon i runden (sekunder fra startpunktet) mens det spiller.
+    func seek(to seconds: Double) {
+        guard let s = stream, started else { return }
+        let f = s.seek(toFrame: frameCount(seconds, s.sampleRate))
+        voice.didSeek(to: f)
+    }
     func pause() { voice.pause() }
     func resume() { voice.resume() }
     var isLooping: Bool { stream?.isLooping ?? false }

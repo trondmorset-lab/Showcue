@@ -480,7 +480,25 @@
                             <TextBlock DockPanel.Dock="Right" Text="{Binding StateText}" Foreground="{DynamicResource Muted}" FontSize="11" Margin="8,0,0,0" />
                             <TextBlock Text="{Binding Cue.DisplayName}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
                         </DockPanel>
-                        <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="1" Margin="0,5,0,0" />
+                        <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="1" Margin="0,5,0,0">
+                            <ProgressBar.Style>
+                                <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CanSeek}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
+                        <!-- Lyd og video kan spoles mens de spiller: dra i linja, eller hopp 5 s med knappene. -->
+                        <DockPanel Margin="0,3,0,0" Visibility="{Binding CanSeek, Converter={StaticResource BoolVis}}">
+                            <Button DockPanel.Dock="Left" Content="⏪" Padding="5,0" Tag="-5" Click="SeekActive_Click" ToolTip="{local:T 'Spol 5 sekunder tilbake'}" />
+                            <Button DockPanel.Dock="Right" Content="⏩" Padding="5,0" Tag="5" Click="SeekActive_Click" ToolTip="{local:T 'Spol 5 sekunder fram'}" />
+                            <Slider Style="{StaticResource SeekSlider}" Margin="6,0" Minimum="0" Maximum="{Binding SeekLength, Mode=OneWay}"
+                                    Value="{Binding ScrubPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ToolTip="{local:T 'Dra for å spole i lyden eller videoen mens den spiller'}" />
+                        </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="12,0" VerticalAlignment="Center" MinWidth="70">
                         <TextBlock Text="{Binding ElapsedText}" FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right" />

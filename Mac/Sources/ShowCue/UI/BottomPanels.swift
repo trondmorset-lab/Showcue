@@ -73,7 +73,16 @@ struct ActiveRow: View {
                     Spacer()
                     Text(active.stateText).uiFont(11).foregroundColor(theme.muted)
                 }
-                ProgressBar(value: active.progress)
+                if active.canSeek {
+                    // Lyd og video kan spoles mens de spiller: dra i linja, eller hopp 5 s med knappene.
+                    HStack(spacing: 6) {
+                        Button("⏪") { active.nudge(-5) }.buttonStyle(PanelButtonStyle()).help(L("Spol 5 sekunder tilbake"))
+                        SeekBar(active: active)
+                        Button("⏩") { active.nudge(5) }.buttonStyle(PanelButtonStyle()).help(L("Spol 5 sekunder fram"))
+                    }
+                } else {
+                    ProgressBar(value: active.progress)
+                }
             }
             VStack(alignment: .trailing, spacing: 0) {
                 Text(active.elapsedText)
@@ -88,6 +97,37 @@ struct ActiveRow: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(RoundedRectangle(cornerRadius: 5).fill(theme.panel2))
+    }
+}
+
+/// Fremdriftslinje med håndtak som kan dras for å spole i sanntid.
+struct SeekBar: View {
+    @Environment(\.theme) var theme
+    @ObservedObject var active: ActiveCue
+    @State private var dragging = false
+
+    var body: some View {
+        GeometryReader { g in
+            let len = max(active.seekLength, 0.001)
+            let frac = min(1, max(0, active.scrubPosition / len))
+            ZStack(alignment: .leading) {
+                Capsule().fill(theme.panel3).frame(height: 6)
+                Capsule().fill(theme.running).frame(width: g.size.width * frac, height: 6)
+                Circle().fill(theme.text).overlay(Circle().stroke(theme.running, lineWidth: 2))
+                    .frame(width: dragging ? 16 : 13, height: dragging ? 16 : 13)
+                    .offset(x: g.size.width * frac - (dragging ? 8 : 6.5))
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { v in
+                    dragging = true
+                    active.scrub(to: min(1, max(0, v.location.x / max(1, g.size.width))) * len)
+                }
+                .onEnded { _ in dragging = false })
+        }
+        .frame(height: 16)
+        .help(L("Dra for å spole i lyden eller videoen mens den spiller"))
     }
 }
 

@@ -53,6 +53,40 @@ class ActiveCue: ObservableObject, Identifiable {
     /// Slipp loopen («devamp»): spill ferdig og fortsett til slutten. False hvis cuen ikke looper.
     func release() -> Bool { false }
 
+    // MARK: Spoling (lyd og video som spiller)
+
+    /// Kan spoles i nå (lyd og video som spiller og ikke er på vei ut).
+    var canSeek: Bool { false }
+    /// Lengden som kan spoles i (sekunder).
+    var seekLength: Double { duration }
+    /// Posisjonen i runden (sekunder fra startpunktet).
+    var seekPosition: Double { elapsed }
+    func seek(to seconds: Double) {}
+
+    private var scrubTarget: Double?
+    private var scrubAt = Date.distantPast
+
+    /// For spolelinja: posisjonen nå. Rett etter en spoling vises målet, så håndtaket ikke hopper tilbake.
+    var scrubPosition: Double {
+        if let t = scrubTarget, Date().timeIntervalSince(scrubAt) < 0.3 { return t }
+        return seekPosition
+    }
+
+    func scrub(to seconds: Double) {
+        guard canSeek, abs(seconds - seekPosition) > 0.05 else { return }
+        seek(to: seconds)
+        scrubTarget = seconds
+        scrubAt = Date()
+        objectWillChange.send()
+    }
+
+    /// Hopp fram eller tilbake (sekunder).
+    func nudge(_ seconds: Double) {
+        guard canSeek else { return }
+        let to = seekPosition + seconds
+        seek(to: seekLength > 0 ? min(max(0, to), max(0, seekLength - 0.1)) : max(0, to))
+    }
+
     func complete() {
         guard !done else { return }
         done = true
@@ -126,7 +160,7 @@ class PlaybackActive: ActiveCue {
 
 final class AudioActive: PlaybackActive {
     override func makePlayback() throws -> Playback {
-        guard FileManager.default.fileExists(atPath: cue.filePath) else { throw CueError.fileMissing(cue.filePath) }
+        try CueError.check(cue.filePath)
         let pb = try engine.audio.makePlayback(audio: cue, offset: startOffset)
         duration = cue.loop ? 0 : (pb.passLength ?? 0)
         if cue.fileDuration <= 0, let len = pb.passLength, cue.endTime <= 0 { cue.fileDuration = cue.startTime + len }
@@ -139,6 +173,11 @@ final class AudioActive: PlaybackActive {
         elapsed = cue.loop ? pb.elapsed : pb.passPosition
     }
 
+    override var canSeek: Bool { started && !done && !isStopping && (playback?.seekLength ?? 0) > 0 }
+    override var seekLength: Double { playback?.seekLength ?? 0 }
+    override var seekPosition: Double { playback?.passPosition ?? 0 }
+    override func seek(to seconds: Double) { playback?.seek(to: seconds) }
+
     override func release() -> Bool {
         guard let pb = playback, pb.isLooping else { return false }
         pb.releaseLoop()
@@ -149,8 +188,18 @@ final class AudioActive: PlaybackActive {
 
 enum CueError: LocalizedError {
     case fileMissing(String)
+    case noFile
     var errorDescription: String? {
-        switch self { case .fileMissing(let p): return L("Fila finnes ikke: {0}", p) }
+        switch self {
+        case .fileMissing(let p): return L("Fila finnes ikke: {0}", p)
+        case .noFile: return L("Ingen fil valgt")
+        }
+    }
+
+    /// Kast riktig feil hvis cuen ikke har en fil som finnes.
+    static func check(_ path: String) throws {
+        if path.isEmpty { throw CueError.noFile }
+        if !FileManager.default.fileExists(atPath: path) { throw CueError.fileMissing(path) }
     }
 }
 
@@ -166,7 +215,7 @@ class VisualActive: ActiveCue {
     override func onBegin() throws {
         if cue.type == .web {
             guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Ugyldig adresse: {0}", cue.url)]) }
-        } else if !FileManager.default.fileExists(atPath: cue.filePath) { throw CueError.fileMissing(cue.filePath) }
+        } else { try CueError.check(cue.filePath) }
         if cue.replaceOthers {
             // Krysstoning: de andre fades ut mens denne fades inn.
             for other in engine.active.compactMap({ $0 as? VisualActive }) where other !== self && other.started && !other.done && !other.isStopping {
@@ -378,6 +427,21 @@ final class VideoActive: VisualActive {
 
     override func pause() { player?.pause(); audio?.pause() }
     override func resume() { player?.play(); audio?.resume(); lastResync = engine.now }
+
+    override var canSeek: Bool { player != nil && started && !done && !isStopping && seekLength > 0 }
+    override var seekLength: Double {
+        if duration > 0 { return duration }
+        let end = endTime > 0 ? endTime : cue.knownDuration
+        return end > startTime ? end - startTime : 0
+    }
+    override func seek(to seconds: Double) {
+        guard let p = player, seconds.isFinite else { return }
+        let s = min(max(0, seconds), max(0, seekLength - 0.05))
+        p.seek(to: CMTime(seconds: startTime + s, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        audio?.seek(to: s)
+        lastResync = engine.now // gi bilde og lyd tid til å finne hverandre igjen
+        elapsed = s
+    }
 
     override func release() -> Bool {
         guard cue.loop, !released, !isStopping else { return false }

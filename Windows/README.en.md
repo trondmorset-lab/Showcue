@@ -168,7 +168,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 | **Ctrl+L** | Show mode on/off |
 | **Enter** (in a field) | Confirm and go back to the list |
 
-- **Drag files** from Explorer straight into the cue list.
+- **Drag files** from Explorer straight into the cue list. Drop one file on a media cue without a file, and the cue gets the file.
+- **＋ Media** creates an empty cue (audio, video, image, PDF, playlist); choose the file later with *Browse* in the panel on the right.
 - **Double-click** a cue to test it without moving the playhead.
 - Hotkeys on audio/image/video work as on/off: press once to start, once more to stop (with the cue's fade out).
 - The F keys also work while you are typing in a field; letters and digits do not.
@@ -182,6 +183,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 - **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
+- **Scrubbing while playing:** audio and video cues under *Active cues* have a scrub bar. Drag it to scrub in
+  real time, or jump 5 seconds with ⏪ / ⏩. Picture and sound in a video follow each other. Also works while paused.
 - **Run from here:** the button below the waveform starts the cue from the blue cursor, on its normal outputs – useful in rehearsals.
 - **Fade curves:** fade cues can use *smooth* (linear in dB, default), *S-curve* (soft start and end) or
   *linear amplitude* (like a physical fader).

@@ -516,6 +516,18 @@ final class AppModel: ObservableObject, ShowControl {
         statusText = L("La til {0} cue(s).", new.count)
     }
 
+    /// Filer sluppet på en rad: én fil på en media-cue uten fil (av samme type) blir cuens fil, ellers nye cuer under raden.
+    func dropFiles(_ urls: [URL], on target: Cue, index: Int) {
+        guard isEditable else { return }
+        if urls.count == 1, [.audio, .video, .image, .pdf].contains(target.type), target.filePath.isEmpty,
+           let made = cue(forFile: urls[0]), made.type == target.type {
+            setFile(target, urls[0].path)
+            statusText = L("La fila inn i cue {0}.", target.number)
+            return
+        }
+        addFiles(urls, at: index + 1)
+    }
+
     func pickFiles(_ types: [String], multiple: Bool) -> [URL] {
         let p = NSOpenPanel()
         p.allowedContentTypes = types.compactMap { UTType(filenameExtension: $0) }
@@ -527,10 +539,8 @@ final class AppModel: ObservableObject, ShowControl {
         guard isEditable else { return }
         NSApp.keyWindow?.makeFirstResponder(nil)
         switch type {
-        case .audio: addFiles(pickFiles(AppModel.audioExt, multiple: true))
-        case .video: addFiles(pickFiles(AppModel.videoExt, multiple: true))
-        case .image: addFiles(pickFiles(AppModel.imageExt, multiple: true))
-        case .pdf: addFiles(pickFiles(["pdf"], multiple: true))
+        // Lyd, video, bilde, PDF og spilleliste lages tomme; fila velges i panelet til høyre (Bla),
+        // eller ved å dra en fil inn på cuen.
         case .fade:
             let c = Cue(type: .fade)
             if let t = playhead, t.type == .audio || t.isVisual { c.target = t.number }
@@ -541,13 +551,6 @@ final class AppModel: ObservableObject, ShowControl {
             let c = Cue(type: .timecode); c.device = MidiSystem.destinations().first ?? ""; insert([c])
         case .input:
             let c = Cue(type: .input); c.fileChannels = max(1, AudioInput.probeChannels(deviceUID: settings.inputDeviceUID)); insert([c])
-        case .playlist:
-            let urls = pickFiles(AppModel.audioExt, multiple: true)
-            guard !urls.isEmpty else { return }
-            let c = Cue(type: .playlist)
-            c.files = urls.map(\.path)
-            c.fileChannels = max(1, urls.map { AudioEngine.probeAudio($0.path).channels }.max() ?? 2)
-            insert([c])
         default:
             insert([Cue(type: type)])
         }

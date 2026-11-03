@@ -85,6 +85,9 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | ⇧⌘U | Show/hide the output window |
 | ⌘, | Settings |
 
+Audio and video cues that are playing can be scrubbed under *Active cues* (drag the bar, or ⏪ / ⏩ for 5 seconds).
+*＋ Media* creates an empty cue; choose the file with *Browse*, or drop a file on the cue.
+
 Click selects, ⌘-click selects several and ⇧-click selects a range. Double-click tests the cue. Right-click opens a menu with colour, enable/disable and duplicate.
 You can drag files from the Finder straight into the list.
 

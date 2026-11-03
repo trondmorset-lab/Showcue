@@ -85,6 +85,9 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⇧⌘U | Vis/skjul utgangsvinduet |
 | ⌘, | Innstillinger |
 
+Lyd- og video-cuer som spiller kan spoles under *Aktive cuer* (dra i linja, eller ⏪ / ⏩ for 5 sekunder).
+*＋ Media* lager en tom cue; velg fila med *Bla*, eller slipp en fil på cuen.
+
 Klikk velger, ⌘-klikk velger flere og ⇧-klikk velger et område. Dobbeltklikk tester cuen. Høyreklikk åpner en meny med farge, aktiver/deaktiver og dupliser.
 Du kan dra filer fra Finder rett inn i lista.
 
