@@ -37,6 +37,9 @@ jobs:
       - name: Tester
         run: dotnet test Windows/ShowCue.Tests/ShowCue.Tests.csproj -c Release --logger "console;verbosity=normal"
 
+      - name: Stresstest (én runde)
+        run: dotnet run -c Release --project tools/stress -- 0
+
       - name: Lisenstekster stemmer med pakkene
         shell: pwsh
         run: |

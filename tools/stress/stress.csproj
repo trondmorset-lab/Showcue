@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Stresstest av programkjernen (Windows-koden uten WPF), på Windows, macOS og Linux. Se README.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>CA1416;CS8602;CS8600;CS8604;CS8618;CS0618</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" Condition="'$(NAudioDll)' == ''" />
+    <Reference Include="NAudio" Condition="'$(NAudioDll)' != ''"><HintPath>$(NAudioDll)</HintPath></Reference>
+    <Compile Include="*.cs" />
+    <Compile Include="../../Windows/ShowCue/Models/*.cs" />
+    <Compile Include="../../Windows/ShowCue/Engine/Osc.cs;../../Windows/ShowCue/Engine/PatchMixer.cs;../../Windows/ShowCue/Engine/CuePlayback.cs;../../Windows/ShowCue/Engine/AudioEngine.cs;../../Windows/ShowCue/Engine/MidiInput.cs;../../Windows/ShowCue/Engine/MidiEngine.cs;../../Windows/ShowCue/Engine/RemoteControl.cs;../../Windows/ShowCue/Engine/Monitors.cs;../../Windows/ShowCue/Engine/VideoAudio.cs;../../Windows/ShowCue/Engine/OscFeedback.cs;../../Windows/ShowCue/Engine/Waveform.cs;../../Windows/ShowCue/Engine/Loudness.cs;../../Windows/ShowCue/Engine/NetworkSender.cs;../../Windows/ShowCue/Engine/TimecodeOutput.cs;../../Windows/ShowCue/Engine/DmxOutput.cs;../../Windows/ShowCue/Engine/AudioInput.cs" />
+    <EmbeddedResource Include="../../i18n/en.json" LogicalName="en.json" />
+  </ItemGroup>
+</Project>
