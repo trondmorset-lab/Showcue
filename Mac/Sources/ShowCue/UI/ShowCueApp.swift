@@ -42,6 +42,7 @@ struct ShowCueApp: App {
 /// eller appen startes rett fra Xcode (uten app-pakke).
 enum AppIcon {
     static var image: NSImage? {
+        if let img = NSImage(named: "AppIcon") { return img } // fra Assets.car
         if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"), let img = NSImage(contentsOf: url) { return img }
         // Fra Xcode / swift run: ressurspakken ligger ved siden av programfila.
         guard let dir = Bundle.main.executableURL?.deletingLastPathComponent(),
@@ -58,6 +59,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return AppModel()
     }()
     private var monitor: Any?
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Så tidlig som mulig, så Dock aldri viser et generisk ikon.
+        if let icon = AppIcon.image { NSApp.applicationIconImage = icon }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)

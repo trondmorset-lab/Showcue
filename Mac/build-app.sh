@@ -21,6 +21,17 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp ../LICENSE "$APP/Contents/Resources/LICENSE.txt"
 cp ../THIRD-PARTY-NOTICES.txt "$APP/Contents/Resources/THIRD-PARTY-NOTICES.txt"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+# Programikonet som ressurskatalog (Assets.car), slik nyere macOS helst vil ha det. AppIcon.icns over er reserve
+# hvis actool (følger med Xcode) ikke finnes.
+if xcrun --find actool >/dev/null 2>&1 && xcrun actool Resources/Assets.xcassets --compile "$APP/Contents/Resources" \
+        --platform macosx --minimum-deployment-target 13.0 --app-icon AppIcon \
+        --output-partial-info-plist build/icon-info.plist >/dev/null; then
+    /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$APP/Contents/Info.plist" 2>/dev/null \
+        || /usr/libexec/PlistBuddy -c "Set :CFBundleIconName AppIcon" "$APP/Contents/Info.plist"
+    echo "Ikon: Assets.car + AppIcon.icns"
+else
+    echo "Ikon: AppIcon.icns (actool mangler – installer Xcode for ressurskatalog)"
+fi
 # Engelsk oversettelse av brukerflaten (felles med Windows).
 cp ../i18n/en.json "$APP/Contents/Resources/en.json"
 # Versjon fra VERSION i roten av repoet (felles for Windows og Mac).

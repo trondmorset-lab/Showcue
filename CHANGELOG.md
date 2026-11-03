@@ -6,6 +6,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.13.1 – 2026-11-03
+
+### Rettet
+- **Logoen vises i Dock og på oppgavelinja:** Mac-appen har nå ikonet som ressurskatalog (slik nyere macOS vil ha det)
+  og setter det selv ved oppstart. Windows-ikonet er laget på nytt i klassisk format for alle størrelser, og settes på alle vinduer.
+- **Lydavspillingen kunne henge** (programmet fryse) ved en loop kortere enn ett sample, f.eks. med start- og sluttmarkør nesten oppå hverandre.
+- **Ugyldige tall** (NaN/uendelig) i tider og nivåer ga feil lyd og gjorde at showet ikke kunne lagres; på Mac kunne appen krasje.
+- **Ødelagte OSC-pakker** fra nettverket kunne gi feil (Windows) eller krasj (Mac).
+- Status ut over OSC tåler svært lange tider; autolagring og sikkerhetskopier tåler svært lange filnavn.
+- «Normaliser lydstyrke» setter ikke lenger −60 dB hvis målingen er ugyldig.
+
 ## 0.13.0 – 2026-11-02
 
 ### Nytt
