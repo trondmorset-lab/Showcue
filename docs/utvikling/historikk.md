@@ -2,7 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
-| 0.14.0 | #14 | Spoling i sanntid i lyd og video (spolelinje, ±5 s, også under pause); media-cuer uten fil; utviklingsnotater |
+| 0.14.0 | #14, #15 | Spoling i sanntid i lyd og video (spolelinje, ±5 s, også under pause); media-cuer uten fil. Utviklingsnotater og stresstest i CI (#15) |
 | 0.13.1 | #12, #13 | Ikon i Dock/oppgavelinja; rettelser fra stresstest (heng i loop, NaN, OSC, lange tider/filnavn); ustabil test rettet |
 | 0.13.0 | #11 | Engelsk brukerflate (felles `i18n/en.json`), engelske README/endringslogg, grått tema, tekstgjennomgang |
 | 0.12.0 | #10 | Knappepanel (før Cart), Beskjed (før Memo), Utstyr (før Signal ut), ingen «…» i menyer, zoom og tekststørrelse |
