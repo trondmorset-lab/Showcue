@@ -13,6 +13,8 @@ namespace ShowCue.Engine;
 public sealed class CuePlayback : IBusSource, IDisposable
 {
     public const double SilenceDb = -80;
+    /// <summary>Korteste loop (10 ms ved 48 kHz).</summary>
+    private const long MinLoopFrames = 480;
 
     private readonly record struct Send(int Bus, float Gain);
 
@@ -65,7 +67,7 @@ public sealed class CuePlayback : IBusSource, IDisposable
     /// <param name="offset">Start så mange sekunder inn i cuen (for prøver: «spill fra her»).</param>
     public CuePlayback(AudioCue cue, int sampleRate, double offset = 0)
         : this(cue, new AudioFileReader(cue.FilePath), cue,
-               new Options(cue.VolumeDb, cue.StartTime + Math.Max(0, offset), cue.EndTime, cue.Loop, offset > 0 ? 0.02 : cue.FadeIn, cue.FadeOut), sampleRate) { }
+               new Options(cue.VolumeDb, cue.StartTime + (offset > 0 ? Math.Min(offset, 86400) : 0), cue.EndTime, cue.Loop, offset > 0 ? 0.02 : cue.FadeIn, cue.FadeOut), sampleRate) { }
 
     /// <summary>Spill en vilkårlig lydstrøm, f.eks. lydsporet i en video (dekodet med Media Foundation).</summary>
     public CuePlayback(Cue owner, WaveStream reader, IRoutedAudio routing, Options o, int sampleRate)
@@ -76,6 +78,8 @@ public sealed class CuePlayback : IBusSource, IDisposable
         _reader = reader;
         ISampleProvider samples = reader as ISampleProvider ?? reader.ToSampleProvider();
         _srcCh = reader.WaveFormat.Channels;
+        static double Sec(double v) => double.IsFinite(v) ? Math.Clamp(v, 0, 86400) : 0;
+        o = o with { StartTime = Sec(o.StartTime), EndTime = Sec(o.EndTime), FadeIn = Sec(o.FadeIn), FadeOut = Sec(o.FadeOut) };
         var total = reader.TotalTime.TotalSeconds;
         _startTime = Math.Min(o.StartTime, Math.Max(0, total - 0.01));
         if (_startTime > 0) _reader.CurrentTime = TimeSpan.FromSeconds(_startTime);
@@ -83,7 +87,8 @@ public sealed class CuePlayback : IBusSource, IDisposable
         var end = o.EndTime > 0 ? Math.Min(o.EndTime, total > 0 ? total : o.EndTime) : total;
         _framesPerPass = end > _startTime ? (long)((end - _startTime) * _rate) : long.MaxValue;
         _framesToFileEnd = total > _startTime ? (long)((total - _startTime) * _rate) : _framesPerPass;
-        _loop = o.Loop && _framesPerPass != long.MaxValue;
+        // En loop må være minst én blokk lang, ellers ville lydtråden bare spole tilbake hele tiden.
+        _loop = o.Loop && _framesPerPass != long.MaxValue && _framesPerPass >= MinLoopFrames;
         _fadeOutFrames = o.FadeOut > 0 ? (long)(o.FadeOut * _rate) : 0;
 
         _source = samples.WaveFormat.SampleRate == sampleRate
@@ -92,7 +97,7 @@ public sealed class CuePlayback : IBusSource, IDisposable
 
         _routing = BuildRouting(routing.EffectiveRoutes(_srcCh), _srcCh);
 
-        var levelDb = o.VolumeDb <= -60 ? SilenceDb : o.VolumeDb;
+        var levelDb = o.VolumeDb > -60 ? Math.Min(o.VolumeDb, 24) : SilenceDb;
         if (o.FadeIn > 0)
         {
             _currentDb = SilenceDb;
@@ -136,12 +141,15 @@ public sealed class CuePlayback : IBusSource, IDisposable
 
     public void Stop(double fadeSeconds)
     {
-        if (fadeSeconds <= 0) { _finished = true; return; }
+        if (!(fadeSeconds > 0)) { _finished = true; return; }
         FadeTo(SilenceDb, fadeSeconds, true);
     }
 
     private void BeginRamp(double targetDb, double seconds, bool stopWhenDone, FadeCurve curve = FadeCurve.Db)
     {
+        // Ugyldige verdier (NaN, uendelig) skal aldri nå lydtråden.
+        targetDb = targetDb > -60 ? Math.Min(targetDb, 24) : SilenceDb;
+        seconds = double.IsFinite(seconds) ? Math.Clamp(seconds, 0, 86400) : 0;
         _targetDb = targetDb;
         _stopAfterRamp = stopWhenDone;
         var frames = (long)(seconds * _rate);
@@ -199,20 +207,21 @@ public sealed class CuePlayback : IBusSource, IDisposable
         if (_tmp.Length < frames * _srcCh) _tmp = new float[frames * _srcCh];
         var routing = _routing;
         int written = 0;
+        int writtenAtRewind = -1; // to tilbakespolinger uten lyd imellom = fila gir ikke mer lyd; stopp i stedet for å henge
 
         while (written < frames && !_finished)
         {
             long passLeft = _framesPerPass - _passFrames;
             if (passLeft <= 0)
             {
-                if (_loop) { Rewind(); continue; }
+                if (_loop && writtenAtRewind != written) { writtenAtRewind = written; Rewind(); continue; }
                 break;
             }
             int toRead = (int)Math.Min(frames - written, passLeft);
             int got = _source.Read(_tmp, 0, toRead * _srcCh) / _srcCh;
             if (got == 0)
             {
-                if (_loop && _passFrames > 0) { Rewind(); continue; }
+                if (_loop && _passFrames > 0 && writtenAtRewind != written) { writtenAtRewind = written; Rewind(); continue; }
                 break;
             }
             int keep = MixInto(bus, written, got, busCount, routing);

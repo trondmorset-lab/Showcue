@@ -44,6 +44,12 @@ public interface IRoutedAudio : System.ComponentModel.INotifyPropertyChanged
 // hvor i objektet det står, så showfiler fra Mac-versjonen også kan åpnes.
 public abstract class Cue : ObservableObject
 {
+    /// <summary>Tid i sekunder: aldri negativ, aldri NaN/uendelig (maks ett døgn).</summary>
+    protected static double Seconds(double v) => double.IsFinite(v) ? Math.Clamp(v, 0, 86400) : 0;
+    /// <summary>Verdi innenfor grensene; NaN blir 0 (eller nærmeste grense).</summary>
+    protected static double Range(double v, double min, double max) => Math.Clamp(double.IsNaN(v) ? 0 : v, min, max);
+    protected static int Range(int v, int min, int max) => Math.Clamp(v, min, max);
+
     private string _number = "";
     private string _name = "";
     private string _notes = "";
@@ -56,7 +62,7 @@ public abstract class Cue : ObservableObject
     public string Name { get => _name; set => SetCue(ref _name, value ?? ""); }
     public string Notes { get => _notes; set => SetCue(ref _notes, value ?? ""); }
     /// <summary>Sekunder fra GO til cuen faktisk starter.</summary>
-    public double PreWait { get => _preWait; set => SetCue(ref _preWait, Math.Max(0, value)); }
+    public double PreWait { get => _preWait; set => SetCue(ref _preWait, Seconds(value)); }
     public ContinueMode ContinueMode { get => _continueMode; set => SetCue(ref _continueMode, value); }
     /// <summary>Hurtigtast, f.eks. "F1", "Q" eller "1". Tom = ingen.</summary>
     public string Hotkey { get => _hotkey; set { if (SetCue(ref _hotkey, (value ?? "").Trim().ToUpperInvariant())) OnPropertyChanged(nameof(TriggerText)); } }
@@ -169,20 +175,20 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
     /// <summary>Gjeldende routing (standard hvis ingen er satt).</summary>
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
     /// <summary>Nivå i dB (0 = uendret, -60 eller lavere = stille).</summary>
-    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
-    public double StartTime { get => _startTime; set => SetCue(ref _startTime, Math.Max(0, value)); }
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
+    public double StartTime { get => _startTime; set => SetCue(ref _startTime, Seconds(value)); }
     /// <summary>0 = spill til slutten av fila.</summary>
-    public double EndTime { get => _endTime; set => SetCue(ref _endTime, Math.Max(0, value)); }
+    public double EndTime { get => _endTime; set => SetCue(ref _endTime, Seconds(value)); }
     public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
-    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Math.Max(0, value)); }
+    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Seconds(value)); }
     /// <summary>Brukes ved stopp, og automatisk mot slutten av fila når cuen ikke looper.</summary>
-    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
     /// <summary>Lengden på lydfila. Fylles inn automatisk.</summary>
-    public double FileDuration { get => _fileDuration; set { if (SetCue(ref _fileDuration, value)) OnPropertyChanged(nameof(FileDurationText)); } }
+    public double FileDuration { get => _fileDuration; set { if (SetCue(ref _fileDuration, Seconds(value))) OnPropertyChanged(nameof(FileDurationText)); } }
     [JsonIgnore] public string FileDurationText => Loc.F("Filens lengde: {0:0.0} s", FileDuration);
     private double? _loudness;
     /// <summary>Målt lydstyrke (LUFS, integrert) mellom start og slutt, før nivået. null = ikke målt.</summary>
-    public double? Loudness { get => _loudness; set { if (SetCue(ref _loudness, value)) OnPropertyChanged(nameof(LoudnessText)); } }
+    public double? Loudness { get => _loudness; set { if (SetCue(ref _loudness, value is double v && !double.IsFinite(v) ? null : value)) OnPropertyChanged(nameof(LoudnessText)); } }
     [JsonIgnore] public string LoudnessText => Loudness is double l ? Loc.F("{0:0.0} LUFS (målt)", l) : Loc.T("Ikke målt");
     [JsonIgnore] public double MediaLength => FileDuration;
     [JsonIgnore] public bool IsVideo => false;
@@ -224,8 +230,8 @@ public abstract class VisualCue : Cue, IFileCue
     private VisualStretch _stretch = VisualStretch.Uniform;
 
     public string FilePath { get => _filePath; set => SetCue(ref _filePath, value ?? ""); }
-    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Math.Max(0, value)); }
-    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Seconds(value)); }
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
     /// <summary>Når cuen starter, fades andre bilder/videoer ut (krysstoning).</summary>
     public bool ReplaceOthers { get => _replaceOthers; set => SetCue(ref _replaceOthers, value); }
     public VisualStretch Stretch { get => _stretch; set => SetCue(ref _stretch, value); }
@@ -244,7 +250,7 @@ public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
     private List<AudioRoute>? _routes;
 
     /// <summary>Nivå på videoens lydspor i dB. Lyden går gjennom lydpatchen akkurat som en lyd-cue.</summary>
-    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
 
     /// <summary>Eldre showfiler (0.1/0.2) lagret nivå i prosent. Leses inn og gjøres om til dB; skrives aldri.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -262,11 +268,11 @@ public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
     [JsonIgnore] public bool HasNoAudio => _fileChannels == 0;
     public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
     /// <summary>Fylles inn første gang videoen åpnes.</summary>
-    public double KnownDuration { get => _knownDuration; set => SetCue(ref _knownDuration, value); }
+    public double KnownDuration { get => _knownDuration; set => SetCue(ref _knownDuration, Seconds(value)); }
     /// <summary>Startpunkt i videoen (sekunder).</summary>
-    public double StartTime { get => _startTime; set => SetCue(ref _startTime, Math.Max(0, value)); }
+    public double StartTime { get => _startTime; set => SetCue(ref _startTime, Seconds(value)); }
     /// <summary>Sluttpunkt i videoen (sekunder). 0 = til slutten.</summary>
-    public double EndTime { get => _endTime; set => SetCue(ref _endTime, Math.Max(0, value)); }
+    public double EndTime { get => _endTime; set => SetCue(ref _endTime, Seconds(value)); }
     [JsonIgnore] public double MediaLength => KnownDuration;
     [JsonIgnore] public bool IsVideo => true;
     /// <summary>Faktisk sluttpunkt (sekunder), 0 = ukjent.</summary>
@@ -283,7 +289,7 @@ public abstract class StillCue : VisualCue
 {
     private double _holdTime;
     /// <summary>Sekunder bildet står før det fades ut. 0 = til det stoppes.</summary>
-    public double HoldTime { get => _holdTime; set => SetCue(ref _holdTime, Math.Max(0, value)); }
+    public double HoldTime { get => _holdTime; set => SetCue(ref _holdTime, Seconds(value)); }
     public override double Duration => HoldTime > 0 ? FadeIn + HoldTime + FadeOut : 0;
 }
 
@@ -347,12 +353,12 @@ public sealed class FadeCue : Cue
 
     /// <summary>Cue-nummeret som skal fades.</summary>
     public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
-    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Max(0, value)); }
+    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Seconds(value)); }
     public bool FadeAudio { get => _fadeAudio; set => SetCue(ref _fadeAudio, value); }
-    public double TargetDb { get => _targetDb; set => SetCue(ref _targetDb, Math.Clamp(value, -60, 12)); }
+    public double TargetDb { get => _targetDb; set => SetCue(ref _targetDb, Range(value, -60, 12)); }
     public bool FadeVisual { get => _fadeVisual; set => SetCue(ref _fadeVisual, value); }
     /// <summary>Synlighet 0–100 %.</summary>
-    public double TargetOpacity { get => _targetOpacity; set => SetCue(ref _targetOpacity, Math.Clamp(value, 0, 100)); }
+    public double TargetOpacity { get => _targetOpacity; set => SetCue(ref _targetOpacity, Range(value, 0, 100)); }
     public bool StopWhenDone { get => _stopWhenDone; set => SetCue(ref _stopWhenDone, value); }
     /// <summary>Formen på lydfaden.</summary>
     public FadeCurve Curve { get => _curve; set => SetCue(ref _curve, value); }
@@ -380,7 +386,7 @@ public sealed class StopCue : Cue
 
     /// <summary>Cue-nummeret som skal stoppes. Tomt = stopp alt.</summary>
     public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
-    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Max(0, value)); }
+    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Seconds(value)); }
     /// <summary>Slipp loopen i stedet for å stoppe («devamp»): runden fullføres og resten av fila spilles.
     /// For spillelister: spill ferdig sporet som går, og stopp.</summary>
     public bool Release { get => _release; set => SetCue(ref _release, value); }
@@ -430,10 +436,10 @@ public sealed class PlaylistCue : Cue, IRoutedAudio
     /// <summary>Start på nytt når lista er ferdig.</summary>
     public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
     /// <summary>Krysstoning mellom sporene (sekunder).</summary>
-    public double Crossfade { get => _crossfade; set => SetCue(ref _crossfade, Math.Clamp(value, 0, 30)); }
-    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
+    public double Crossfade { get => _crossfade; set => SetCue(ref _crossfade, Range(value, 0, 30)); }
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
     /// <summary>Fade ut når spillelista stoppes.</summary>
-    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
     /// <summary>Antall kanaler i routingmatrisen (det største antallet blant filene).</summary>
     public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
@@ -474,7 +480,7 @@ public sealed class NetworkCue : Cue
 
     public NetworkProtocol Protocol { get => _protocol; set => SetCue(ref _protocol, value); }
     public string Host { get => _host; set => SetCue(ref _host, value?.Trim() ?? ""); }
-    public int Port { get => _port; set => SetCue(ref _port, Math.Clamp(value, 1, 65535)); }
+    public int Port { get => _port; set => SetCue(ref _port, Range(value, 1, 65535)); }
     /// <summary>Teksten som sendes (UDP/TCP) eller innholdet i forespørselen (HTTP). \r \n \t \\ og \xHH tolkes.</summary>
     public string Message { get => _message; set => SetCue(ref _message, value ?? ""); }
     public string Url { get => _url; set => SetCue(ref _url, value?.Trim() ?? ""); }
@@ -511,10 +517,10 @@ public sealed class TimecodeCue : Cue
     public string Device { get => _device; set => SetCue(ref _device, value ?? ""); }
     public bool SendLtc { get => _sendLtc; set => SetCue(ref _sendLtc, value); }
     /// <summary>Utgang i lydpatchen for LTC (fra 1).</summary>
-    public int LtcBus { get => _ltcBus; set => SetCue(ref _ltcBus, Math.Clamp(value, 1, 64)); }
-    public double LtcLevelDb { get => _ltcLevelDb; set => SetCue(ref _ltcLevelDb, Math.Clamp(value, -40, 0)); }
+    public int LtcBus { get => _ltcBus; set => SetCue(ref _ltcBus, Range(value, 1, 64)); }
+    public double LtcLevelDb { get => _ltcLevelDb; set => SetCue(ref _ltcLevelDb, Range(value, -40, 0)); }
     /// <summary>Hvor lenge tidskoden går (sekunder). 0 = til cuen stoppes.</summary>
-    public double Length { get => _length; set => SetCue(ref _length, Math.Max(0, value)); }
+    public double Length { get => _length; set => SetCue(ref _length, Seconds(value)); }
 
     [JsonIgnore] public Timecode StartTimecode => Timecode.TryParse(Start, out var tc) ? tc : default;
 
@@ -537,10 +543,10 @@ public sealed class LightCue : Cue
     /// <summary>Art-Net-node eller kringkasting (255.255.255.255, 2.255.255.255 …).</summary>
     public string Host { get => _host; set => SetCue(ref _host, value?.Trim() ?? ""); }
     /// <summary>Art-Net-univers (0 = det første).</summary>
-    public int Universe { get => _universe; set => SetCue(ref _universe, Math.Clamp(value, 0, 32767)); }
+    public int Universe { get => _universe; set => SetCue(ref _universe, Range(value, 0, 32767)); }
     /// <summary>«kanal@verdi», f.eks. «1@255 2-4@50% 10@0».</summary>
     public string Levels { get => _levels; set => SetCue(ref _levels, value ?? ""); }
-    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Math.Clamp(value, 0, 600)); }
+    public double FadeTime { get => _fadeTime; set => SetCue(ref _fadeTime, Range(value, 0, 600)); }
 
     public override string TypeName => Loc.T("Lys");
     public override string TypeIcon => "✺";
@@ -558,12 +564,12 @@ public sealed class InputCue : Cue, IRoutedAudio
     private double _fadeOut = 1;
 
     /// <summary>Antall kanaler fra inngangen (settes fra lydenheten).</summary>
-    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Clamp(value, 1, 64)); }
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Range(value, 1, 64)); }
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
-    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Math.Clamp(value, -60, 12)); }
-    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Math.Max(0, value)); }
-    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Math.Max(0, value)); }
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
+    public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Seconds(value)); }
+    public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
 
     public override string TypeName => Loc.T("Inngang");
     public override string TypeIcon => "◉";
@@ -580,7 +586,7 @@ public sealed class OscCue : Cue
     private string _arguments = "";
 
     public string Host { get => _host; set => SetCue(ref _host, value?.Trim() ?? ""); }
-    public int Port { get => _port; set => SetCue(ref _port, Math.Clamp(value, 1, 65535)); }
+    public int Port { get => _port; set => SetCue(ref _port, Range(value, 1, 65535)); }
     public string Address { get => _address; set => SetCue(ref _address, value?.Trim() ?? "/"); }
     /// <summary>Mellomromsseparert: 1 = int, 0.5 = float, tekst eller "tekst med mellomrom" = string.</summary>
     public string Arguments { get => _arguments; set => SetCue(ref _arguments, value ?? ""); }
@@ -604,15 +610,15 @@ public sealed class MidiCue : Cue
 
     public string Device { get => _device; set => SetCue(ref _device, value ?? ""); }
     public MidiMessageType MessageType { get => _messageType; set => SetCue(ref _messageType, value); }
-    public int Channel { get => _channel; set => SetCue(ref _channel, Math.Clamp(value, 1, 16)); }
+    public int Channel { get => _channel; set => SetCue(ref _channel, Range(value, 1, 16)); }
     /// <summary>Note / program / controller.</summary>
-    public int Data1 { get => _data1; set => SetCue(ref _data1, Math.Clamp(value, 0, 127)); }
+    public int Data1 { get => _data1; set => SetCue(ref _data1, Range(value, 0, 127)); }
     /// <summary>Velocity / verdi.</summary>
-    public int Data2 { get => _data2; set => SetCue(ref _data2, Math.Clamp(value, 0, 127)); }
+    public int Data2 { get => _data2; set => SetCue(ref _data2, Range(value, 0, 127)); }
     /// <summary>MSC device ID (127 = alle).</summary>
-    public int MscDeviceId { get => _mscDeviceId; set => SetCue(ref _mscDeviceId, Math.Clamp(value, 0, 127)); }
+    public int MscDeviceId { get => _mscDeviceId; set => SetCue(ref _mscDeviceId, Range(value, 0, 127)); }
     /// <summary>MSC command format (1 = lys, 0x10 = lyd …).</summary>
-    public int MscCommandFormat { get => _mscCommandFormat; set => SetCue(ref _mscCommandFormat, Math.Clamp(value, 0, 127)); }
+    public int MscCommandFormat { get => _mscCommandFormat; set => SetCue(ref _mscCommandFormat, Range(value, 0, 127)); }
     public string MscCueNumber { get => _mscCueNumber; set => SetCue(ref _mscCueNumber, value?.Trim() ?? ""); }
 
     public override string TypeName => "MIDI";
@@ -635,7 +641,8 @@ public sealed class AudioRoute
     public int Source { get; set; }
     /// <summary>Utgang/buss i lydpatchen, fra 1.</summary>
     public int Bus { get; set; }
-    public double GainDb { get; set; }
+    private double _gainDb;
+    public double GainDb { get => _gainDb; set => _gainDb = double.IsNaN(value) ? 0 : Math.Clamp(value, -60, 12); }
 
     public AudioRoute() { }
     public AudioRoute(int source, int bus, double gainDb = 0) { Source = source; Bus = bus; GainDb = gainDb; }
@@ -681,7 +688,7 @@ public static class TimeFormat
     {
         if (double.IsNaN(seconds) || double.IsInfinity(seconds)) return "";
         var neg = seconds < 0;
-        seconds = Math.Abs(seconds);
+        seconds = Math.Min(Math.Abs(seconds), 359_999); // maks 99:59:59
         var ts = TimeSpan.FromSeconds(seconds);
         var s = ts.TotalHours >= 1
             ? $"{(int)ts.TotalHours}:{ts.Minutes:00}:{ts.Seconds:00}"

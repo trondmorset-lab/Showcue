@@ -113,6 +113,14 @@ jobs:
         working-directory: Mac
         run: ./build-app.sh
 
+      - name: Programikonet er med i appen
+        working-directory: Mac/build/ShowCue.app/Contents
+        run: |
+          test -s Resources/AppIcon.icns
+          test -s Resources/Assets.car
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' Info.plist)" = AppIcon ]
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' Info.plist)" = AppIcon ]
+
       - name: Pakk zip og dmg
         working-directory: Mac
         run: |

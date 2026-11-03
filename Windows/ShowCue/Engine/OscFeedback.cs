@@ -74,6 +74,7 @@ public sealed class OscFeedback
     public static string Clock(double seconds)
     {
         if (double.IsNaN(seconds) || seconds < 0) seconds = 0;
+        seconds = Math.Min(seconds, 359_999); // maks 99:59:59
         var t = TimeSpan.FromSeconds(Math.Floor(seconds));
         return t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{(int)t.TotalMinutes}:{t.Seconds:00}";
     }

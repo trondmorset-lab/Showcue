@@ -53,7 +53,7 @@ struct Timecode: Equatable, Hashable, CustomStringConvertible {
     }
 
     func toSeconds(_ r: TimecodeRate) -> Double { Double(toFrame(r)) / r.fps }
-    static func fromSeconds(_ s: Double, _ r: TimecodeRate) -> Timecode { fromFrame(Int((s * r.fps + 1e-6).rounded(.down)), r) }
+    static func fromSeconds(_ s: Double, _ r: TimecodeRate) -> Timecode { fromFrame(Int((safeSeconds(s) * r.fps + 1e-6).rounded(.down)), r) }
 
     func format(_ r: TimecodeRate) -> String {
         String(format: "%02d:%02d:%02d%@%02d", hours, minutes, seconds, r.isDrop ? ";" : ":", frames)

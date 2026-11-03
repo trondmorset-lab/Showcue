@@ -66,7 +66,7 @@ final class OscFeedback {
     func requestRefresh() { forceNext = true }
 
     static func clock(_ seconds: Double) -> String {
-        let s = (seconds.isNaN || seconds < 0) ? 0 : Int(seconds.rounded(.down))
+        let s = (seconds.isNaN || seconds < 0) ? 0 : Int(min(seconds, 359_999).rounded(.down)) // maks 99:59:59
         let h = s / 3600, m = (s % 3600) / 60, sec = s % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", s / 60, sec)
     }

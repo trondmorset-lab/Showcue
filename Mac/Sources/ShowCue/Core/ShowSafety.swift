@@ -19,7 +19,7 @@ enum ShowSafety {
         guard let show else { return dir.appendingPathComponent("Uten navn.showcue") }
         let full = show.standardizedFileURL.path.lowercased()
         let hash = SHA256.hash(data: Data(full.utf8)).prefix(4).map { String(format: "%02X", $0) }.joined()
-        return dir.appendingPathComponent("\(show.deletingPathExtension().lastPathComponent) \(hash).showcue")
+        return dir.appendingPathComponent("\(String(show.deletingPathExtension().lastPathComponent.prefix(80))) \(hash).showcue")
     }
 
     static func writeAutosave(for show: URL?, data: Data, root: URL = defaultRoot) throws {
@@ -49,7 +49,7 @@ enum ShowSafety {
     private static let stamp: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = L("yyyy-MM-dd HH.mm.ss")
+        f.dateFormat = "yyyy-MM-dd HH.mm.ss"
         return f
     }()
 
@@ -60,7 +60,7 @@ enum ShowSafety {
         guard fm.fileExists(atPath: show.path) else { return nil }
         let dir = backupDir(root: root)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        let name = show.deletingPathExtension().lastPathComponent
+        let name = String(show.deletingPathExtension().lastPathComponent.prefix(80)) // svært lange navn skal ikke stoppe kopien
         let target = dir.appendingPathComponent("\(name) \(stamp.string(from: now)).showcue")
         try? fm.removeItem(at: target)
         guard (try? fm.copyItem(at: show, to: target)) != nil else { return nil }

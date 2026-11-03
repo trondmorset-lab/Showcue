@@ -179,7 +179,7 @@ enum Osc {
                 case "b":
                     let n = Int(readInt(d, &pos, end))
                     if n >= 0 && pos + n <= end { args.append(.blob(Data(d[pos..<(pos + n)]))) }
-                    pos += (n + 3) & ~3
+                    pos += n >= 0 ? (n + 3) & ~3 : end
                 case "T": args.append(.bool(true))
                 case "F": args.append(.bool(false))
                 case "N", "I": break
@@ -203,6 +203,7 @@ enum Osc {
 
     private static func readString(_ d: [UInt8], _ p: inout Int, _ end: Int) -> String {
         let s = p
+        guard s < end else { p = end + 4; return "" } // strengen mangler (ødelagt pakke): markér at vi er forbi slutten
         while p < end && d[p] != 0 { p += 1 }
         let str = String(decoding: d[s..<p], as: UTF8.self)
         p = s + ((p - s) / 4 + 1) * 4

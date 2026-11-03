@@ -69,7 +69,8 @@ public sealed class PatchMixer : ISampleProvider
         return new PatchState { Gains = gains, Channels = chans };
     }
 
-    public static float DbToGain(double db) => db <= -60 ? 0f : (float)Math.Pow(10, db / 20.0);
+    /// <summary>dB → lineær forsterkning. −60 eller lavere (og NaN) = stille; maks +24 dB.</summary>
+    public static float DbToGain(double db) => !(db > -60) ? 0f : (float)Math.Pow(10, Math.Min(db, 24) / 20.0);
 
     public void Add(IBusSource s)
     {

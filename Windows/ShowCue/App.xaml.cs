@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ShowCue.Models;
 
@@ -13,6 +14,10 @@ public partial class App : Application
             new FrameworkPropertyMetadata(System.Windows.Markup.XmlLanguage.GetLanguage(
                 System.Globalization.CultureInfo.CurrentCulture.IetfLanguageTag)));
         Loc.Use(AppSettings.Load().Language);
+        // Programikonet på alle vinduer (oppgavelinja, Alt+Tab og tittellinja), også dem som ikke setter det selv.
+        var icon = BitmapFrame.Create(new Uri("pack://application:,,,/Assets/ShowCue.ico"));
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((s, _) => { if (s is Window { Icon: null } w) w.Icon = icon; }));
         base.OnStartup(e);
     }
 

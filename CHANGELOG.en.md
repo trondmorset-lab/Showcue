@@ -6,6 +6,17 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.13.1 – 2026-11-03
+
+### Fixed
+- **The logo shows in the Dock and the taskbar:** the Mac app now has its icon as an asset catalog (as newer macOS prefers)
+  and sets it itself at startup. The Windows icon has been rebuilt in the classic format for all sizes and is set on every window.
+- **Audio playback could hang** (the program froze) with a loop shorter than one sample, e.g. with the start and end markers almost on top of each other.
+- **Invalid numbers** (NaN/infinity) in times and levels gave wrong audio and made the show impossible to save; on the Mac the app could crash.
+- **Corrupt OSC packets** from the network could cause errors (Windows) or a crash (Mac).
+- Status out over OSC handles very long times; autosave and backups handle very long file names.
+- “Normalise loudness” no longer sets −60 dB if the measurement is invalid.
+
 ## 0.13.0 – 2026-11-02
 
 ### New

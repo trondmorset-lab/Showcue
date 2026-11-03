@@ -16,7 +16,7 @@ struct WaveformData {
     /// Leser hele dekoderen og regner ut min/maks per bit.
     static func compute(decoder: FrameDecoder, sampleRate: Double, buckets wanted: Int = defaultBuckets) -> WaveformData {
         let ch = Swift.max(1, decoder.channels)
-        let totalFrames = Swift.max(1, Int(decoder.duration * sampleRate))
+        let totalFrames = Swift.max(1, frameCount(decoder.duration, sampleRate))
         let buckets = Swift.max(1, Swift.min(wanted, totalFrames))
         let framesPerBucket = Swift.max(1.0, Double(totalFrames) / Double(buckets))
         var mn = [Float](repeating: 0, count: buckets)
