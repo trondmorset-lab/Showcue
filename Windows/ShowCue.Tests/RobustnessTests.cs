@@ -79,6 +79,7 @@ public class RobustnessTests
         var show = Path.Combine(root, new string('x', 200) + ".showcue");
         Directory.CreateDirectory(root);
         File.WriteAllText(show, "{}");
+        File.SetLastWriteTimeUtc(show, DateTime.UtcNow.AddMinutes(-1)); // autolagringen må være nyere enn showfila
         ShowSafety.WriteAutosave(show, "{}", root);
         Assert.NotNull(ShowSafety.PendingAutosave(show, root));
         Assert.NotNull(ShowSafety.Backup(show, root));
