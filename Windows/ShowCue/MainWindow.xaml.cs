@@ -164,6 +164,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Engine.Log += s => StatusText = s;
         Engine.Ticked += OnTick;
         Engine.OutputCreated += OnOutputCreated;
+        Engine.ExtraOutputCreated += w =>
+        {
+            w.ForwardKey += (_, e) => HandleKey(e);
+            Dispatcher.BeginInvoke(() => { Activate(); }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        };
         Engine.PauseChanged += () =>
         {
             Raise(nameof(PauseGlyph)); Raise(nameof(PauseText));
@@ -349,6 +354,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             return;
         }
         if (!ConfirmDiscard()) { e.Cancel = true; return; }
+        // Sikkerhetsnett: henger en lyd- eller videodriver under avslutningen, avsluttes prosessen likevel etter 8 sekunder.
+        new Thread(() => { Thread.Sleep(8000); Environment.Exit(0); }) { IsBackground = true, Name = "Avslutningsvakt" }.Start();
         ShowSafety.DeleteAutosave(_showPath);
         _settings.Save();
         _patchWindow?.Close();

@@ -5,7 +5,12 @@ import QuartzCore
 /// bare selve lydmiksingen og dekodingen går på egne tråder.
 final class CueEngine: ObservableObject {
     let audio: AudioEngine
+    /// Standard utgang for video, bilde og PDF (skjermen i innstillingene). Vises også som forhåndsvisning.
     let output: OutputCompositor
+    /// Skjermen standardutgangen står på (−1 = eget vindu).
+    private(set) var defaultScreen = -1
+    /// Utganger for cuer som har valgt en annen skjerm enn standard, per skjerm.
+    private(set) var extraOutputs: [Int: OutputCompositor] = [:]
     let midi: MidiSystem
     /// Art-Net-utgang for lys-cuer.
     let dmx = DmxOutput()
@@ -50,6 +55,29 @@ final class CueEngine: ObservableObject {
     }
 
     deinit { timer?.invalidate() }
+
+    // MARK: Utganger
+
+    /// Utgangen for en cue: −2 = standard (innstillingene), −1 = eget vindu, 0… = skjerm.
+    func output(forScreen screen: Int) -> OutputCompositor {
+        if screen < -1 || screen == defaultScreen { return output }
+        if let o = extraOutputs[screen] { return o }
+        let o = OutputCompositor()
+        o.configure(screen: screen)
+        extraOutputs[screen] = o
+        return o
+    }
+
+    /// Standardskjermen er endret i innstillingene.
+    func setDefaultScreen(_ screen: Int) {
+        defaultScreen = screen
+        output.configure(screen: screen)
+        // En ekstra utgang på samme skjerm som den nye standarden trengs ikke lenger.
+        if let o = extraOutputs.removeValue(forKey: screen) { o.hide() }
+    }
+
+    /// Alle utganger som finnes (standard først).
+    var allOutputs: [OutputCompositor] { [output] + extraOutputs.keys.sorted().compactMap { extraOutputs[$0] } }
 
     // MARK: Forhåndslytting
 

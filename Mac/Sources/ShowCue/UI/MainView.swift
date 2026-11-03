@@ -24,9 +24,12 @@ struct MainView: View {
         .environment(\.uiScale, zoom)
         .controlSize(zoom >= 1.25 ? .large : zoom < 0.95 ? .small : .regular)
         .background(theme.bg)
+        .background(MainWindowHook())
         .navigationTitle(model.windowTitle)
+        .onAppear { MainWindowCloser.shared.reopen = { openWindow(id: "main") } }
     }
 
+    @Environment(\.openWindow) private var openWindow
     private var zoom: CGFloat { CGFloat(model.settings.zoom) }
 }
 

@@ -60,6 +60,10 @@ Underklasser: lyd (`AudioActive`), live-inngang (`InputActive`) – begge `Playb
 bilde/PDF/nettside (`StillActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, beskjed).
 Felles: stopp med fade, fade-cuer, pause/fortsett, slipp loop, spoling (`CanSeek`, `SeekLength`, `SeekPosition`, `Seek`, `ScrubPosition`, `Nudge`).
 
+**Utganger:** én standardutgang (skjermen i innstillingene, også vist som forhåndsvisning) og ved behov ekstra utganger for cuer med
+egen skjerm (`OutputScreen`/`outputScreen`: −2 standard, −1 eget vindu, 0… skjerm). `CueEngine.EnsureOutput(screen)` /
+`CueEngine.output(forScreen:)` lager dem ved første bruk. Krysstoning gjelder bare cuer på samme utgang. Forhåndsvisningen viser bare standardutgangen.
+
 **Video:** bildet spilles dempet; lyden går gjennom lydpatchen som en vanlig avspilling. Lyden er «master»:
 avviker bildet mer enn 0,12 s fra lyden (sjekkes hvert 2. sekund), flyttes bildet. Ved spoling flyttes begge, og synkroniseringen venter 2 s.
 

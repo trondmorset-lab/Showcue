@@ -23,7 +23,7 @@ Both have:
 - Pre-wait, auto-continue and auto-follow
 - Hotkeys and MIDI triggers per cue
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
-- **Audio in video** that goes through the audio patch and stays in sync with the picture
+- **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
 - **Remote control** with OSC in, MIDI in and MSC
 - **Status out over OSC** (e.g. to Companion): next cue, what is playing and time remaining
 - **Dark, grey, light and night themes**, **zoom** and larger text in the cue list, and colour coding of cues

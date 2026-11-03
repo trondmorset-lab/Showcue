@@ -112,7 +112,7 @@ final class AppModel: ObservableObject, ShowControl {
         audio.start(settings)
         engine.configurePreview(settings)
         engine.inputDeviceUID = settings.inputDeviceUID
-        output.configure(screen: settings.videoScreen)
+        engine.setDefaultScreen(settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
         if !settings.lastShowPath.isEmpty, FileManager.default.fileExists(atPath: settings.lastShowPath) {
@@ -348,6 +348,15 @@ final class AppModel: ObservableObject, ShowControl {
 
     /// Programversjonen fra Info.plist (settes fra VERSION-fila når appen bygges).
     static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev" }
+
+    /// Skjul utgangsvinduene (før spørsmål som ellers kunne havne bak et fullskjermvindu). Returnerer dem som var synlige.
+    func hideOutputsForDialog() -> [OutputCompositor] {
+        let visible = engine.allOutputs.filter(\.isVisible)
+        visible.forEach { $0.hide() }
+        return visible
+    }
+
+    func restoreOutputs(_ outputs: [OutputCompositor]) { outputs.forEach { $0.ensureVisible() } }
 
     func confirmDiscard() -> Bool {
         updateDirty()
@@ -823,7 +832,7 @@ final class AppModel: ObservableObject, ShowControl {
         }
         engine.configurePreview(settings)
         engine.inputDeviceUID = settings.inputDeviceUID
-        output.configure(screen: settings.videoScreen)
+        engine.setDefaultScreen(settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
     }

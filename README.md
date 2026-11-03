@@ -23,7 +23,7 @@ Begge har:
 - Pre-wait, auto-continue og auto-follow
 - Hurtigtaster og MIDI-triggere per cue
 - **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
-- **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet
+- **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet, og **valgfri skjerm per cue**
 - **Fjernstyring** med OSC inn, MIDI inn og MSC
 - **Status ut over OSC** (f.eks. til Companion): neste cue, hva som spiller og tid igjen
 - **Mørkt, grått, lyst og nattmodus**, **zoom** og større tekst i cuelista, og fargemerking av cuer

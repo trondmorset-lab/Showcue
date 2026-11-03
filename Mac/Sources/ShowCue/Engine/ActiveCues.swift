@@ -207,6 +207,8 @@ enum CueError: LocalizedError {
 
 class VisualActive: ActiveCue {
     var layers: VisualLayers?
+    /// Utgangen (skjermen) denne cuen vises på.
+    private(set) var out: OutputCompositor!
     var startedAt: Double = 0
     private var finishAt: Double?
 
@@ -216,9 +218,11 @@ class VisualActive: ActiveCue {
         if cue.type == .web {
             guard cue.webURL != nil else { throw NSError(domain: "ShowCue.Web", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Ugyldig adresse: {0}", cue.url)]) }
         } else { try CueError.check(cue.filePath) }
+        out = engine.output(forScreen: cue.outputScreen)
         if cue.replaceOthers {
-            // Krysstoning: de andre fades ut mens denne fades inn.
-            for other in engine.active.compactMap({ $0 as? VisualActive }) where other !== self && other.started && !other.done && !other.isStopping {
+            // Krysstoning: de andre på samme utgang fades ut mens denne fades inn.
+            for other in engine.active.compactMap({ $0 as? VisualActive })
+            where other !== self && other.out === out && other.started && !other.done && !other.isStopping {
                 other.stop(fade: cue.fadeIn > 0 ? cue.fadeIn : other.cue.fadeOut)
             }
         }
@@ -272,7 +276,7 @@ final class StillActive: VisualActive {
         if cue.type == .web, let url = cue.webURL {
             duration = cue.duration
             let c = cue
-            return engine.output.addWeb(url) { msg in c.error = L("Nettside: ") + msg }
+            return out.addWeb(url) { msg in c.error = L("Nettside: ") + msg }
         }
         let page = cue.type == .pdf ? cue.page : 0
         var image = MediaCache.shared.cached(path: cue.filePath, page: page)
@@ -281,7 +285,7 @@ final class StillActive: VisualActive {
             throw CueError.fileMissing(cue.type == .pdf ? L("{0} (side {1})", cue.filePath, cue.page) : cue.filePath)
         }
         duration = cue.duration
-        return engine.output.addImage(img, stretch: cue.stretch)
+        return out.addImage(img, stretch: cue.stretch)
     }
 
     override func tick() {
@@ -341,7 +345,7 @@ final class VideoActive: VisualActive {
         subs = followLiveChanges { [weak self] in self?.audio }
 
         if startTime == 0 { p.play() } // ellers: spol først når fila er klar (itemStatusChanged)
-        return engine.output.addVideo(p, stretch: cue.stretch)
+        return out.addVideo(p, stretch: cue.stretch)
     }
 
     private func itemStatusChanged(_ item: AVPlayerItem) {

@@ -177,4 +177,19 @@ public class CueModelTests
         Assert.Equal(3, CueEngine.NextPlayheadIndex(L((AC, false), (N, true), (N, false), (N, false)), 0));
         Assert.Equal(1, CueEngine.NextPlayheadIndex(L((N, false)), 0));
     }
+
+    [Fact]
+    public void OutputScreenIsSavedPerVisualCue()
+    {
+        var doc = new ShowDocument();
+        doc.Cues.Add(new VideoCue { FilePath = "a.mp4", OutputScreen = 1 });
+        doc.Cues.Add(new ImageCue { FilePath = "b.png" });
+        doc.Cues.Add(new PdfCue { OutputScreen = -1 });
+        var back = JsonSerializer.Deserialize<ShowDocument>(doc.ToJson(), ShowDocument.JsonOptions)!;
+        Assert.Equal(1, ((VideoCue)back.Cues[0]).OutputScreen);
+        Assert.Equal(-2, ((ImageCue)back.Cues[1]).OutputScreen); // standard
+        Assert.Equal(-1, ((PdfCue)back.Cues[2]).OutputScreen);
+        Assert.Equal(-2, new VideoCue { OutputScreen = -99 }.OutputScreen);
+        Assert.Equal(-2, JsonSerializer.Deserialize<ShowDocument>("{\"Cues\":[{\"type\":\"video\"}]}", ShowDocument.JsonOptions)!.Cues.OfType<VideoCue>().Single().OutputScreen);
+    }
 }

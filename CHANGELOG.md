@@ -6,6 +6,20 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.15.0 – 2026-11-03
+
+### Nytt
+- **Skjerm per cue:** video-, bilde-, PDF- og nettside-cuer kan vises på en annen skjerm enn standard (eller i eget vindu).
+  Velg under *Skjerm* i panelet til høyre; *Standard* bruker skjermen fra *Innstillinger → Video*.
+  Krysstoning («Erstatt andre bilder/videoer») gjelder bare cuer på samme skjerm.
+
+### Rettet
+- **Mac: programmet lot seg ikke lukke etter at en video hadde spilt.** Utgangsvinduet holdt appen i gang når hovedvinduet ble
+  lukket, og spørsmål ved avslutning kunne havne bak et utgangsvindu i fullskjerm. Nå avslutter lukking av hovedvinduet programmet
+  (med de vanlige spørsmålene), og utgangsvinduene skjules mens spørsmålene vises.
+- **Windows: sikrere avslutning.** Hvert steg i oppryddingen kjøres for seg, alle utgangsvinduer lukkes, programmet avsluttes når
+  hovedvinduet lukkes, og et sikkerhetsnett avslutter prosessen hvis en lyd- eller videodriver skulle henge.
+
 ## 0.14.0 – 2026-11-03
 
 ### Nytt

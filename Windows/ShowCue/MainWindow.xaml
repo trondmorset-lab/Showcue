@@ -117,6 +117,10 @@
                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Skalering'}" />
                 <ComboBox ItemsSource="{x:Static local:EnumValues.Stretches}" SelectedItem="{Binding Stretch}" ItemTemplate="{StaticResource EnumItem}" />
                 <CheckBox IsChecked="{Binding ReplaceOthers}" Content="{local:T 'Erstatt andre bilder/videoer (krysstoning)'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Skjerm'}" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.OutputScreens}" SelectedValuePath="Key" DisplayMemberPath="Value"
+                          SelectedValue="{Binding OutputScreen}"
+                          ToolTip="{local:T 'Hvilken skjerm cuen vises på. Standard er skjermen under Innstillinger → Video.'}" />
             </StackPanel>
         </DataTemplate>
 

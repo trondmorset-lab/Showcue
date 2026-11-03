@@ -276,6 +276,7 @@ The colours are adapted to each theme (muted in dark and night, pastel in grey a
   Falls back automatically to the Windows default device if the chosen interface is missing. See *Audio patch* above.
 - **OSC in / MIDI in:** see *Remote control* above.
 - **Video/image/PDF output:** choose the screen/projector for full screen, or “Window” for testing on one screen.
+  Each visual cue can also have its own screen (*Screen* in the panel on the right); *Default* uses the screen from here.
   The output is also shown as a preview at the bottom right.
 - Settings and the audio patch are stored per computer in `%AppData%\ShowCue\settings.json`.
 

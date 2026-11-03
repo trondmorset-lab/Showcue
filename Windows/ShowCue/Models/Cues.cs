@@ -228,6 +228,7 @@ public abstract class VisualCue : Cue, IFileCue
     private double _fadeOut = 0.5;
     private bool _replaceOthers = true;
     private VisualStretch _stretch = VisualStretch.Uniform;
+    private int _outputScreen = -2;
 
     public string FilePath { get => _filePath; set => SetCue(ref _filePath, value ?? ""); }
     public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Seconds(value)); }
@@ -235,6 +236,8 @@ public abstract class VisualCue : Cue, IFileCue
     /// <summary>Når cuen starter, fades andre bilder/videoer ut (krysstoning).</summary>
     public bool ReplaceOthers { get => _replaceOthers; set => SetCue(ref _replaceOthers, value); }
     public VisualStretch Stretch { get => _stretch; set => SetCue(ref _stretch, value); }
+    /// <summary>Skjermen cuen vises på: −2 = standard (innstillingene), −1 = eget vindu, 0… = skjerm.</summary>
+    public int OutputScreen { get => _outputScreen; set => SetCue(ref _outputScreen, Range(value, -2, 15)); }
 
     protected override string DefaultName => NameFromFile(FilePath);
 }
