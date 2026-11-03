@@ -112,4 +112,42 @@ public class PlaybackTests
         Assert.Contains("slipp loop", back.Cues[2].Summary);
         Assert.Equal(0, back.Cues[2].Duration);
     }
+
+    [Fact]
+    public void SeekJumpsWhilePlayingAndWhilePaused()
+    {
+        var pb = new CuePlayback(new AudioCue { FilePath = Ramp }, 48000);
+        _mixer.Add(pb);
+        Run(_mixer, 4800);
+        pb.Seek(2.0);
+        var o = Run(_mixer, 100);
+        Near((2.0 + 50 / 48000.0) / 10, At(o, 8, 50, 1), 0.001);
+        Near(3.0, pb.SeekLength, 0.001);
+
+        pb.Pause();
+        pb.Seek(0.5);
+        Run(_mixer, 480);
+        Near(0.5, pb.PassPosition, 0.001); // spolingen skjer også under pause
+        pb.Resume();
+        o = Run(_mixer, 100);
+        Near((0.5 + 50 / 48000.0) / 10, At(o, 8, 50, 1), 0.001);
+
+        pb.Seek(99); // forbi slutten: hopper til slutten, og cuen blir ferdig
+        Run(_mixer, 64);
+        Assert.True(pb.IsFinished);
+    }
+
+    [Fact]
+    public void SeekingBackOutOfTheAutoFadeRestoresTheLevel()
+    {
+        var pb = new CuePlayback(new AudioCue { FilePath = Ramp, FadeOut = 1 }, 48000);
+        _mixer.Add(pb);
+        pb.Seek(2.5); // inne i fade ut-en mot slutten
+        Run(_mixer, 48000 / 4);
+        pb.Seek(0.5);
+        Run(_mixer, 48000 / 10); // kort rampe tilbake til fullt nivå
+        var o = Run(_mixer, 100);
+        Near((0.6 + 50 / 48000.0) / 10, At(o, 8, 50, 1), 0.002);
+        pb.Stop(0); Run(_mixer, 64);
+    }
 }

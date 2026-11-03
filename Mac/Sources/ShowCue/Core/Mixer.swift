@@ -244,6 +244,7 @@ final class Voice: BusSource {
     private var rampLeft = 0
     private var stopAfterRamp = false
     private var autoFadeStarted = false
+    private var levelBeforeAutoFade = 0.0
     private var finished = false
     private var finishedReported = false
     private(set) var totalFrames = 0
@@ -288,6 +289,15 @@ final class Voice: BusSource {
 
     func fadeTo(_ db: Double, seconds: Double, stopWhenDone: Bool, curve: FadeCurve = .db) {
         lock.locked { beginRamp(db <= -60 ? Voice.silenceDb : db, seconds, stop: stopWhenDone, curve: curve) }
+    }
+
+    /// Kilden er spolt til `passFrame`. Spolt tilbake fra den automatiske fade-ut-en: tilbake til nivået før faden.
+    func didSeek(to passFrame: Int) {
+        lock.locked {
+            guard autoFadeStarted, !stopAfterRamp, let len = source.passLength, len - passFrame > autoFadeOutFrames else { return }
+            autoFadeStarted = false
+            beginRamp(levelBeforeAutoFade, 0.05, stop: false)
+        }
     }
 
     /// Pause: lyden holder på der den er (også fader) til `resume()`.
@@ -338,6 +348,7 @@ final class Voice: BusSource {
         for f in 0..<got {
             if autoFadeOutFrames > 0, !autoFadeStarted, let len = passLen, len - (passPos + f) <= autoFadeOutFrames {
                 autoFadeStarted = true
+                levelBeforeAutoFade = targetDb
                 beginRamp(Voice.silenceDb, Double(len - (passPos + f)) / sampleRate, stop: false)
             }
             if rampLeft > 0 {
@@ -415,11 +426,11 @@ final class SampleRing {
         }
     }
 
-    /// Tøm (ved rewind). Neste skrevne ramme er starten på en ny runde.
-    func reset() {
+    /// Tøm (ved rewind eller spoling). Neste skrevne ramme er ramme `passOffset` i runden.
+    func reset(passOffset: Int = 0) {
         lock.locked {
             readIdx = writeIdx; count = 0
-            readTotal = writtenTotal; passStart = writtenTotal
+            readTotal = writtenTotal; passStart = writtenTotal - passOffset
             boundaries.removeAll(); ended = false
         }
     }

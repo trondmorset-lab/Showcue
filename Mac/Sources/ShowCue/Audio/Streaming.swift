@@ -254,6 +254,28 @@ final class StreamingSource: PcmSource {
 
     func read(_ dst: UnsafeMutablePointer<Float>, frames: Int) -> Int { ring.read(dst, frames: frames) }
 
+    /// Lengden som kan spoles i (rammer): runden, eller resten av fila. 0 = ukjent.
+    var seekLength: Int {
+        if let pl = passLength { return pl }
+        return frameCount(decoder.duration - startTime, sampleRate)
+    }
+
+    /// Spol til en ramme i runden mens det spiller. Returnerer rammen det ble spolt til.
+    @discardableResult
+    func seek(toFrame frame: Int) -> Int {
+        let len = seekLength
+        let f = len > 0 ? min(max(0, frame), len - 1) : max(0, frame)
+        lock.locked {
+            rewindRequested = false
+            ring.reset(passOffset: f)
+            decoder.seek(to: startTime + Double(f) / sampleRate)
+            decodedInPass = f
+            doneDecoding = false
+        }
+        fill(minimumFrames: Int(0.2 * sampleRate)) // ha lyd klar med en gang
+        return f
+    }
+
     /// Hopp tilbake til start (brukes når en video looper). Utføres av dekodertråden.
     func requestRewind() { lock.locked { rewindRequested = true } }
 

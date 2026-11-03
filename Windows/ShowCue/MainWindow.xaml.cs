@@ -672,9 +672,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var target = SelectedCue;
         List<Cue> list = type switch
         {
-            "audio" or "video" or "image" or "pdf" => PickFiles(FilterFor(type), true).Select(CreateCueForFile).OfType<Cue>().ToList(),
-            "playlist" => PickFiles(FilterFor("audio"), true).ToList() is { Count: > 0 } files
-                ? new() { new PlaylistCue { Files = files, FileChannels = MaxChannels(files) } } : new(),
+            // Media-cuer lages tomme; fila velges i panelet til høyre (Bla), eller ved å dra en fil inn på cuen.
+            "audio" => new() { new AudioCue() },
+            "video" => new() { new VideoCue() },
+            "image" => new() { new ImageCue() },
+            "pdf" => new() { new PdfCue() },
+            "playlist" => new() { new PlaylistCue() },
             "goto" => new() { new GotoCue() },
             "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
             "stop" => new() { new StopCue() },
@@ -803,12 +806,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         if (!IsEditable) return;
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+        var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
+
+        // Én fil sluppet på en media-cue uten fil (av samme type): gi cuen fila.
+        if (files.Length == 1 && row?.Item is IFileCue { FilePath: "" } empty && CreateCueForFile(files[0])?.GetType() == empty.GetType())
+        {
+            empty.FilePath = files[0];
+            StatusText = Loc.F("La fila inn i cue {0}.", ((Cue)empty).Number);
+            return;
+        }
         var cues = files.OrderBy(f => f, StringComparer.CurrentCultureIgnoreCase).Select(CreateCueForFile).OfType<Cue>().ToList();
         if (cues.Count == 0) { StatusText = Loc.T("Ingen støttede filer i det du slapp."); return; }
 
         // Sett inn under raden det ble sluppet på, ellers nederst.
         int at = Cues.Count;
-        var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
         if (row?.Item is Cue c) at = Cues.IndexOf(c) + 1;
         InsertCues(cues, at);
         StatusText = Loc.F("La til {0} cue(s).", cues.Count);
@@ -878,6 +889,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Panic_Click(object sender, RoutedEventArgs e) => Panic();
     private void TestCue_Click(object sender, RoutedEventArgs e) { CommitFocusedTextBox(); if (SelectedCue != null) Engine.Fire(SelectedCue); }
     private void StopSelected_Click(object sender, RoutedEventArgs e) { if (SelectedCue != null) Engine.Stop(SelectedCue, FadeOutOf(SelectedCue)); }
+
+    private void SeekActive_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ActiveCue a, Tag: string t })
+            a.Nudge(double.Parse(t, CultureInfo.InvariantCulture));
+    }
 
     private void StopActive_Click(object sender, RoutedEventArgs e)
     {

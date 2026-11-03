@@ -6,6 +6,15 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.14.0 – 2026-11-03
+
+### Nytt
+- **Spoling i sanntid:** lyd- og video-cuer som spiller har en spolelinje under *Aktive cuer*. Dra for å spole,
+  eller hopp 5 sekunder med ⏪ / ⏩. Bilde og lyd i video følger hverandre, og det virker også under pause.
+  Spoler du tilbake fra den automatiske fade ut-en mot slutten, kommer nivået tilbake.
+- **Media-cuer uten fil:** *＋ Media* lager en tom lyd-, video-, bilde-, PDF- eller spilleliste-cue med en gang.
+  Velg fila senere med *Bla*, eller slipp en fil på cuen. En cue uten fil viser «Ingen fil valgt» hvis den kjøres.
+
 ## 0.13.1 – 2026-11-03
 
 ### Rettet

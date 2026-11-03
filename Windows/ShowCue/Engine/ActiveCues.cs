@@ -38,8 +38,45 @@ public abstract class ActiveCue : ObservableObject
     public string RemainingText => Started && Duration > 0 ? "-" + TimeFormat.Format(Math.Max(0, Duration - Elapsed)) : (Started ? "∞" : "");
     public string StateText => !Started ? Loc.T("Pre-wait") : IsStopping ? Loc.T("Fader ut") : Loc.T("Spiller");
 
+    // ---- Spoling (lyd og video som spiller) ----
+
+    /// <summary>Kan spoles i nå (lyd og video som spiller og ikke er på vei ut).</summary>
+    public virtual bool CanSeek => false;
+    /// <summary>Lengden som kan spoles i (sekunder).</summary>
+    public virtual double SeekLength => Duration;
+    /// <summary>Posisjonen i runden (sekunder fra startpunktet).</summary>
+    public virtual double SeekPosition => Elapsed;
+    public virtual void Seek(double seconds) { }
+
+    private double _scrubTarget = -1, _scrubAt;
+
+    /// <summary>For spolelinja: posisjonen nå, og spoler når den settes (dras). Rett etter en spoling vises målet,
+    /// så håndtaket ikke hopper tilbake før lyden har kommet dit.</summary>
+    public double ScrubPosition
+    {
+        get => _scrubTarget >= 0 && Environment.TickCount64 / 1000.0 - _scrubAt < 0.3 ? _scrubTarget : SeekPosition;
+        set
+        {
+            if (!CanSeek || Math.Abs(value - SeekPosition) <= 0.05) return;
+            Seek(value);
+            _scrubTarget = value;
+            _scrubAt = Environment.TickCount64 / 1000.0;
+        }
+    }
+
+    /// <summary>Hopp fram eller tilbake (sekunder).</summary>
+    public void Nudge(double seconds)
+    {
+        if (!CanSeek) return;
+        var to = SeekPosition + seconds;
+        Seek(SeekLength > 0 ? Math.Clamp(to, 0, Math.Max(0, SeekLength - 0.1)) : Math.Max(0, to));
+    }
+
     private void RaiseTime()
     {
+        OnPropertyChanged(nameof(ScrubPosition));
+        OnPropertyChanged(nameof(SeekLength));
+        OnPropertyChanged(nameof(CanSeek));
         OnPropertyChanged(nameof(Progress));
         OnPropertyChanged(nameof(HasDuration));
         OnPropertyChanged(nameof(ElapsedText));
@@ -165,6 +202,7 @@ public sealed class AudioActive : PlaybackActive
 
     protected override CuePlayback Start()
     {
+        if (string.IsNullOrEmpty(AudioCue.FilePath)) throw new InvalidOperationException(Loc.T("Ingen fil valgt"));
         if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException(Loc.T("Lydfila finnes ikke: ") + AudioCue.FilePath);
         var pb = Engine.Audio.Play(AudioCue, StartOffset);
         Duration = AudioCue.Loop ? 0 : pb.PassLength;
@@ -178,6 +216,11 @@ public sealed class AudioActive : PlaybackActive
         base.Tick();
         if (Pb != null) Elapsed = AudioCue.Loop ? Pb.Elapsed : Pb.PassPosition;
     }
+
+    public override bool CanSeek => Pb != null && Started && !Done && !IsStopping && Pb.SeekLength > 0;
+    public override double SeekLength => Pb?.SeekLength ?? 0;
+    public override double SeekPosition => Pb?.PassPosition ?? 0;
+    public override void Seek(double seconds) => Pb?.Seek(seconds);
 
     public override bool Release()
     {
@@ -204,6 +247,7 @@ public abstract class VisualActive : ActiveCue
     protected override void OnBegin()
     {
         if (VCue is WebCue w) { if (w.ValidUri == null) throw new InvalidOperationException(Loc.T("Ugyldig adresse: ") + w.Url); }
+        else if (string.IsNullOrEmpty(VCue.FilePath)) throw new InvalidOperationException(Loc.T("Ingen fil valgt"));
         else if (!File.Exists(VCue.FilePath)) throw new FileNotFoundException(Loc.T("Fila finnes ikke: ") + VCue.FilePath);
         var host = Engine.EnsureOutput();
 
@@ -400,7 +444,7 @@ public sealed class VideoActive : VisualActive
             Stretch = ToStretch(VidCue.Stretch),
             IsMuted = true,
             Volume = 0,
-            ScrubbingEnabled = false,
+            ScrubbingEnabled = true, // viser riktig bilde når man spoler under pause
         };
         PrepareAudio();
 
@@ -509,6 +553,19 @@ public sealed class VideoActive : VisualActive
     {
         base.ApplyFade(fade);
         if (fade.FadeAudio) _audio?.FadeTo(fade.TargetDb, fade.FadeTime, false, fade.Curve);
+    }
+
+    public override bool CanSeek => _media != null && Started && !Done && !IsStopping && SeekLength > 0;
+    public override double SeekLength => Duration > 0 ? Duration
+        : (EndPoint > 0 ? EndPoint : VidCue.KnownDuration) is var end && end > Begin ? end - Begin : 0;
+    public override void Seek(double seconds)
+    {
+        if (_media == null || !double.IsFinite(seconds)) return;
+        seconds = Math.Clamp(seconds, 0, Math.Max(0, SeekLength - 0.05));
+        _media.Position = TimeSpan.FromSeconds(Begin + seconds);
+        _audio?.Seek(seconds);
+        _lastResync = Engine.Now; // gi bilde og lyd tid til å finne hverandre igjen
+        Elapsed = seconds;
     }
 
     public override void Pause() { _media?.Pause(); _audio?.Pause(); }

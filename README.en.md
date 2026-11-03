@@ -18,7 +18,7 @@ Both have:
 - Cues for audio, video, image, PDF, web page, fade, stop, OSC, MIDI, playlist, “go to”, message and network (UDP/TCP/HTTP)
 - **Timecode** (MTC/LTC out, MTC triggers in), **lighting over Art-Net** and **live input** through the audio patch
 - **Button panel** with large buttons (jingles, effects, touch screens), **loudness normalisation** (LUFS) and **find/collect media files**
-- **Pause/resume all**, release loop (devamp), start from the cursor and fade curves
+- **Pause/resume all**, **real-time scrubbing** in audio and video while playing, release loop (devamp), start from the cursor and fade curves
 - **Start and end with waveform**, zoom and preview through the audio patch
 - Pre-wait, auto-continue and auto-follow
 - Hotkeys and MIDI triggers per cue

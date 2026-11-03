@@ -21,6 +21,8 @@ public sealed class CuePlayback : IBusSource, IDisposable
     private readonly WaveStream _reader;
     private readonly ISampleProvider _source;
     private volatile bool _rewindRequested;
+    private long _seekRequest = -1;           // ramme i runden å spole til, -1 = ingen
+    private double _levelBeforeAutoFade;
     private volatile bool _releaseRequested;
     private volatile bool _paused;
     private readonly int _srcCh;
@@ -180,6 +182,19 @@ public sealed class CuePlayback : IBusSource, IDisposable
     /// <summary>Hopp tilbake til start (trådsikkert; utføres på lydtråden). Brukes når en video looper.</summary>
     public void RequestRewind() => _rewindRequested = true;
 
+    /// <summary>Spol til en posisjon i runden (sekunder fra startpunktet) mens det spiller. Utføres av lydtråden.</summary>
+    public void Seek(double seconds)
+    {
+        if (!double.IsFinite(seconds)) return;
+        var len = _framesPerPass != long.MaxValue ? _framesPerPass : _framesToFileEnd;
+        long f = (long)(Math.Clamp(seconds, 0, 86400) * _rate);
+        if (len != long.MaxValue && len > 0) f = Math.Min(f, Math.Max(0, len - 1));
+        Interlocked.Exchange(ref _seekRequest, f);
+    }
+
+    /// <summary>Lengden som kan spoles i (sekunder), 0 = ukjent.</summary>
+    public double SeekLength => (_framesPerPass != long.MaxValue ? _framesPerPass : _framesToFileEnd) is var l && l != long.MaxValue ? l / (double)_rate : 0;
+
     /// <summary>Slipp loopen («devamp»): runden som spiller fullføres, så spilles resten av fila til slutt.</summary>
     public void ReleaseLoop() => _releaseRequested = true;
     public bool IsLooping => _loop && !_releaseRequested;
@@ -192,8 +207,10 @@ public sealed class CuePlayback : IBusSource, IDisposable
     public bool Render(float[] bus, int frames, int busCount)
     {
         if (_finished) { RaiseFinished(); return false; }
-        if (_paused) return true;
         if (_rewindRequested) { _rewindRequested = false; Rewind(); }
+        var seek = Interlocked.Exchange(ref _seekRequest, -1);
+        if (seek >= 0) SeekTo(seek); // også under pause, så man kan finne riktig sted før man fortsetter
+        if (_paused) return true;
         if (_releaseRequested)
         {
             _releaseRequested = false;
@@ -248,6 +265,7 @@ public sealed class CuePlayback : IBusSource, IDisposable
                     _framesPerPass - (_passFrames + f) <= _fadeOutFrames)
                 {
                     _autoFadeStarted = true;
+                    _levelBeforeAutoFade = _targetDb;
                     BeginRamp(SilenceDb, (_framesPerPass - (_passFrames + f)) / (double)_rate, false);
                 }
 
@@ -277,6 +295,21 @@ public sealed class CuePlayback : IBusSource, IDisposable
                 }
             }
             return frames;
+        }
+    }
+
+    private void SeekTo(long frame)
+    {
+        _reader.CurrentTime = TimeSpan.FromSeconds(_startTime + frame / (double)_rate);
+        Interlocked.Exchange(ref _passFrames, frame);
+        lock (_lock)
+        {
+            // Spolt tilbake fra den automatiske fade-ut-en mot slutten: tilbake til nivået før faden.
+            if (_autoFadeStarted && !_stopAfterRamp && _framesPerPass - frame > _fadeOutFrames)
+            {
+                _autoFadeStarted = false;
+                BeginRamp(_levelBeforeAutoFade, 0.05, false);
+            }
         }
     }
 

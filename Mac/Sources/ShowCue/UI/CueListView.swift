@@ -26,7 +26,7 @@ struct CueListView: View {
                             CueRow(cue: cue, index: i, selected: model.selection.contains(cue.id))
                                 .id(cue.id)
                                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                                    loadURLs(providers) { model.addFiles($0, at: i + 1) }
+                                    loadURLs(providers) { model.dropFiles($0, on: cue, index: i) }
                                     return true
                                 }
                         }

@@ -42,6 +42,29 @@ final class PlaybackTests: XCTestCase {
         v.stop(fade: 0); _ = m.renderInterleaved(frames: 64)
     }
 
+    func testSeekJumpsWhilePlaying() {
+        let src = StreamingSource(decoder: RampDecoder(), sampleRate: rate, startTime: 0, endTime: 0, loop: false)
+        src.fill()
+        var buf = [Float](repeating: 0, count: 4800 * 2)
+        XCTAssertEqual(src.read(&buf, frames: 4800), 4800)
+        XCTAssertEqual(src.seekLength, Int(3 * rate))
+        XCTAssertEqual(src.seek(toFrame: Int(2 * rate)), Int(2 * rate))
+        XCTAssertEqual(src.passPosition, Int(2 * rate), "posisjonen i runden følger spolingen")
+        XCTAssertEqual(src.read(&buf, frames: 100), 100)
+        XCTAssertEqual(Double(buf[50 * 2]), (2.0 + 50 / rate) / 10, accuracy: 0.001)
+        XCTAssertEqual(src.seek(toFrame: Int(99 * rate)), Int(3 * rate) - 1, "forbi slutten: siste ramme")
+    }
+
+    func testSeekInsideALoopStaysInTheLoop() {
+        let src = StreamingSource(decoder: RampDecoder(), sampleRate: rate, startTime: 0.5, endTime: 1.0, loop: true, bufferSeconds: 4)
+        src.fill()
+        XCTAssertEqual(src.seek(toFrame: Int(0.4 * rate)), Int(0.4 * rate))
+        var buf = [Float](repeating: 0, count: 100 * 2)
+        XCTAssertEqual(src.read(&buf, frames: 100), 100)
+        XCTAssertEqual(Double(buf[50 * 2]), (0.9 + 50 / rate) / 10, accuracy: 0.001)
+        XCTAssertTrue(src.isLooping)
+    }
+
     func testReleaseLoopPlaysToTheEndOfTheFile() {
         let src = StreamingSource(decoder: RampDecoder(), sampleRate: rate, startTime: 0.5, endTime: 1.0, loop: true, bufferSeconds: 4)
         XCTAssertTrue(src.isLooping)

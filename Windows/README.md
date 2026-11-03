@@ -168,7 +168,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+L** | Showmodus av/på |
 | **Enter** (i et felt) | Bekreft og gå tilbake til lista |
 
-- **Dra filer** fra Utforsker rett inn i cuelista.
+- **Dra filer** fra Utforsker rett inn i cuelista. Slipper du én fil på en media-cue uten fil, får cuen fila.
+- **＋ Media** lager en tom cue (lyd, video, bilde, PDF, spilleliste); velg fila senere med *Bla* i panelet til høyre.
 - **Dobbeltklikk** en cue for å teste den uten å flytte markøren.
 - Hurtigtaster på lyd/bilde/video fungerer som av/på: trykk én gang for å starte, én gang til for å stoppe (med cuens fade ut).
 - F-tastene virker også mens du skriver i et felt; bokstaver og tall gjør det ikke.
@@ -182,6 +183,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
 - **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
   runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.
+- **Spoling mens det spiller:** lyd- og video-cuer under *Aktive cuer* har en spolelinje. Dra i den for å spole i
+  sanntid, eller hopp 5 sekunder med ⏪ / ⏩. Bilde og lyd i en video følger hverandre. Virker også under pause.
 - **Kjør herfra:** knappen under bølgeformen starter cuen fra den blå markøren, på de vanlige utgangene – nyttig på prøver.
 - **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
   *lineær amplitude* (som en fysisk fader).
