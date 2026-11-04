@@ -15,6 +15,11 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
   Lysbildene krysstones, serien kan starte forfra etter siste lysbilde (loop) og spilles i tilfeldig rekkefølge.
   Slå av *Bytt automatisk* for å bla manuelt.
 - **Bla i lysbildeserien:** ⏮ / ⏭ under *Aktive cuer*, eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`.
+- **Skjermbilder i manualene** (README for Windows og Mac, norsk og engelsk), tatt av programmet selv.
+
+### Rettet
+- **Windows: nedtrekkslister** for lydenhet, skjerm og MIDI-kanal viste «[nøkkel, navn]» i stedet for bare navnet når de var lukket.
+- **Typekolonnen i cuelista** er bredere, så «Lysbildeserie», «Spilleliste» og «Beskjed» ikke kuttes (Mac: ikke delt over to linjer).
 
 ## 0.15.0 – 2026-11-03
 

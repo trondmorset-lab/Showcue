@@ -37,6 +37,14 @@ Begge har:
 Showfiler (`.showcue`) kan flyttes fritt mellom Mac og Windows. Legg mediefilene i samme mappe som showet,
 eller i en undermappe `Media`.
 
+## Skjermbilder
+
+![ShowCue på Mac: cueliste, panel for valgt cue, aktive cuer med lysbildeserie, hurtigtaster og utgang](docs/skjermbilder/mac/nb/hovedvindu.png)
+
+| Windows | Lyst tema |
+|---|---|
+| ![ShowCue på Windows](docs/skjermbilder/windows/nb/hovedvindu.png) | ![ShowCue med lyst tema](docs/skjermbilder/mac/nb/hovedvindu-lyst.png) |
+
 ## Last ned
 
 Ferdige programmer ligger under **Releases** på GitHub:

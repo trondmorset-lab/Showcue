@@ -5,6 +5,8 @@
 Cue-basert avspillingsprogram for Windows. Laget for konsert og event:
 GO-knapp med cueliste, hurtigtaster for jingler og walk-in, og utgang til projektor.
 
+![Hovedvinduet: GO og neste cue øverst, cuelista med panelet for valgt cue til høyre, og aktive cuer, hurtigtaster og utgang nederst](../docs/skjermbilder/windows/nb/hovedvindu.png)
+
 ## Bygge programmet
 
 1. Installer **.NET 10 SDK** (ikke bare runtime): https://dotnet.microsoft.com/download/dotnet/10.0
@@ -195,6 +197,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Fadekurver:** fade-cuer kan bruke *jevn* (lineær i dB, standard), *S-kurve* (myk start og slutt) eller
   *lineær amplitude* (som en fysisk fader).
 
+![Lysbildeserien valgt: filene i rekkefølge, tid per bilde og krysstoning. Under *Aktive cuer* blas det med ⏮ / ⏭](../docs/skjermbilder/windows/nb/lysbildeserie.png)
+
 ## Verktøylinja
 
 | Meny | Innhold |
@@ -276,6 +280,8 @@ Begge finnes også under *Innstillinger → Utseende* og huskes til neste gang.
 og hurtigknappen får en fargestripe. Velg flere cuer for å farge alle på én gang.
 Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i grå og lys).
 
+![Lyst tema](../docs/skjermbilder/windows/nb/hovedvindu-lyst.png)
+
 ## Innstillinger
 
 - **Lyd:** WASAPI (vanlige lydkort, USB og nettverkslydkort i WDM-modus) eller **ASIO** (proffe lydkort og nettverkslydkort).
@@ -285,6 +291,8 @@ Farger er tilpasset hvert tema (dempet i mørk og natt, pastell i grå og lys).
   Hver visuell cue kan også få sin egen skjerm (*Skjerm* i panelet til høyre); *Standard* bruker skjermen herfra.
   Utgangen vises også som forhåndsvisning nede til høyre.
 - Innstillinger og lydpatch lagres per maskin i `%AppData%\ShowCue\settings.json`.
+
+<img src="../docs/skjermbilder/windows/nb/innstillinger.png" width="480" alt="Innstillinger → Lyd">
 
 ## Showfiler
 
