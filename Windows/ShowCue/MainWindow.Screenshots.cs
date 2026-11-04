@@ -1,8 +1,10 @@
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ShowCue.Models;
@@ -31,16 +33,17 @@ public partial class MainWindow
         try
         {
             Directory.CreateDirectory(dir);
-            var media = Path.Combine(Path.GetTempPath(), "ShowCue-demo", "Media");
+            var media = Path.Combine(Path.GetPathRoot(Path.GetTempPath()) ?? "C:\\", "Show", "Media");
             Directory.CreateDirectory(media);
             var doc = BuildDemoShow(media);
             SetShow(doc, Path.Combine(Path.GetDirectoryName(media)!, Demo("Vårkonsert", "Spring concert") + ".showcue"));
             // Video og PDF i demoen er bare navn (filene lages ikke); de skal ikke vises som manglende.
             foreach (var c in Cues) c.Error = null;
             StatusText = "";
+            AllowLargerThanScreen(this);
             WindowState = WindowState.Normal;
-            Width = 1440; Height = 900;
             Left = 0; Top = 0;
+            Width = 1440; Height = 900;
 
             // Lysbildeserien og innslippsmusikken spiller, så «Aktive cuer» og utgangen viser noe.
             var slides = Cues.OfType<SlideshowCue>().First();
@@ -67,11 +70,13 @@ public partial class MainWindow
             SelectedCue = Cues.OfType<AudioCue>().Skip(1).First();
 
             var patch = new PatchWindow(Engine.Audio, _settings.Buses, () => { }) { Owner = this, Left = 0, Top = 0 };
+            AllowLargerThanScreen(patch);
             patch.Show();
             await Shot(patch, Path.Combine(dir, "lydpatch.png"), log);
             patch.Close();
 
             var settings = new SettingsWindow(_settings.Copy(), Remote) { Owner = this, Left = 0, Top = 0 };
+            AllowLargerThanScreen(settings);
             settings.Show();
             await Shot(settings, Path.Combine(dir, "innstillinger.png"), log);
             settings.Close();
@@ -84,16 +89,43 @@ public partial class MainWindow
         Environment.Exit(0);
     }
 
+    /// <summary>
+    /// Lar vinduet bli større enn skjermen (som er liten på byggemaskinene), så bildene får vanlig vindusstørrelse.
+    /// </summary>
+    private static void AllowLargerThanScreen(Window w)
+    {
+        var source = HwndSource.FromHwnd(new WindowInteropHelper(w).EnsureHandle());
+        source?.AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+        {
+            const int WM_GETMINMAXINFO = 0x0024;
+            if (msg == WM_GETMINMAXINFO)
+            {
+                var info = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+                info.MaxTrackX = info.MaxTrackY = 8000;
+                Marshal.StructureToPtr(info, lParam, false);
+                handled = true;
+            }
+            return IntPtr.Zero;
+        });
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public int ReservedX, ReservedY, MaxSizeX, MaxSizeY, MaxPositionX, MaxPositionY, MinTrackX, MinTrackY, MaxTrackX, MaxTrackY;
+    }
+
     /// <summary>Venter til vinduet er tegnet ferdig, og lagrer innholdet som PNG (2x oppløsning).</summary>
     private static async Task Shot(Window w, string file, List<string> log)
     {
+        if (w.Content is not FrameworkElement root) return;
+        var m = root.Margin;
         try
         {
             await Task.Delay(1200);
             await w.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             w.UpdateLayout();
-            if (w.Content is not FrameworkElement root) return;
-            var size = new Size(root.ActualWidth, root.ActualHeight);
+            var size = new Size(root.ActualWidth + m.Left + m.Right, root.ActualHeight + m.Top + m.Bottom);
             var bmp = new RenderTargetBitmap((int)(size.Width * ShotScale), (int)(size.Height * ShotScale),
                 96 * ShotScale, 96 * ShotScale, PixelFormats.Pbgra32);
             var bg = new DrawingVisual();
@@ -138,7 +170,7 @@ public partial class MainWindow
         Add(new MemoCue { Name = Demo("Vent på konferansier", "Wait for the host"), Text = Demo("Vent på at konferansier går av scenen", "Wait for the host to leave the stage") });
         Add(new VideoCue { FilePath = Path.Combine(media, Demo("aapning.mp4", "opening.mp4")), Name = Demo("Åpningsvideo", "Opening video"), KnownDuration = 92.4, FileChannels = 2, Color = CueColor.Blue });
         Add(new OscCue { Name = Demo("Lys: åpning", "Lights: opening"), Host = "192.168.1.50", Port = 8000, Address = "/lys/cue/1", PreWait = 2, Color = CueColor.Orange });
-        Add(new SlideshowCue { Name = Demo("Program og sponsorer", "Programme and sponsors"), Files = slides, SlideTime = 6, Color = CueColor.Purple });
+        Add(new SlideshowCue { Name = Demo("Program og sponsorer", "Programme and sponsors"), Files = slides, SlideTime = 30, Color = CueColor.Purple });
         Add(new PdfCue { FilePath = Path.Combine(media, Demo("sangtekster.pdf", "lyrics.pdf")), Name = Demo("Sangtekst – vers 1", "Lyrics – verse 1"), Page = 1 });
         Add(new AudioCue { Name = Demo("Applaus", "Applause"), FilePath = Wav(Demo("applaus.wav", "applause.wav"), 6.8, 330), Hotkey = "F2", FadeOut = 1, Color = CueColor.Yellow });
         Add(new PlaylistCue { Name = Demo("Pausemusikk", "Interval music"), Files = new() { Wav("pause-1.wav", 30, 196), Wav("pause-2.wav", 30, 247), Wav("pause-3.wav", 30, 262) }, Hotkey = "F3", Crossfade = 3 });

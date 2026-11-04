@@ -24,7 +24,7 @@ enum Screenshots {
 
     static func run(_ model: AppModel, dir: URL) {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let media = FileManager.default.temporaryDirectory.appendingPathComponent("ShowCue-demo/Media")
+        let media = URL(fileURLWithPath: "/Users/Shared/Show/Media")
         try? FileManager.default.createDirectory(at: media, withIntermediateDirectories: true)
         var doc = ShowDocument()
         doc.cues = demoCues(media)
@@ -44,20 +44,19 @@ enum Screenshots {
                 if let e = audioCues[0].error { log.append("lyd: " + e); model.engine.stop(audioCues[0], fade: 0) }
                 model.cues.forEach { $0.error = nil }
                 model.statusText = ""
-                if let w = MainWindowCloser.shared.window {
-                    w.setFrame(NSRect(x: 0, y: 0, width: 1440, height: 900), display: true)
-                    w.makeKeyAndOrderFront(nil)
-                }
+                MainWindowCloser.shared.window?.orderOut(nil)
                 model.select(audioCues[1])
+                // Eget vindu i fast størrelse (et vanlig vindu krympes til skjermen, som er liten på byggemaskinene).
+                window(model, title: model.windowTitle, size: NSSize(width: 1440, height: 872)) { MainView() }
             }),
-            (1.5, { shoot(MainWindowCloser.shared.window, dir, "hovedvindu") }),
+            (2.0, { shoot(windows.first, dir, "hovedvindu") }),
             (0.1, { model.select(slides) }),
-            (1.5, { shoot(MainWindowCloser.shared.window, dir, "lysbildeserie") }),
+            (1.5, { shoot(windows.first, dir, "lysbildeserie") }),
             (0.1, {
                 model.settings.theme = .light
                 model.select(model.cues.first { $0.type == .video })
             }),
-            (1.5, { shoot(MainWindowCloser.shared.window, dir, "hovedvindu-lyst") }),
+            (1.5, { shoot(windows.first, dir, "hovedvindu-lyst") }),
             (0.1, {
                 model.settings.theme = .dark
                 model.select(audioCues[1])
@@ -85,16 +84,23 @@ enum Screenshots {
             .environmentObject(model.audio)
             .environmentObject(model.output)
             .frame(width: size.width, height: size.height)
-        let w = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let w = FixedSizeWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                                backing: .buffered, defer: false)
         w.title = title
         w.isReleasedWhenClosed = false
         w.contentView = NSHostingView(rootView: root)
-        w.setFrameOrigin(NSPoint(x: 40, y: 40))
+        w.setFrameOrigin(NSPoint(x: 0, y: 0))
         w.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
         windows.append(w)
     }
 
-    /// Lagrer vinduet som PNG: tegnet av appen selv (med tittellinje), og som skjermbilde fra systemet hvis det er tillatt.
+    /// Lagrer vinduet (med tittellinje) som PNG i dobbel oppløsning, tegnet av appen selv.
+    /// Vindu som ikke krympes til skjermen.
+    private final class FixedSizeWindow: NSWindow {
+        override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+    }
+
     private static func shoot(_ w: NSWindow?, _ dir: URL, _ name: String) {
         guard let w, let content = w.contentView else { log.append(name + ": fant ikke vinduet"); return }
         let view = content.superview ?? content
@@ -109,10 +115,6 @@ enum Screenshots {
                 log.append("\(name): \(rep.pixelsWide)x\(rep.pixelsHigh)")
             }
         }
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        p.arguments = ["-x", "-o", "-l\(w.windowNumber)", dir.appendingPathComponent(name + "-system.png").path]
-        do { try p.run(); p.waitUntilExit() } catch { log.append(name + " (system): \(error.localizedDescription)") }
     }
 
     private static func demoCues(_ media: URL) -> [Cue] {
@@ -142,7 +144,7 @@ enum Screenshots {
         add(.memo) { $0.name = demo("Vent på konferansier", "Wait for the host"); $0.text = demo("Vent på at konferansier går av scenen", "Wait for the host to leave the stage") }
         add(.video) { $0.name = demo("Åpningsvideo", "Opening video"); $0.filePath = media.appendingPathComponent(demo("aapning.mp4", "opening.mp4")).path; $0.knownDuration = 92.4; $0.fileChannels = 2; $0.color = .blue }
         add(.osc) { $0.name = demo("Lys: åpning", "Lights: opening"); $0.host = "192.168.1.50"; $0.port = 8000; $0.address = "/lys/cue/1"; $0.preWait = 2; $0.color = .orange }
-        add(.slideshow) { $0.name = demo("Program og sponsorer", "Programme and sponsors"); $0.files = slidePaths; $0.slideTime = 6; $0.color = .purple }
+        add(.slideshow) { $0.name = demo("Program og sponsorer", "Programme and sponsors"); $0.files = slidePaths; $0.slideTime = 30; $0.color = .purple }
         add(.pdf) { $0.name = demo("Sangtekst – vers 1", "Lyrics – verse 1"); $0.filePath = media.appendingPathComponent(demo("sangtekster.pdf", "lyrics.pdf")).path; $0.page = 1 }
         add(.audio) { $0.name = demo("Applaus", "Applause"); $0.filePath = wav(demo("applaus.wav", "applause.wav"), 6.8, 330); $0.hotkey = "F2"; $0.fadeOut = 1; $0.color = .yellow }
         add(.playlist) { $0.name = demo("Pausemusikk", "Interval music"); $0.files = [wav("pause-1.wav", 30, 196), wav("pause-2.wav", 30, 247), wav("pause-3.wav", 30, 262)]; $0.hotkey = "F3"; $0.crossfade = 3 }

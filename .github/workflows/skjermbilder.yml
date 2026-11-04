@@ -2,11 +2,11 @@ name: Skjermbilder
 
 # Tar skjermbilder av ShowCue på Windows og Mac (norsk og engelsk) til manualene, og legger dem i docs/skjermbilder.
 # Appen startes med --screenshots <mappe> --language nb|en: den lager et demoshow, tar bildene og avslutter.
-# Kjør manuelt under Actions når brukerflaten er endret (eller ved push til grenen «skjermbilder»).
+# Kjør manuelt under Actions når brukerflaten er endret (eller ved push til grenen «manual-skjermbilder»).
 on:
   workflow_dispatch:
   push:
-    branches: [skjermbilder]
+    branches: [manual-skjermbilder]
 
 permissions:
   contents: read
@@ -83,30 +83,30 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # Legger bildene i repoet (på samme gren som arbeidsflyten ble kjørt fra).
-  commit:
-    name: Legg inn bildene
+  # Legger bildene på grenen «skjermbilder-ut/<gren>» (erstattes hver gang). Derfra hentes de inn i en vanlig commit:
+  #   git fetch origin skjermbilder-ut/<gren> && git checkout FETCH_HEAD -- docs/skjermbilder
+  publish:
+    name: Legg ut bildene
     needs: [windows, mac]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.ref_name }}
-
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: skjermbilder-*
           merge-multiple: true
           path: nye
 
-      - name: Commit
+      - name: Push til skjermbilder-ut/${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p docs/skjermbilder
-          (cd nye && find . -name '*.png' -exec cp --parents {} ../docs/skjermbilder/ \;)
-          git add docs/skjermbilder
-          if git diff --cached --quiet; then echo "Ingen endringer i bildene."; exit 0; fi
+          mkdir -p ut/docs/skjermbilder
+          (cd nye && find . -name '*.png' -exec cp --parents {} ../ut/docs/skjermbilder/ \;)
+          cd ut
+          git init -q -b ut
+          git add docs
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -m "Oppdater skjermbilder i manualene"
-          git push origin "HEAD:${{ github.ref_name }}"
+            commit -q -m "Skjermbilder fra ${{ github.ref_name }} (${{ github.sha }})"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:refs/heads/skjermbilder-ut/${{ github.ref_name }}"
