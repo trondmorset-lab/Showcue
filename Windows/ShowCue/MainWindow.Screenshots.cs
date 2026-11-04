@@ -108,7 +108,7 @@ public partial class MainWindow
             using (var dc = bg.RenderOpen()) dc.DrawRectangle(w.Background ?? Brushes.Black, null, new Rect(size));
             bmp.Render(bg);
             if (client != null)
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) bmp.Render(VisualTreeHelper.GetChild(root, i));
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) bmp.Render((Visual)VisualTreeHelper.GetChild(root, i));
             else
                 bmp.Render(root);
             var png = new PngBitmapEncoder();
