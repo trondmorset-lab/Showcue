@@ -6,14 +6,21 @@ namespace ShowCue.Models;
 /// og samle showet og alle mediefilene i én mappe («collect»), f.eks. før showet flyttes til en annen maskin.</summary>
 public static class MediaTools
 {
-    /// <summary>Alle mediefiler showet bruker (fil-cuer og spillelister), uten duplikater.</summary>
+    public static readonly string[] AudioExtensions = { ".wav", ".mp3", ".aif", ".aiff", ".flac", ".m4a", ".aac", ".wma" };
+    public static readonly string[] VideoExtensions = { ".mp4", ".mov", ".m4v", ".wmv", ".avi", ".mkv" };
+    public static readonly string[] ImageExtensions = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff" };
+
+    public static bool HasExtension(string path, string[] extensions) =>
+        extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Alle mediefiler showet bruker (fil-cuer, spillelister og lysbildeserier), uten duplikater.</summary>
     public static List<string> MediaPaths(IEnumerable<Cue> cues)
     {
         var all = new List<string>();
         foreach (var c in cues)
         {
             if (c is IFileCue f && !string.IsNullOrEmpty(f.FilePath)) all.Add(f.FilePath);
-            if (c is PlaylistCue p) all.AddRange(p.Files.Where(s => !string.IsNullOrEmpty(s)));
+            if (c is IFileListCue p) all.AddRange(p.Files.Where(s => !string.IsNullOrEmpty(s)));
         }
         return all.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
@@ -47,7 +54,7 @@ public static class MediaTools
         foreach (var c in cues)
         {
             if (c is IFileCue fc && Find(fc.FilePath) is string p) { fc.FilePath = p; count++; }
-            if (c is PlaylistCue pl)
+            if (c is IFileListCue pl)
             {
                 var files = pl.Files.ToList();
                 var changed = false;
@@ -93,7 +100,7 @@ public static class MediaTools
         foreach (var c in copy.Cues)
         {
             if (c is IFileCue fc && !string.IsNullOrEmpty(fc.FilePath)) fc.FilePath = Place(fc.FilePath);
-            if (c is PlaylistCue pl) pl.Files = pl.Files.Select(f => string.IsNullOrEmpty(f) ? f : Place(f)).ToList();
+            if (c is IFileListCue pl) pl.Files = pl.Files.Select(f => string.IsNullOrEmpty(f) ? f : Place(f)).ToList();
         }
 
         var showPath = Path.Combine(folder, showName + ".showcue");

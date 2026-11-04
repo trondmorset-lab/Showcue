@@ -118,6 +118,7 @@ public class RemoteControlTests
         public void RefreshFeedback() => Log.Add("refresh");
         public void SetPaused(bool? p) => Log.Add("pause " + (p?.ToString() ?? "toggle"));
         public bool ReleaseCue(string n) { Log.Add("release " + n); return true; }
+        public bool StepCue(string n, int d) { Log.Add($"step {n} {d}"); return true; }
         public int FireTimecodeTriggers(long prev, long frame, TimecodeRate rate) { Log.Add($"tc {prev}-{frame}"); return 0; }
     }
 
@@ -160,9 +161,10 @@ public class RemoteControlTests
         Osc1("/playhead/3"); Osc1("/select/next"); Osc1("/previous"); Osc1("/hotkey/f1"); Osc1("/stop"); Osc1("/panic"); Osc1("/hardstop");
         Osc1("/showcue/go"); Osc1("/go", "22"); Osc1("/go/23"); Osc1("/refresh");
         Osc1("/pause"); Osc1("/resume"); Osc1("/pause/toggle"); Osc1("/cue/4/devamp");
+        Osc1("/cue/8/next"); Osc1("/cue/8/previous");
         Assert.Equal(new[] { "start 12", "stop 1.5", "gocue 7", "start 9", "start 4", "select 3", "move 1", "move -1", "hotkey F1",
                              "stopall", "panic", "hardstop", "go", "gocue 22", "gocue 23", "refresh",
-                             "pause True", "pause False", "pause toggle", "release 4" }, _show.Log);
+                             "pause True", "pause False", "pause toggle", "release 4", "step 8 1", "step 8 -1" }, _show.Log);
     }
 
     [Fact]

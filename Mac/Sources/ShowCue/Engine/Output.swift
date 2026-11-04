@@ -270,6 +270,7 @@ final class WebLayers: NSObject, VisualLayers, WKNavigationDelegate {
 final class MediaCache {
     static let shared = MediaCache()
     private var cache: [String: CGImage] = [:]
+    private var pageCounts: [String: Int] = [:]
     private let lock = NSLock()
     private let queue = DispatchQueue(label: "showcue.media", qos: .userInitiated)
     var pdfWidth: CGFloat = 1920
@@ -298,7 +299,23 @@ final class MediaCache {
         queue.async { [weak self] in items.forEach { _ = self?.image(path: $0.0, page: $0.1) } }
     }
 
-    func clear() { lock.lock(); cache.removeAll(); lock.unlock() }
+    /// Laster bildet i bakgrunnen (f.eks. neste lysbilde), så det er klart når det skal vises.
+    func prefetch(path: String, page: Int = 0) {
+        guard cached(path: path, page: page) == nil, FileManager.default.fileExists(atPath: path) else { return }
+        queue.async { [weak self] in _ = self?.image(path: path, page: page) }
+    }
+
+    /// Antall sider i en PDF (huskes; 0 hvis fila ikke kan leses).
+    func pdfPageCount(_ path: String) -> Int {
+        lock.lock()
+        if let n = pageCounts[path] { lock.unlock(); return n }
+        lock.unlock()
+        let n = PDFDocument(url: URL(fileURLWithPath: path))?.pageCount ?? 0
+        lock.lock(); pageCounts[path] = n; lock.unlock()
+        return n
+    }
+
+    func clear() { lock.lock(); cache.removeAll(); pageCounts.removeAll(); lock.unlock() }
 
     static func loadImage(_ path: String) -> CGImage? {
         guard let img = NSImage(contentsOfFile: path) else { return nil }

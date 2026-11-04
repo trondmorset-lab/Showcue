@@ -131,6 +131,7 @@ final class CueEngine: ObservableObject {
         case .fade: return FadeActive(cue: cue, engine: self)
         case .stop: return StopActive(cue: cue, engine: self)
         case .playlist: return PlaylistActive(cue: cue, engine: self)
+        case .slideshow: return SlideshowActive(cue: cue, engine: self)
         case .timecode: return TimecodeActive(cue: cue, engine: self)
         case .light: return LightActive(cue: cue, engine: self)
         case .input: return InputActive(cue: cue, engine: self)

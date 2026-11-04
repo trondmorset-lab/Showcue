@@ -279,6 +279,47 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type m:SlideshowCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lysbilder (bilder, PDF og video, vises ovenfra og ned)'}" />
+                <ListBox x:Name="SlideBox" ItemsSource="{Binding Files}" Height="160">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding Converter={StaticResource FileName}}" ToolTip="{Binding}" /></DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <WrapPanel Margin="0,6,0,0">
+                    <Button Content="{local:T '+ Legg til filer'}" Margin="0,0,6,0" Click="PlaylistAdd_Click" />
+                    <Button Content="{local:T 'Fjern'}" Margin="0,0,6,0" Click="PlaylistRemove_Click" Tag="{Binding ElementName=SlideBox}" />
+                    <Button Content="↑" Margin="0,0,6,0" Click="PlaylistUp_Click" Tag="{Binding ElementName=SlideBox}" />
+                    <Button Content="↓" Click="PlaylistDown_Click" Tag="{Binding ElementName=SlideBox}" />
+                </WrapPanel>
+                <CheckBox IsChecked="{Binding AutoAdvance}" Content="{local:T 'Bytt automatisk'}" Margin="0,10,0,0" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="10" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Tid per bilde (s)'}" />
+                        <TextBox Text="{Binding SlideTime}" IsEnabled="{Binding AutoAdvance}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'Krysstoning (s)'}" />
+                        <TextBox Text="{Binding Crossfade}" />
+                    </StackPanel>
+                </Grid>
+                <CheckBox IsChecked="{Binding Loop}" Content="{local:T 'Start forfra etter siste lysbilde'}" Margin="0,10,0,0" />
+                <CheckBox IsChecked="{Binding Shuffle}" Content="{local:T 'Tilfeldig rekkefølge'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Skalering'}" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.Stretches}" SelectedItem="{Binding Stretch}" ItemTemplate="{StaticResource EnumItem}" />
+                <CheckBox IsChecked="{Binding ReplaceOthers}" Content="{local:T 'Erstatt andre bilder/videoer (krysstoning)'}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Skjerm'}" />
+                <ComboBox ItemsSource="{x:Static local:EnumValues.OutputScreens}" SelectedValuePath="Key" DisplayMemberPath="Value"
+                          SelectedValue="{Binding OutputScreen}" />
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Lydnivå for video (dB)'}" />
+                <TextBox Text="{Binding VolumeDb}" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="{local:T 'Bilder og PDF-sider vises i valgt tid; hver side i en PDF blir et eget lysbilde. Videoer spiller til de er ferdige. Bla med ⏮ / ⏭ under Aktive cuer (eller OSC /cue/nr/next og /cue/nr/previous). Stopp cuen for å avslutte serien.'}" />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type m:MemoCue}">
             <StackPanel>
                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Beskjed til operatøren'}" />
@@ -508,7 +549,14 @@
                         <TextBlock Text="{Binding ElapsedText}" FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right" />
                         <TextBlock Text="{Binding RemainingText}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Wait}" HorizontalAlignment="Right" />
                     </StackPanel>
-                    <Button Grid.Column="3" Content="■" Padding="10,4" Click="StopActive_Click" ToolTip="{local:T 'Stopp (med cuens fade ut)'}" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Lysbildeserie: bla tilbake / fram -->
+                        <Button Content="⏮" Padding="7,4" Margin="0,0,4,0" Tag="-1" Click="StepActive_Click" ToolTip="{local:T 'Forrige lysbilde'}"
+                                Visibility="{Binding CanStep, Converter={StaticResource BoolVis}}" />
+                        <Button Content="⏭" Padding="7,4" Margin="0,0,6,0" Tag="1" Click="StepActive_Click" ToolTip="{local:T 'Neste lysbilde'}"
+                                Visibility="{Binding CanStep, Converter={StaticResource BoolVis}}" />
+                        <Button Content="■" Padding="10,4" Click="StopActive_Click" ToolTip="{local:T 'Stopp (med cuens fade ut)'}" />
+                    </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -628,6 +676,7 @@
                                     <MenuItem Header="{local:T '▣  Bilde'}" InputGestureText="Ctrl+3" Tag="image" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '▤  PDF'}" InputGestureText="Ctrl+4" Tag="pdf" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '◍  Nettside'}" InputGestureText="Ctrl+Shift+W" Tag="web" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '▧  Lysbildeserie'}" InputGestureText="Ctrl+Shift+B" Tag="slideshow" Click="AddCue_Click" />
                                     <Separator />
                                     <MenuItem Header="{local:T '☰  Spilleliste'}" InputGestureText="Ctrl+9" Tag="playlist" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '◉  Live-inngang'}" InputGestureText="Ctrl+Shift+I" Tag="input" Click="AddCue_Click" />

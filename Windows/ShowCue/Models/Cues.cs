@@ -422,7 +422,13 @@ public sealed class GotoCue : Cue
 //  SPILLELISTE
 // ======================================================================
 /// <summary>Flere lydfiler etter hverandre (pausemusikk, innslipp): i rekkefølge eller tilfeldig, med krysstoning.</summary>
-public sealed class PlaylistCue : Cue, IRoutedAudio
+/// <summary>Cue med en liste av filer (spilleliste, lysbildeserie).</summary>
+public interface IFileListCue
+{
+    List<string> Files { get; set; }
+}
+
+public sealed class PlaylistCue : Cue, IRoutedAudio, IFileListCue
 {
     private List<string> _files = new();
     private bool _shuffle;
@@ -452,6 +458,52 @@ public sealed class PlaylistCue : Cue, IRoutedAudio
     public override string TypeIcon => "☰";
     public override string Summary => Loc.F("{0} spor", Files.Count) + (Shuffle ? Loc.T("  tilfeldig") : "") + (Loop ? "  ⟲" : "")
         + (Crossfade > 0 ? Loc.F("  krysstoning {0:0.#}s", Crossfade) : "");
+}
+
+/// <summary>Lysbildeserie: bilder, PDF-sider og videoer som byttes automatisk (og kan bla i), med krysstoning og loop.</summary>
+public sealed class SlideshowCue : Cue, IRoutedAudio, IFileListCue
+{
+    private List<string> _files = new();
+    private double _slideTime = 5;
+    private double _crossfade = 1;
+    private bool _loop = true;
+    private bool _shuffle;
+    private bool _autoAdvance = true;
+    private bool _replaceOthers = true;
+    private VisualStretch _stretch = VisualStretch.Uniform;
+    private int _outputScreen = -2;
+    private double _volumeDb;
+    private int _fileChannels = 2;
+    private List<AudioRoute>? _routes;
+
+    /// <summary>Bilder, PDF-er (alle sidene blir lysbilder) og videoer, i rekkefølge.</summary>
+    public List<string> Files { get => _files; set => SetCue(ref _files, value ?? new()); }
+    /// <summary>Hvor lenge hvert bilde / hver PDF-side vises (sekunder). Videoer spiller til de er ferdige.</summary>
+    public double SlideTime { get => _slideTime; set => SetCue(ref _slideTime, Range(value, 0.5, 3600)); }
+    /// <summary>Krysstoning mellom lysbildene (sekunder).</summary>
+    public double Crossfade { get => _crossfade; set => SetCue(ref _crossfade, Range(value, 0, 10)); }
+    /// <summary>Start forfra etter siste lysbilde.</summary>
+    public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
+    public bool Shuffle { get => _shuffle; set => SetCue(ref _shuffle, value); }
+    /// <summary>Bytt automatisk. Av = bla manuelt (⏭ / ⏮ eller OSC), som i en presentasjon.</summary>
+    public bool AutoAdvance { get => _autoAdvance; set => SetCue(ref _autoAdvance, value); }
+    public bool ReplaceOthers { get => _replaceOthers; set => SetCue(ref _replaceOthers, value); }
+    public VisualStretch Stretch { get => _stretch; set => SetCue(ref _stretch, value); }
+    /// <summary>Skjermen: −2 = standard (innstillingene), −1 = eget vindu, 0… = skjerm.</summary>
+    public int OutputScreen { get => _outputScreen; set => SetCue(ref _outputScreen, Range(value, -2, 15)); }
+    /// <summary>Nivå for lyden i video-lysbilder.</summary>
+    public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
+
+    public override string TypeName => Loc.T("Lysbildeserie");
+    public override string TypeIcon => "▧";
+    public override string Summary => Loc.F("{0} filer", Files.Count)
+        + (AutoAdvance ? Loc.F("  {0:0.#} s per bilde", SlideTime) : Loc.T("  manuell"))
+        + (Shuffle ? Loc.T("  tilfeldig") : "") + (Loop ? "  ⟲" : "");
+
+    public static bool IsPdf(string path) => Path.GetExtension(path).Equals(".pdf", StringComparison.OrdinalIgnoreCase);
 }
 
 // ======================================================================

@@ -142,6 +142,7 @@ struct CueInspector: View {
         case .osc: oscSection
         case .midi: midiSection
         case .playlist: playlistSection
+        case .slideshow: slideshowSection
         case .goto: gotoSection
         case .memo: memoSection
         case .network: networkSection
@@ -211,6 +212,13 @@ struct CueInspector: View {
             } _: {
                 FieldLabel(L("Fade ut (s)")); NumberInput(value: $cue.fadeOut, range: 0...600)
             }
+            visualOutput
+        }
+    }
+
+    /// Skalering, krysstoning med andre bilder og skjermvalg (bilde, video, PDF, nettside og lysbildeserie).
+    private var visualOutput: some View {
+        VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Skalering"))
             Picker("", selection: $cue.stretch) {
                 ForEach(VisualStretch.allCases, id: \.self) { Text($0.label).tag($0) }
@@ -448,6 +456,39 @@ struct CueInspector: View {
             FieldLabel(L("Utganger (dB per filkanal → utgang)")).padding(.top, 6)
             RoutingMatrixView(cue: cue)
             Hint(L("Stopp-cue med «slipp loop» lar spillelista spille ferdig sporet som går og stoppe."))
+        }
+    }
+
+    private var slideshowSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel(L("Lysbilder (bilder, PDF og video, vises ovenfra og ned)"))
+            VStack(alignment: .leading, spacing: 2) {
+                if cue.files.isEmpty { Text(L("(ingen filer)")).foregroundColor(theme.muted).uiFont(12) }
+                ForEach(Array(cue.files.enumerated()), id: \.offset) { i, f in
+                    HStack(spacing: 4) {
+                        Text("\(i + 1). \((f as NSString).lastPathComponent)").uiFont(12).lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading).help(f)
+                        Button("↑") { if i > 0 { cue.files.swapAt(i, i - 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == 0)
+                        Button("↓") { if i < cue.files.count - 1 { cue.files.swapAt(i, i + 1) } }.buttonStyle(PanelButtonStyle()).disabled(i == cue.files.count - 1)
+                        Button("✕") { cue.files.remove(at: i) }.buttonStyle(PanelButtonStyle()).help(L("Fjern"))
+                    }
+                }
+            }
+            .padding(6)
+            .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
+            .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
+            Button(L("+ Legg til filer")) { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
+            Toggle(L("Bytt automatisk"), isOn: $cue.autoAdvance).padding(.top, 8)
+            Pair {
+                FieldLabel(L("Tid per bilde (s)")); NumberInput(value: $cue.slideTime, range: 0.5...3600).disabled(!cue.autoAdvance)
+            } _: {
+                FieldLabel(L("Krysstoning (s)")); NumberInput(value: $cue.crossfade, range: 0...10)
+            }
+            Toggle(L("Start forfra etter siste lysbilde"), isOn: $cue.loop).padding(.top, 8)
+            Toggle(L("Tilfeldig rekkefølge"), isOn: $cue.shuffle).padding(.top, 4)
+            visualOutput
+            FieldLabel(L("Lydnivå for video (dB)")); NumberInput(value: $cue.volumeDb, range: -60...12)
+            Hint(L("Bilder og PDF-sider vises i valgt tid; hver side i en PDF blir et eget lysbilde. Videoer spiller til de er ferdige. Bla med ⏮ / ⏭ under Aktive cuer (eller OSC /cue/nr/next og /cue/nr/previous). Stopp cuen for å avslutte serien."))
         }
     }
 

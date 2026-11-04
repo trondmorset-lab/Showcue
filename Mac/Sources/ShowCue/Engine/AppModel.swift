@@ -176,7 +176,10 @@ final class AppModel: ObservableObject, ShowControl {
     func stopAll() { engine.stopAll(fade: settings.panicFadeTime) }
     func hardStop() { engine.stopAll(fade: 0) }
 
-    static func fadeOut(of c: Cue) -> Double { (c.type == .audio || c.type == .playlist || c.isVisual) ? c.fadeOut : 0 }
+    static func fadeOut(of c: Cue) -> Double {
+        if c.type == .slideshow { return c.crossfade }
+        return (c.type == .audio || c.type == .playlist || c.isVisual) ? c.fadeOut : 0
+    }
 
     func togglePause() {
         engine.togglePause()
@@ -194,6 +197,14 @@ final class AppModel: ObservableObject, ShowControl {
     @discardableResult
     func releaseCue(_ number: String) -> Bool { find(number).map { engine.release($0) } ?? false }
 
+    /// Bla fram (+1) eller tilbake (−1) i lysbildeserier med dette nummeret som kjører.
+    @discardableResult
+    func stepCue(_ number: String, _ delta: Int) -> Bool {
+        let running = engine.findActive(number).filter(\.canStep)
+        running.forEach { $0.step(delta) }
+        return !running.isEmpty
+    }
+
     func releaseSelected() {
         guard let c = playhead else { return }
         if !engine.release(c) { statusText = L("Cuen looper ikke (eller spiller ikke).") }
@@ -201,7 +212,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     /// Hurtigtast/MIDI-trigger: lyd og bilde/video startes og stoppes (av/på), resten bare startes.
     func toggleHot(_ c: Cue) {
-        if c.isRunning && (c.type == .audio || c.type == .playlist || c.isVisual) { engine.stop(c, fade: AppModel.fadeOut(of: c)) }
+        if c.isRunning && (c.type == .audio || c.type == .playlist || c.type == .slideshow || c.isVisual) { engine.stop(c, fade: AppModel.fadeOut(of: c)) }
         else { engine.fire(c) }
     }
 
@@ -565,9 +576,14 @@ final class AppModel: ObservableObject, ShowControl {
         }
     }
 
-    /// Legg til spor i en spilleliste.
+    /// Legg til spor i en spilleliste, eller bilder, PDF-er og videoer i en lysbildeserie.
     func addTracks(to c: Cue) {
         guard isEditable else { return }
+        if c.type == .slideshow {
+            let urls = pickFiles(AppModel.imageExt + ["pdf"] + AppModel.videoExt, multiple: true)
+            c.files += urls.map(\.path)
+            return
+        }
         let urls = pickFiles(AppModel.audioExt, multiple: true)
         guard !urls.isEmpty else { return }
         c.files += urls.map(\.path)

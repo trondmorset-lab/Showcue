@@ -6,6 +6,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.16.0 – 2026-11-04
+
+### Nytt
+- **Lysbildeserie:** en ny cue-type som viser bilder, PDF-sider og videoer etter hverandre på én skjerm, som en presentasjon.
+  Legg til filer under *＋ Media → Lysbildeserie* (Ctrl+Shift+B / ⇧⌘B) og sorter dem med ↑ / ↓.
+  Bilder og PDF-sider vises i valgt tid (*Tid per bilde*), hver side i en PDF blir et eget lysbilde, og videoer spiller til de er ferdige.
+  Lysbildene krysstones, serien kan starte forfra etter siste lysbilde (loop) og spilles i tilfeldig rekkefølge.
+  Slå av *Bytt automatisk* for å bla manuelt.
+- **Bla i lysbildeserien:** ⏮ / ⏭ under *Aktive cuer*, eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`.
+
 ## 0.15.0 – 2026-11-03
 
 ### Nytt

@@ -57,7 +57,7 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 
 `CueEngine` lager én `ActiveCue` per avfyrt cue (pre-wait → spiller → ferdig) og kaller `Tick` ca. 60 ganger i sekundet.
 Underklasser: lyd (`AudioActive`), live-inngang (`InputActive`) – begge `PlaybackActive`; video (`VideoActive`),
-bilde/PDF/nettside (`StillActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, beskjed).
+bilde/PDF/nettside (`StillActive`), lysbildeserie (`SlideshowActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, beskjed).
 Felles: stopp med fade, fade-cuer, pause/fortsett, slipp loop, spoling (`CanSeek`, `SeekLength`, `SeekPosition`, `Seek`, `ScrubPosition`, `Nudge`).
 
 **Utganger:** én standardutgang (skjermen i innstillingene, også vist som forhåndsvisning) og ved behov ekstra utganger for cuer med
@@ -67,9 +67,15 @@ egen skjerm (`OutputScreen`/`outputScreen`: −2 standard, −1 eget vindu, 0…
 **Video:** bildet spilles dempet; lyden går gjennom lydpatchen som en vanlig avspilling. Lyden er «master»:
 avviker bildet mer enn 0,12 s fra lyden (sjekkes hvert 2. sekund), flyttes bildet. Ved spoling flyttes begge, og synkroniseringen venter 2 s.
 
+**Lysbildeserie:** `SlideshowActive` lager for hvert lysbilde en midlertidig bilde-, PDF- eller video-cue og en `StillActive`/`VideoActive`
+som den eier selv (står ikke i `Active`, tikkes av serien). Forrige lysbilde stoppes med krysstoningen når neste starter.
+Byttet sjekkes før lysbildene tikker, så en video krysstones over i neste før den fader ut av seg selv. Hver PDF-side er et lysbilde
+(sideantallet hentes i bakgrunnen og huskes i `MediaCache`). Blaing: `CanStep`/`Step(±1)` (`canStep`/`step`), OSC `/cue/{nr}/next|previous`.
+Filer i serien behandles som spillelistens (`IFileListCue` / `usesFileList`): finn/samle mediefiler og leting ved åpning.
+
 ## Fjernstyring og status
 
-- **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp`,
+- **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,
   `/hotkey/{tast}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
   Dekoderen leser aldri utenfor pakken, uansett hva lengdefeltene påstår.
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
@@ -78,7 +84,7 @@ avviker bildet mer enn 0,12 s fra lyden (sjekkes hvert 2. sekund), flyttes bilde
 ## Showfil
 
 JSON (`.showcue`), lesbar. Cuer har `"type"` (`audio`, `video`, `image`, `pdf`, `web`, `fade`, `stop`, `osc`, `midi`, `goto`,
-`playlist`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
+`playlist`, `slideshow`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
 Mediefiler letes etter ved siden av showfila og i `Media/` når stien ikke finnes (show flyttes mellom maskiner).
 Nøkkelen for knappepanelet er `InButtonPanel` (het `Cart` før 0.12.0; den gamle leses ikke).
 Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerflaten er endret).

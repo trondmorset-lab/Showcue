@@ -26,6 +26,8 @@ public interface IShowControl
     void SetPaused(bool? paused);
     /// <summary>Slipp loopen i en cue («devamp»).</summary>
     bool ReleaseCue(string number);
+    /// <summary>Bla fram (+1) eller tilbake (−1) i en lysbildeserie som spiller.</summary>
+    bool StepCue(string number, int delta);
     /// <summary>Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.</summary>
     int FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate);
 }
@@ -44,6 +46,7 @@ public interface IShowControl
 ///   /hotkey/{tast}              som å trykke hurtigtasten (f.eks. /hotkey/F1)
 ///   /pause  /resume  /pause/toggle   pause / fortsett alt
 ///   /cue/{nr}/devamp            slipp loopen i cuen (spill ferdig og fortsett til slutten)
+///   /cue/{nr}/next  /cue/{nr}/previous   neste / forrige lysbilde i en lysbildeserie
 ///   /refresh                    send all status tilbake på nytt
 ///   Cuenummer kan også sendes som argument: /cue/start "12"
 /// </summary>
@@ -237,6 +240,8 @@ public sealed class RemoteControl : IDisposable
                     "stop" => _show.StopCue(number),
                     "go" => _show.GoCue(number),
                     "devamp" or "release" => _show.ReleaseCue(number),
+                    "next" => _show.StepCue(number, 1),
+                    "previous" or "prev" => _show.StepCue(number, -1),
                     "select" or "playhead" => _show.SelectCue(number),
                     _ => false
                 };

@@ -2,6 +2,15 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.16.0 – lysbildeserie
+- **Egen cuetype** i stedet for en «autokjør»-innstilling på hver bilde-cue: én cue i lista holder hele serien, og den kan stoppes,
+  fades og blas i som én enhet. Lysbildene gjenbruker bilde-/video-avspillingen, så skalering, skjermvalg og videolyd virker likt.
+- Lysbildene ligger ikke i lista over aktive cuer (serien styrer dem), så stopp-/fade-cuer treffer serien, og *Aktive cuer* viser én rad
+  med «Lysbilde 3/10».
+- PDF-sider blir egne lysbilder, så en eksportert presentasjon kan brukes direkte.
+- Uten loop avsluttes serien etter siste lysbilde (auto-follow virker). Ved manuell blaing stopper serien aldri av seg selv.
+- En bilde-/video-cue med «Erstatt andre» stopper også en lysbildeserie på samme skjerm, og omvendt.
+
 ## 0.15.0 – skjerm per cue og avslutning
 - Skjermvalg ligger på cuen (følger showfila), med «Standard» som peker til innstillingene, så et show kan flyttes til en maskin med
   andre skjermer uten å endre hver cue. Finnes ikke skjermen, vises cuen i et vanlig vindu.

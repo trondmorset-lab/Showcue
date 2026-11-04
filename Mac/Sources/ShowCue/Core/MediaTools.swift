@@ -9,7 +9,7 @@ enum MediaTools {
         for c in cues {
             var paths: [String] = []
             if c.isFileCue && !c.filePath.isEmpty { paths.append(c.filePath) }
-            if c.type == .playlist { paths += c.files.filter { !$0.isEmpty } }
+            if c.usesFileList { paths += c.files.filter { !$0.isEmpty } }
             for p in paths where seen.insert(p.lowercased()).inserted { all.append(p) }
         }
         return all
@@ -38,7 +38,7 @@ enum MediaTools {
         var count = 0
         for c in cues {
             if c.isFileCue, let p = find(c.filePath) { c.filePath = p; count += 1 }
-            if c.type == .playlist {
+            if c.usesFileList {
                 var files = c.files, changed = false
                 for i in files.indices { if let q = find(files[i]) { files[i] = q; changed = true; count += 1 } }
                 if changed { c.files = files }
@@ -78,7 +78,7 @@ enum MediaTools {
         }
         for c in copy.cues {
             if c.isFileCue && !c.filePath.isEmpty { c.filePath = try place(c.filePath) }
-            if c.type == .playlist { c.files = try c.files.map { $0.isEmpty ? $0 : try place($0) } }
+            if c.usesFileList { c.files = try c.files.map { $0.isEmpty ? $0 : try place($0) } }
         }
         copy.title = name
         let url = folder.appendingPathComponent("\(name).showcue")

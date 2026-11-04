@@ -4,7 +4,7 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input, web
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input, web, slideshow
 }
 
 /// Hvordan en nettverks-cue sender.
@@ -215,6 +215,12 @@ final class Cue: ObservableObject, Identifiable, Codable {
     /// Krysstoning mellom sporene (sekunder).
     @Published var crossfade: Double = 2
 
+    // Lysbildeserie (bruker også files, crossfade, loop, shuffle, stretch, outputScreen, replaceOthers, volumeDb)
+    /// Hvor lenge hvert bilde / hver PDF-side vises (sekunder). Videoer spiller til de er ferdige.
+    @Published var slideTime: Double = 5
+    /// Bytt automatisk. Av = bla manuelt (⏭ / ⏮ eller OSC), som i en presentasjon.
+    @Published var autoAdvance = true
+
     // OSC
     @Published var host = "127.0.0.1"
     @Published var port = 8000
@@ -274,6 +280,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
             fadeTime = 3
         case .playlist:
             loop = true; fadeOut = 3; fileChannels = 2
+        case .slideshow:
+            loop = true; crossfade = 1; fileChannels = 2
         case .network:
             port = 9000
         case .light:
@@ -289,6 +297,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // MARK: Egenskaper
 
     var isFileCue: Bool { [.audio, .video, .image, .pdf].contains(type) }
+    /// Har en liste av filer (spilleliste, lysbildeserie).
+    var usesFileList: Bool { type == .playlist || type == .slideshow }
     var isVisual: Bool { [.video, .image, .pdf, .web].contains(type) }
 
     /// Nettside-cue: adressen som gyldig http(s)- eller fil-adresse. «www.x.no» får https:// foran.
@@ -319,6 +329,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .light: return L("Lys")
         case .input: return L("Inngang")
         case .web: return L("Nettside")
+        case .slideshow: return L("Lysbildeserie")
         }
     }
 
@@ -340,6 +351,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .light: return "✺"
         case .input: return "◉"
         case .web: return "◍"
+        case .slideshow: return "▧"
         }
     }
 
@@ -377,6 +389,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .light: return L("Lys")
         case .input: return "Live-inngang"
         case .web: return webURL.flatMap { $0.isFileURL ? nil : $0.host } ?? L("Nettside")
+        case .slideshow: return L("Lysbildeserie")
         }
     }
 
@@ -407,6 +420,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .stop:
             return (target.isEmpty ? L("Alle cuer") : "→ " + target)
                 + (release ? L("  slipp loop") : fadeTime > 0 ? L("  fade {0}s", Cue.fmt(fadeTime)) : "")
+        case .slideshow:
+            return L("{0} filer", files.count) + (autoAdvance ? L("  {0} s per bilde", Cue.fmt(slideTime)) : L("  manuell"))
+                + (shuffle ? L("  tilfeldig") : "") + (loop ? "  ⟲" : "")
         case .playlist:
             return L("{0} spor", files.count) + (shuffle ? L("  tilfeldig") : "") + (loop ? "  ⟲" : "")
                 + (crossfade > 0 ? L("  krysstoning {0}s", Cue.fmt(crossfade)) : "")
@@ -517,7 +533,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
-        case Curve, Release, Fire, Files, Shuffle, Crossfade
+        case Curve, Release, Fire, Files, Shuffle, Crossfade, SlideTime, AutoAdvance
         case InButtonPanel, Loudness, Text, Message, Url, Method
         case TimecodeTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
         case protocolKey = "Protocol"
@@ -556,6 +572,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")
         curve = v(.Curve, FadeCurve.db); release = v(.Release, false); fire = v(.Fire, false)
         files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
+        slideTime = min(3600, max(0.5, v(.SlideTime, 5.0))); autoAdvance = v(.AutoAdvance, true)
         inButtonPanel = v(.InButtonPanel, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
         text = v(.Text, ""); networkProtocol = v(.protocolKey, NetworkProtocol.udp); message = v(.Message, "")
         url = v(.Url, t == .web ? "https://" : "http://"); method = v(.Method, "GET").uppercased()
@@ -637,6 +654,19 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(Cue.finite(crossfade), forKey: .Crossfade)
             try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
             try c.encode(Cue.finite(fadeOut), forKey: .FadeOut)
+            try c.encode(fileChannels, forKey: .FileChannels)
+            try c.encode(routes, forKey: .Routes)
+        case .slideshow:
+            try c.encode(files, forKey: .Files)
+            try c.encode(Cue.finite(slideTime), forKey: .SlideTime)
+            try c.encode(Cue.finite(crossfade), forKey: .Crossfade)
+            try c.encode(loop, forKey: .Loop)
+            try c.encode(shuffle, forKey: .Shuffle)
+            try c.encode(autoAdvance, forKey: .AutoAdvance)
+            try c.encode(replaceOthers, forKey: .ReplaceOthers)
+            try c.encode(stretch, forKey: .Stretch)
+            try c.encode(outputScreen, forKey: .OutputScreen)
+            try c.encode(Cue.finite(volumeDb), forKey: .VolumeDb)
             try c.encode(fileChannels, forKey: .FileChannels)
             try c.encode(routes, forKey: .Routes)
         case .web:
@@ -740,7 +770,7 @@ struct ShowDocument: Codable {
             return candidates.first(where: { fm.fileExists(atPath: $0.path) })?.path ?? path
         }
         for cue in doc.cues where cue.isFileCue { cue.filePath = locate(cue.filePath) }
-        for cue in doc.cues where cue.type == .playlist {
+        for cue in doc.cues where cue.type == .playlist || cue.type == .slideshow {
             let moved = cue.files.map(locate)
             if moved != cue.files { cue.files = moved }
         }

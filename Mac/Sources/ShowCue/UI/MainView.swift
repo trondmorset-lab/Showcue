@@ -207,6 +207,7 @@ struct ToolbarRow: View {
                     Button(L("◍  Nettside (⇧⌘W)")) { model.add(.web) }
                     Divider()
                     Button(L("☰  Spilleliste (⌘9)")) { model.add(.playlist) }
+                    Button(L("▧  Lysbildeserie (⇧⌘B)")) { model.add(.slideshow) }
                     Button(L("◉  Live-inngang (⇧⌘I)")) { model.add(.input) }
                 }
                 .help(L("Legg til lyd, video, bilde, PDF, nettside og mer"))

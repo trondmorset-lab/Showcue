@@ -91,6 +91,11 @@ struct ActiveRow: View {
             .uiFont(13, design: .monospaced)
             .frame(minWidth: 76, alignment: .trailing)
             .padding(.horizontal, 12)
+            if active.canStep {
+                // Lysbildeserie: bla til forrige / neste lysbilde.
+                Button("⏮") { active.step(-1) }.buttonStyle(PanelButtonStyle()).help(L("Forrige lysbilde")).padding(.trailing, 4)
+                Button("⏭") { active.step(1) }.buttonStyle(PanelButtonStyle()).help(L("Neste lysbilde")).padding(.trailing, 4)
+            }
             Button("■") { active.stop(fade: AppModel.fadeOut(of: active.cue)) }
                 .buttonStyle(PanelButtonStyle())
                 .help(L("Stopp (med cuens fade ut)"))

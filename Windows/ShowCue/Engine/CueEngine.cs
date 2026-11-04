@@ -120,6 +120,7 @@ public sealed class CueEngine : IDisposable
     {
         AudioCue c => new AudioActive(c, this),
         PlaylistCue c => new PlaylistActive(c, this),
+        SlideshowCue c => new SlideshowActive(c, this),
         VideoCue c => new VideoActive(c, this),
         StillCue c => new StillActive(c, this),
         FadeCue c => new FadeActive(c, this),
