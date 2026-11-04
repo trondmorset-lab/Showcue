@@ -44,7 +44,7 @@ public sealed class ShowDocument
             return file;
         }
         foreach (var fc in doc.Cues.OfType<IFileCue>()) fc.FilePath = Locate(fc.FilePath);
-        foreach (var pl in doc.Cues.OfType<PlaylistCue>())
+        foreach (var pl in doc.Cues.OfType<IFileListCue>())
             if (pl.Files.Any(f => Locate(f) != f)) pl.Files = pl.Files.Select(Locate).ToList();
         return doc;
     }
@@ -59,7 +59,7 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
         ["audio"] = typeof(AudioCue), ["video"] = typeof(VideoCue), ["image"] = typeof(ImageCue), ["pdf"] = typeof(PdfCue),
         ["fade"] = typeof(FadeCue), ["stop"] = typeof(StopCue), ["osc"] = typeof(OscCue), ["midi"] = typeof(MidiCue),
         ["goto"] = typeof(GotoCue), ["playlist"] = typeof(PlaylistCue), ["memo"] = typeof(MemoCue), ["network"] = typeof(NetworkCue),
-        ["web"] = typeof(WebCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue),
+        ["web"] = typeof(WebCue), ["slideshow"] = typeof(SlideshowCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue),
     };
 
     public override bool CanConvert(Type t) => t == typeof(Cue);

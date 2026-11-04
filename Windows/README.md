@@ -97,6 +97,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 | `/hotkey/{tast}` | Som å trykke hurtigtasten, f.eks. `/hotkey/F1` |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / fortsett alt |
 | `/cue/{nr}/devamp` | Slipp loopen i en cue (spiller ferdig og fortsetter til filslutt) |
+| `/cue/{nr}/next`, `/cue/{nr}/previous` | Bla til neste / forrige lysbilde i en lysbildeserie som kjører |
 
 - Cuenummer kan også sendes som argument: `/cue/start "12"`.
 - Meldinger med argument 0 eller false ignoreres, så knapper som sender «sluppet» ikke trigger to ganger.
@@ -155,6 +156,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **F1–F12, A–Z, 0–9** | Hurtigtaster (start/stopp cuen uten å flytte markøren) |
 | **Ctrl+1 … Ctrl+8** | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | **Ctrl+9 / Ctrl+0** | Legg til spilleliste / gå til-cue |
+| **Ctrl+Shift+B** | Legg til lysbildeserie |
 | **Ctrl+P** | Pause / fortsett alt |
 | **Ctrl+Shift+M / Ctrl+Shift+N** | Legg til beskjed / nettverks-cue |
 | **Ctrl+K** | Knappepanel |
@@ -180,6 +182,10 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 - **Pause** (knappen ved STOPP ALT eller Ctrl+P): fryser all lyd, video, fader og pre-wait. Trykk igjen, eller GO, for å fortsette.
 - **Spilleliste:** en cue med flere lydfiler som spilles etter hverandre med krysstoning. Velg tilfeldig rekkefølge og
   om lista skal starte forfra. Fade ut brukes når den stoppes. Fin for innslipp og pause.
+- **Lysbildeserie:** en cue med bilder, PDF-er og videoer som vises etter hverandre på én skjerm, som en presentasjon.
+  Bilder og PDF-sider vises i *Tid per bilde* sekunder (hver PDF-side blir et eget lysbilde), videoer spiller til de er ferdige,
+  og lysbildene krysstones. Velg loop og tilfeldig rekkefølge, eller slå av *Bytt automatisk* og bla med ⏮ / ⏭ under *Aktive cuer*
+  (eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`). Stopp cuen for å avslutte serien.
 - **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
 - **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
   runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.

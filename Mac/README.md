@@ -77,6 +77,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘K | Knappepanel |
 | ⌘+ / ⌘− | Zoom inn / ut (vanlig størrelse i *Oppsett*-menyen) |
 | ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Legg til tidskode-, lys-, inngang-, nettside-cue |
+| ⇧⌘B | Legg til lysbildeserie |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |

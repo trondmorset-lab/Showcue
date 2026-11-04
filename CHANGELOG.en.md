@@ -6,6 +6,16 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.16.0 – 2026-11-04
+
+### New
+- **Slideshow:** a new cue type that shows images, PDF pages and videos one after another on one screen, like a presentation.
+  Add files under *＋ Media → Slideshow* (Ctrl+Shift+B / ⇧⌘B) and sort them with ↑ / ↓.
+  Images and PDF pages are shown for the chosen time (*Time per slide*), each page of a PDF becomes a slide of its own, and videos play until they finish.
+  Slides crossfade, the slideshow can start again after the last slide (loop) and play in random order.
+  Turn off *Advance automatically* to step through by hand.
+- **Stepping through a slideshow:** ⏮ / ⏭ under *Active cues*, or OSC `/cue/{nr}/next` and `/cue/{nr}/previous`.
+
 ## 0.15.0 – 2026-11-03
 
 ### New

@@ -29,6 +29,10 @@ class ActiveCue: ObservableObject, Identifiable {
     var elapsedText: String { started ? TimeFormat.format(elapsed) : "-" + TimeFormat.format(max(0, startAt - engine.now)) }
     var remainingText: String { started ? (duration > 0 ? "-" + TimeFormat.format(max(0, duration - elapsed)) : "∞") : "" }
     var stateText: String { !started ? L("Pre-wait") : isStopping ? L("Fader ut") : L("Spiller") }
+    /// Kan blas i (lysbildeserie som kjører).
+    var canStep: Bool { false }
+    /// Bla til neste (+1) eller forrige (−1) lysbilde.
+    func step(_ delta: Int) {}
 
     func begin() throws {
         started = true
@@ -224,6 +228,10 @@ class VisualActive: ActiveCue {
             for other in engine.active.compactMap({ $0 as? VisualActive })
             where other !== self && other.out === out && other.started && !other.done && !other.isStopping {
                 other.stop(fade: cue.fadeIn > 0 ? cue.fadeIn : other.cue.fadeOut)
+            }
+            for show in engine.active.compactMap({ $0 as? SlideshowActive })
+            where show.out === out && show.started && !show.done && !show.isStopping {
+                show.stop(fade: cue.fadeIn > 0 ? cue.fadeIn : show.cue.crossfade)
             }
         }
         let l = try makeLayers()
@@ -465,6 +473,192 @@ final class VideoActive: VisualActive {
         audio?.cleanup()
         player?.pause()
         player?.replaceCurrentItem(with: nil)
+    }
+}
+
+// MARK: - Lysbildeserie
+
+/// Viser bilder, PDF-sider og videoer etter hverandre på én utgang, med krysstoning.
+/// Hvert lysbilde spilles som en egen bilde-/video-avspilling som serien styrer selv (de står ikke i lista over aktive cuer).
+final class SlideshowActive: ActiveCue {
+    private var files: [String] = []
+    private var fileIndex = 0
+    private var page = 1
+    private var current: VisualActive?
+    /// Lysbildene som vises, inkludert dem som fader ut.
+    private var children: [VisualActive] = []
+    private var begin: Double = 0
+    private var slideStart: Double = 0
+    private var failures = 0
+    private var subs: [ObjectIdentifier: AnyCancellable] = [:]
+    /// Utgangen serien vises på.
+    private(set) var out: OutputCompositor?
+
+    static func isPdf(_ path: String) -> Bool { (path as NSString).pathExtension.lowercased() == "pdf" }
+    static func isVideo(_ path: String) -> Bool { AppModel.videoExt.contains((path as NSString).pathExtension.lowercased()) }
+
+    override func onBegin() throws {
+        files = cue.files.filter { FileManager.default.fileExists(atPath: $0) }
+        if files.isEmpty { throw NSError(domain: "ShowCue.Slideshow", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Lysbildeserien har ingen filer som finnes.")]) }
+        if cue.shuffle { files.shuffle() }
+        let o = engine.output(forScreen: cue.outputScreen)
+        out = o
+        if cue.replaceOthers {
+            for v in engine.active.compactMap({ $0 as? VisualActive }) where v.out === o && v.started && !v.done && !v.isStopping {
+                v.stop(fade: cue.crossfade)
+            }
+            for s in engine.active.compactMap({ $0 as? SlideshowActive }) where s !== self && s.out === o && s.started && !s.done && !s.isStopping {
+                s.stop(fade: cue.crossfade)
+            }
+        }
+        begin = engine.now
+        show(fade: cue.crossfade)
+    }
+
+    private func pageCount(_ file: String) -> Int {
+        SlideshowActive.isPdf(file) ? max(1, MediaCache.shared.pdfPageCount(file)) : 1
+    }
+
+    /// Vis gjeldende lysbilde; det forrige fades ut samtidig.
+    private func show(fade: Double) {
+        let file = files[fileIndex]
+        let c: Cue
+        if SlideshowActive.isVideo(file) {
+            c = Cue(type: .video)
+            c.volumeDb = cue.volumeDb
+            c.routes = cue.routes
+            c.fileChannels = cue.fileChannels
+        } else if SlideshowActive.isPdf(file) {
+            c = Cue(type: .pdf)
+            c.page = page
+        } else {
+            c = Cue(type: .image)
+        }
+        c.filePath = file
+        c.name = cue.displayName
+        c.fadeIn = fade
+        c.fadeOut = cue.crossfade
+        c.stretch = cue.stretch
+        c.outputScreen = cue.outputScreen
+        c.replaceOthers = false
+
+        let slide: VisualActive = c.type == .video ? VideoActive(cue: c, engine: engine) : StillActive(cue: c, engine: engine)
+        let previous = current
+        current = slide
+        slideStart = engine.now
+        slide.onCompleted = { [weak self] s in self?.slideCompleted(s) }
+        do {
+            try slide.begin()
+            children.append(slide)
+            failures = 0
+            subs[ObjectIdentifier(slide)] = c.$error.dropFirst().sink { [weak self] e in
+                if let e { DispatchQueue.main.async { self?.cue.error = e } }
+            }
+        } catch {
+            cue.error = error.localizedDescription
+            current = previous
+            // Hopp over lysbildet som ikke kunne vises (men aldri i ring hvis ingen kan vises).
+            failures += 1
+            if failures < files.count + 1, move(1) { show(fade: fade) }
+            else if previous == nil { stop(fade: 0) }
+            return
+        }
+        previous?.stop(fade: fade)
+        prefetchNext()
+        objectWillChange.send()
+    }
+
+    /// Henter neste bilde eller PDF-side i bakgrunnen.
+    private func prefetchNext() {
+        let file = files[fileIndex]
+        if SlideshowActive.isPdf(file), page < pageCount(file) { MediaCache.shared.prefetch(path: file, page: page + 1); return }
+        let next = files[(fileIndex + 1) % files.count]
+        if SlideshowActive.isPdf(next) { MediaCache.shared.prefetch(path: next, page: 1) }
+        else if !SlideshowActive.isVideo(next) { MediaCache.shared.prefetch(path: next) }
+    }
+
+    /// Flytt til neste/forrige lysbilde (PDF-sider teller som egne lysbilder). False ved slutten uten loop.
+    private func move(_ delta: Int) -> Bool {
+        let file = files[fileIndex]
+        if delta > 0 {
+            if page < pageCount(file) { page += 1; return true }
+            if fileIndex + 1 < files.count { fileIndex += 1; page = 1; return true }
+            if !cue.loop { return false }
+            if cue.shuffle && files.count > 2 { files.shuffle() }
+            fileIndex = 0; page = 1
+            return true
+        }
+        if page > 1 { page -= 1; return true }
+        if fileIndex > 0 { fileIndex -= 1 }
+        else if cue.loop { fileIndex = files.count - 1 }
+        else { return false }
+        page = pageCount(files[fileIndex])
+        return true
+    }
+
+    private func advance(_ delta: Int) {
+        if move(delta) { show(fade: cue.crossfade) }
+        else if delta > 0 && cue.autoAdvance {
+            // Siste lysbilde uten loop: serien er ferdig (auto-follow virker).
+            stop(fade: cue.crossfade)
+            wasStopped = false
+        }
+    }
+
+    override var canStep: Bool { started && !done && !isStopping }
+    override func step(_ delta: Int) { if canStep { advance(delta > 0 ? 1 : -1) } }
+
+    override var stateText: String {
+        guard started, !isStopping, !files.isEmpty else { return super.stateText }
+        return L("Lysbilde {0}/{1}", fileIndex + 1, files.count) + (SlideshowActive.isPdf(files[fileIndex]) ? L(" s. {0}", page) : "")
+    }
+
+    private func slideCompleted(_ slide: ActiveCue) {
+        children.removeAll { $0 === slide }
+        subs[ObjectIdentifier(slide)] = nil
+        if done { return }
+        if isStopping { if children.isEmpty { complete() }; return }
+        // En video er ferdig: neste lysbilde (ved manuell blaing står skjermen svart til man blar videre).
+        if slide === current && cue.autoAdvance { advance(1) }
+    }
+
+    override func tick() {
+        super.tick()
+        guard started, !done else { return }
+        elapsed = engine.now - begin
+        // Bytt lysbilde før lysbildene tikker, så en video som nærmer seg slutten krysstones over i neste
+        // (i stedet for å fade ut til svart av seg selv).
+        if !isStopping, cue.autoAdvance, let cur = current, !cur.isStopping {
+            if cur is VideoActive {
+                if cur.duration > 0, cur.duration - cur.elapsed <= max(0.05, cue.crossfade) { advance(1) }
+            } else if engine.now - slideStart >= cue.slideTime {
+                advance(1)
+            }
+        }
+        for c in children where !c.done { c.tick() }
+    }
+
+    override func stop(fade: Double) {
+        super.stop(fade: fade)
+        guard started, !done else { return }
+        isStopping = true
+        current = nil
+        for c in children { c.stop(fade: fade) }
+        if children.isEmpty || fade <= 0 { complete() }
+    }
+
+    override func applyFade(_ f: Cue) {
+        for c in children { c.applyFade(f) }
+        if f.stopWhenDone { wasStopped = true; isStopping = true; current = nil }
+    }
+
+    override func pause() { children.forEach { $0.pause() } }
+    override func resume() { children.forEach { $0.resume() } }
+
+    override func onComplete() {
+        for c in children { c.stop(fade: 0) }
+        children.removeAll()
+        subs.removeAll()
     }
 }
 

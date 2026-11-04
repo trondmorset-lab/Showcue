@@ -77,6 +77,7 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | ⌘K | Button panel |
 | ⌘+ / ⌘− | Zoom in / out (normal size in the *Setup* menu) |
 | ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Add timecode, light, input, web page cue |
+| ⇧⌘B | Add slideshow |
 | ⌘D, ⌘⌫, ⌘↑/⌘↓ | Duplicate, delete, move |
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Save, save as, open, new |
 | ⌘Z, ⇧⌘Z | Undo, redo |

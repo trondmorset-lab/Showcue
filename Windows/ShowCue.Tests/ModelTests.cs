@@ -192,4 +192,25 @@ public class CueModelTests
         Assert.Equal(-2, new VideoCue { OutputScreen = -99 }.OutputScreen);
         Assert.Equal(-2, JsonSerializer.Deserialize<ShowDocument>("{\"Cues\":[{\"type\":\"video\"}]}", ShowDocument.JsonOptions)!.Cues.OfType<VideoCue>().Single().OutputScreen);
     }
+
+    [Fact]
+    public void SlideshowRoundTripsAndItsFilesAreMedia()
+    {
+        var doc = new ShowDocument();
+        doc.Cues.Add(new SlideshowCue
+        {
+            Files = new() { @"C:\b\1.png", @"C:\p\deck.pdf", @"C:\v\klipp.mp4" },
+            SlideTime = 8, Crossfade = 0.5, Loop = false, Shuffle = true, AutoAdvance = false, OutputScreen = 1, VolumeDb = -6,
+        });
+        var json = doc.ToJson();
+        Assert.Contains("\"type\": \"slideshow\"", json);
+        var s = Assert.IsType<SlideshowCue>(JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!.Cues[0]);
+        Assert.Equal(3, s.Files.Count);
+        Assert.Equal(8, s.SlideTime);
+        Assert.False(s.AutoAdvance);
+        Assert.Equal(1, s.OutputScreen);
+        Assert.True(SlideshowCue.IsPdf(s.Files[1]));
+        Assert.Equal(3, MediaTools.MediaPaths(new Cue[] { s }).Count);
+        Assert.Equal(0.5, new SlideshowCue { SlideTime = 0 }.SlideTime); // minst et halvt sekund per bilde
+    }
 }

@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.16.0 | #17 | Lysbildeserie: bilder, PDF-sider og videoer etter hverandre med krysstoning, loop, tilfeldig rekkefølge og blaing (⏮ / ⏭, OSC) |
 | 0.15.0 | #16 | Skjerm per visuell cue; Mac lar seg lukke etter video; sikrere avslutning på Windows |
 | 0.14.0 | #14, #15 | Spoling i sanntid i lyd og video (spolelinje, ±5 s, også under pause); media-cuer uten fil. Utviklingsnotater og stresstest i CI (#15) |
 | 0.13.1 | #12, #13 | Ikon i Dock/oppgavelinja; rettelser fra stresstest (heng i loop, NaN, OSC, lange tider/filnavn); ustabil test rettet |

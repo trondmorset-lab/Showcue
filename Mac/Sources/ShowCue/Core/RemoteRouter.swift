@@ -20,6 +20,8 @@ protocol ShowControl: AnyObject {
     func setPaused(_ paused: Bool?)
     /// Slipp loopen i en cue («devamp»).
     @discardableResult func releaseCue(_ number: String) -> Bool
+    /// Bla fram (+1) eller tilbake (−1) i en lysbildeserie som kjører.
+    @discardableResult func stepCue(_ number: String, _ delta: Int) -> Bool
     /// Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.
     func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int
 }
@@ -27,7 +29,7 @@ protocol ShowControl: AnyObject {
 /// Oversetter OSC, MIDI og MSC til kommandoer. Samme kommandoer som Windows-versjonen:
 ///
 ///   /go  /go/{nr}  /stop  /panic  /hardstop  /next  /previous  /refresh
-///   /playhead/{nr}  /select/{nr}  /cue/{nr}/start|stop|go|select|devamp  /hotkey/{tast}
+///   /playhead/{nr}  /select/{nr}  /cue/{nr}/start|stop|go|select|devamp|next|previous  /hotkey/{tast}
 ///   /pause  /resume  /pause/toggle
 ///   Cuenummer kan også sendes som argument: /cue/start "12". Prefikset /showcue/ er tillatt.
 final class RemoteRouter {
@@ -118,6 +120,8 @@ final class RemoteRouter {
             case "go": return show.goCue(number)
             case "select", "playhead": return show.selectCue(number)
             case "devamp", "release": return show.releaseCue(number)
+            case "next": return show.stepCue(number, 1)
+            case "previous", "prev": return show.stepCue(number, -1)
             default: return false
             }
         default:

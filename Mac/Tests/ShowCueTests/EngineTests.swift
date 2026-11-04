@@ -142,6 +142,7 @@ final class FakeShow: ShowControl {
     func refreshFeedback() { log.append("refresh") }
     func setPaused(_ paused: Bool?) { log.append("pause \(paused.map { String($0) } ?? "toggle")") }
     func releaseCue(_ n: String) -> Bool { log.append("release \(n)"); return true }
+    func stepCue(_ n: String, _ d: Int) -> Bool { log.append("step \(n) \(d)"); return true }
     func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int { log.append("tc \(previous)-\(frame)"); return 0 }
 }
 
@@ -161,8 +162,8 @@ final class RemoteTests: XCTestCase {
         XCTAssertEqual(fake.log, ["start 12", "stop 1.5", "gocue 7", "start 9", "start 4", "select 3", "move 1", "move -1", "hotkey F1",
                                   "stopall", "panic", "hardstop", "go", "gocue 22", "gocue 23", "refresh"])
         fake.log.removeAll()
-        osc("/pause"); osc("/resume"); osc("/pause/toggle"); osc("/cue/4/devamp")
-        XCTAssertEqual(fake.log, ["pause true", "pause false", "pause toggle", "release 4"])
+        osc("/pause"); osc("/resume"); osc("/pause/toggle"); osc("/cue/4/devamp"); osc("/cue/8/next"); osc("/cue/8/previous")
+        XCTAssertEqual(fake.log, ["pause true", "pause false", "pause toggle", "release 4", "step 8 1", "step 8 -1"])
         osc("/tull")
         XCTAssertTrue(fake.remote.last?.contains("ukjent") ?? false)
     }

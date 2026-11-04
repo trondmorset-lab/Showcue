@@ -138,6 +138,32 @@ final class PlaybackTests: XCTestCase {
         XCTAssertEqual(try back.jsonData(), data)
     }
 
+    func testSlideshowRoundTripsAndReadsWindowsFormat() throws {
+        var doc = ShowDocument()
+        let c = Cue(type: .slideshow)
+        XCTAssertTrue(c.loop && c.autoAdvance && c.slideTime == 5 && c.crossfade == 1)
+        c.files = ["/b/1.png", "/p/deck.pdf", "/v/klipp.mp4"]; c.slideTime = 8; c.autoAdvance = false; c.shuffle = true; c.outputScreen = 1
+        doc.cues = [c]
+        let data = try doc.jsonData()
+        let json = String(decoding: data, as: UTF8.self)
+        XCTAssertTrue(json.contains("\"type\" : \"slideshow\""), json)
+        XCTAssertTrue(json.contains("\"SlideTime\" : 8"), json)
+        let back = try JSONDecoder().decode(ShowDocument.self, from: data).cues[0]
+        XCTAssertEqual(back.type, .slideshow)
+        XCTAssertEqual(back.files, c.files)
+        XCTAssertTrue(back.slideTime == 8 && !back.autoAdvance && back.shuffle && back.loop && back.outputScreen == 1)
+        XCTAssertTrue(back.usesFileList)
+        XCTAssertTrue(back.summary.contains("3"), back.summary)
+
+        let win = """
+        {"FormatVersion":1,"Cues":[{"type":"slideshow","Number":"1","Files":["C:\\\\b\\\\1.png"],"SlideTime":0.1,"Crossfade":2,"AutoAdvance":true,"Loop":false}]}
+        """
+        let w = try JSONDecoder().decode(ShowDocument.self, from: Data(win.utf8)).cues[0]
+        XCTAssertEqual(w.type, .slideshow)
+        XCTAssertEqual(w.slideTime, 0.5, "for kort tid per bilde rettes opp")
+        XCTAssertTrue(w.autoAdvance && !w.loop && w.crossfade == 2)
+    }
+
     func testReadsWindowsPlaylist() throws {
         let json = """
         {"FormatVersion":1,"Cues":[{"type":"playlist","Number":"1","Files":["C:\\\\m\\\\a.mp3"],"Crossfade":3,"Shuffle":false,"Loop":true}]}

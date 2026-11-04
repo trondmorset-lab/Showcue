@@ -198,7 +198,7 @@ public static class Program
         public bool SelectCue(string n) => Check(n); public bool StartCue(string n) => Check(n); public bool StopCue(string n) => Check(n);
         public bool GoCue(string n) => Check(n); public bool FireHotkey(string k) => Check(k); public int FireMidiTrigger(string t) => 0;
         public void RemoteLog(string text) { } public void RefreshFeedback() { } public void SetPaused(bool? p) { }
-        public bool ReleaseCue(string n) => Check(n); public int FireTimecodeTriggers(long a, long b, TimecodeRate r) => 0;
+        public bool ReleaseCue(string n) => Check(n); public bool StepCue(string n, int d) => Check(n); public int FireTimecodeTriggers(long a, long b, TimecodeRate r) => 0;
         static bool Check(string s) { if (s == null) throw new ArgumentNullException(nameof(s), "null cuenummer sendt til showet"); return true; }
     }
 

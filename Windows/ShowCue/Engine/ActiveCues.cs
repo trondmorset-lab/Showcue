@@ -36,7 +36,12 @@ public abstract class ActiveCue : ObservableObject
 
     public string ElapsedText => !Started ? "-" + TimeFormat.Format(Math.Max(0, StartAt - Engine.Now)) : TimeFormat.Format(Elapsed);
     public string RemainingText => Started && Duration > 0 ? "-" + TimeFormat.Format(Math.Max(0, Duration - Elapsed)) : (Started ? "∞" : "");
-    public string StateText => !Started ? Loc.T("Pre-wait") : IsStopping ? Loc.T("Fader ut") : Loc.T("Spiller");
+    public virtual string StateText => !Started ? Loc.T("Pre-wait") : IsStopping ? Loc.T("Fader ut") : Loc.T("Spiller");
+
+    /// <summary>Kan blas i (lysbildeserie): ⏮ / ⏭.</summary>
+    public virtual bool CanStep => false;
+    /// <summary>Bla fram (+1) eller tilbake (−1).</summary>
+    public virtual void Step(int delta) { }
 
     // ---- Spoling (lyd og video som spiller) ----
 
@@ -77,6 +82,7 @@ public abstract class ActiveCue : ObservableObject
         OnPropertyChanged(nameof(ScrubPosition));
         OnPropertyChanged(nameof(SeekLength));
         OnPropertyChanged(nameof(CanSeek));
+        OnPropertyChanged(nameof(CanStep));
         OnPropertyChanged(nameof(Progress));
         OnPropertyChanged(nameof(HasDuration));
         OnPropertyChanged(nameof(ElapsedText));
@@ -258,6 +264,8 @@ public abstract class VisualActive : ActiveCue
             // Krysstoning: de andre på samme utgang fades ut på samme tid som denne fades inn.
             foreach (var other in Engine.Active.OfType<VisualActive>().Where(v => v != this && v.Host == host && v.Started && !v.Done && !v.IsStopping).ToList())
                 other.Stop(VCue.FadeIn > 0 ? VCue.FadeIn : other.VCue.FadeOut);
+            foreach (var show in Engine.Active.OfType<SlideshowActive>().Where(s => s.Host == host && s.Started && !s.Done && !s.IsStopping).ToList())
+                show.Stop(VCue.FadeIn > 0 ? VCue.FadeIn : ((SlideshowCue)show.Cue).Crossfade);
         }
 
         Element = CreateElement();
@@ -597,6 +605,190 @@ public sealed class VideoActive : VisualActive
         _media.Stop();
         _media.Close();
         _media.Source = null;
+    }
+}
+
+// ======================================================================
+/// <summary>Lysbildeserie: viser bilder, PDF-sider og videoer etter hverandre på én utgang, med krysstoning.
+/// Hvert lysbilde spilles som en egen bilde-/video-avspilling som serien styrer selv (de står ikke i lista over aktive cuer).</summary>
+public sealed class SlideshowActive : ActiveCue
+{
+    private SlideshowCue S => (SlideshowCue)Cue;
+    private List<string> _files = new();
+    private int _fileIndex, _page = 1;
+    private VisualActive? _current;
+    private readonly List<VisualActive> _children = new(); // inkludert lysbilder som fader ut
+    private double _begin, _slideStart;
+    private int _failures;
+
+    /// <summary>Utgangen serien vises på.</summary>
+    public System.Windows.Controls.Grid? Host { get; private set; }
+
+    public SlideshowActive(SlideshowCue cue, CueEngine engine) : base(cue, engine) { }
+
+    protected override void OnBegin()
+    {
+        _files = S.Files.Where(File.Exists).ToList();
+        if (_files.Count == 0) throw new FileNotFoundException(Loc.T("Lysbildeserien har ingen filer som finnes."));
+        if (S.Shuffle) Shuffle();
+        foreach (var f in _files.Where(SlideshowCue.IsPdf)) _ = MediaCache.PdfPageCount(f); // antall sider hentes i bakgrunnen
+        Host = Engine.EnsureOutput(S.OutputScreen);
+        if (S.ReplaceOthers)
+        {
+            foreach (var v in Engine.Active.OfType<VisualActive>().Where(v => v.Host == Host && v.Started && !v.Done && !v.IsStopping).ToList())
+                v.Stop(S.Crossfade);
+            foreach (var s in Engine.Active.OfType<SlideshowActive>().Where(s => s != this && s.Host == Host && s.Started && !s.Done && !s.IsStopping).ToList())
+                s.Stop(S.Crossfade);
+        }
+        _begin = Engine.Now;
+        Show(S.Crossfade);
+    }
+
+    private void Shuffle()
+    {
+        var rnd = new Random();
+        for (int i = _files.Count - 1; i > 0; i--) { int j = rnd.Next(i + 1); (_files[i], _files[j]) = (_files[j], _files[i]); }
+    }
+
+    private int PageCount(string file)
+    {
+        if (!SlideshowCue.IsPdf(file)) return 1;
+        var t = MediaCache.PdfPageCount(file);
+        return t.IsCompletedSuccessfully ? Math.Max(1, t.Result) : 1;
+    }
+
+    /// <summary>Vis gjeldende lysbilde; det forrige fades ut samtidig.</summary>
+    private void Show(double fade)
+    {
+        var file = _files[_fileIndex];
+        VisualCue c;
+        if (MediaTools.HasExtension(file, MediaTools.VideoExtensions))
+            c = new VideoCue { FilePath = file, VolumeDb = S.VolumeDb, Routes = S.Routes, FileChannels = S.FileChannels };
+        else if (SlideshowCue.IsPdf(file))
+            c = new PdfCue { FilePath = file, Page = _page };
+        else
+            c = new ImageCue { FilePath = file };
+        c.Name = Cue.DisplayName;
+        c.FadeIn = fade;
+        c.FadeOut = S.Crossfade;
+        c.Stretch = S.Stretch;
+        c.OutputScreen = S.OutputScreen;
+        c.ReplaceOthers = false;
+
+        VisualActive slide = c is VideoCue v ? new VideoActive(v, Engine) : new StillActive((StillCue)c, Engine);
+        var previous = _current;
+        _current = slide;
+        _slideStart = Engine.Now;
+        slide.Completed += OnSlideCompleted;
+        try
+        {
+            slide.Begin();
+            _children.Add(slide);
+            _failures = 0;
+            c.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Cue.Error) && c.Error != null) Cue.Error = c.Error; };
+        }
+        catch (Exception ex)
+        {
+            Cue.Error = ex.Message;
+            _current = previous;
+            // Hopp over lysbildet som ikke kunne vises (men aldri i ring hvis ingen kan vises).
+            if (++_failures < _files.Count + 1 && Move(1)) Show(fade);
+            else if (previous == null) Stop(0);
+            return;
+        }
+        previous?.Stop(fade);
+        OnPropertyChanged(nameof(StateText));
+    }
+
+    /// <summary>Flytt til neste/forrige lysbilde (PDF-sider teller som egne lysbilder). False ved slutten uten loop.</summary>
+    private bool Move(int delta)
+    {
+        var file = _files[_fileIndex];
+        if (delta > 0)
+        {
+            if (_page < PageCount(file)) { _page++; return true; }
+            if (_fileIndex + 1 < _files.Count) { _fileIndex++; _page = 1; return true; }
+            if (!S.Loop) return false;
+            if (S.Shuffle && _files.Count > 2) Shuffle();
+            _fileIndex = 0; _page = 1;
+            return true;
+        }
+        if (_page > 1) { _page--; return true; }
+        if (_fileIndex > 0) _fileIndex--;
+        else if (S.Loop) _fileIndex = _files.Count - 1;
+        else return false;
+        _page = PageCount(_files[_fileIndex]);
+        return true;
+    }
+
+    private void Advance(int delta)
+    {
+        if (Move(delta)) Show(S.Crossfade);
+        else if (delta > 0 && S.AutoAdvance)
+        {
+            // Siste lysbilde uten loop: serien er ferdig (auto-follow virker).
+            Stop(S.Crossfade);
+            WasStopped = false;
+        }
+    }
+
+    public override bool CanStep => Started && !Done && !IsStopping;
+    public override void Step(int delta) { if (CanStep) Advance(Math.Sign(delta)); }
+
+    public override string StateText => Started && !IsStopping && _files.Count > 0
+        ? Loc.F("Lysbilde {0}/{1}", _fileIndex + 1, _files.Count) + (SlideshowCue.IsPdf(_files[_fileIndex]) ? Loc.F(" s. {0}", _page) : "")
+        : base.StateText;
+
+    private void OnSlideCompleted(ActiveCue slide)
+    {
+        _children.Remove((VisualActive)slide);
+        if (Done) return;
+        if (IsStopping) { if (_children.Count == 0) Complete(); return; }
+        // En video er ferdig: neste lysbilde (ved manuell blaing står skjermen svart til man blar videre).
+        if (slide == _current && S.AutoAdvance) Advance(1);
+    }
+
+    internal override void Tick()
+    {
+        base.Tick();
+        if (!Started || Done) return;
+        Elapsed = Engine.Now - _begin;
+        // Bytt lysbilde før lysbildene tikker, så en video som nærmer seg slutten krysstones over i neste
+        // (i stedet for å fade ut til svart av seg selv).
+        if (!IsStopping && S.AutoAdvance && _current != null && !_current.IsStopping)
+        {
+            if (_current is VideoActive v)
+            {
+                if (v.Duration > 0 && v.Duration - v.Elapsed <= Math.Max(0.05, S.Crossfade)) Advance(1);
+            }
+            else if (Engine.Now - _slideStart >= S.SlideTime) Advance(1);
+        }
+        foreach (var c in _children.ToList()) if (!c.Done) c.Tick();
+    }
+
+    public override void Stop(double fadeSeconds)
+    {
+        base.Stop(fadeSeconds);
+        if (!Started || Done) return;
+        IsStopping = true;
+        _current = null;
+        foreach (var c in _children.ToList()) c.Stop(fadeSeconds);
+        if (_children.Count == 0 || fadeSeconds <= 0) Complete();
+    }
+
+    public override void ApplyFade(FadeCue fade)
+    {
+        foreach (var c in _children.ToList()) c.ApplyFade(fade);
+        if (fade.StopWhenDone) { WasStopped = true; IsStopping = true; _current = null; }
+    }
+
+    public override void Pause() { foreach (var c in _children) c.Pause(); }
+    public override void Resume() { foreach (var c in _children) c.Resume(); }
+
+    protected override void OnCompleted()
+    {
+        foreach (var c in _children.ToList()) c.Stop(0);
+        _children.Clear();
     }
 }
 

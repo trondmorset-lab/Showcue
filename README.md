@@ -19,9 +19,10 @@ Det finnes i to utgaver som deler showformat:
 | `Mac/` | macOS 13+ | Swift / SwiftUI / CoreAudio / AVFoundation | Åpne `Package.swift` i Xcode, eller `./build-app.sh` |
 
 Begge har:
-- Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, «gå til», beskjed og nettverk (UDP/TCP/HTTP)
+- Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, lysbildeserie, «gå til», beskjed og nettverk (UDP/TCP/HTTP)
 - **Tidskode** (MTC/LTC ut, MTC-triggere inn), **lys over Art-Net** og **live-inngang** gjennom lydpatchen
 - **Knappepanel** med store knapper (jingler, effekter, berøringsskjerm), **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
+- **Lysbildeserie** som bytter mellom bilder, PDF-sider og videoer automatisk (eller manuelt), med krysstoning og loop
 - **Pause/fortsett alt**, **spoling i sanntid** i lyd og video som spiller, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow

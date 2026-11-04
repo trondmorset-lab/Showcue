@@ -42,6 +42,22 @@ public static class MediaCache
         return t;
     }
 
+    private static readonly Dictionary<string, Task<int>> PageCounts = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Antall sider i en PDF (hentes i bakgrunnen og huskes).</summary>
+    public static Task<int> PdfPageCount(string path)
+    {
+        if (PageCounts.TryGetValue(path, out var t) && !t.IsFaulted) return t;
+        return PageCounts[path] = CountPages(path);
+    }
+
+    private static async Task<int> CountPages(string path)
+    {
+        var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path));
+        var doc = await PdfDocument.LoadFromFileAsync(file);
+        return (int)doc.PageCount;
+    }
+
     private static async Task<BitmapSource> RenderPdfPage(string path, int page)
     {
         var file = await StorageFile.GetFileFromPathAsync(Path.GetFullPath(path));
@@ -85,5 +101,6 @@ public static class MediaCache
     {
         Images.Clear();
         Pdfs.Clear();
+        PageCounts.Clear();
     }
 }

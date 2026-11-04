@@ -19,9 +19,9 @@ namespace ShowCue;
 public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 {
     // ---------- Filtyper ----------
-    private static readonly string[] AudioExt = { ".wav", ".mp3", ".aif", ".aiff", ".flac", ".m4a", ".aac", ".wma" };
-    private static readonly string[] VideoExt = { ".mp4", ".mov", ".m4v", ".wmv", ".avi", ".mkv" };
-    private static readonly string[] ImageExt = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff" };
+    private static readonly string[] AudioExt = MediaTools.AudioExtensions;
+    private static readonly string[] VideoExt = MediaTools.VideoExtensions;
+    private static readonly string[] ImageExt = MediaTools.ImageExtensions;
     private static readonly string[] PdfExt = { ".pdf" };
     private static string ShowFilter => Loc.T("ShowCue-show|*.showcue|Alle filer|*.*");
 
@@ -33,6 +33,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         AudioCue or "audio" => Filter(Loc.T("Lydfiler"), AudioExt),
         VideoCue or "video" => Filter(Loc.T("Videofiler"), VideoExt),
         ImageCue or "image" => Filter(Loc.T("Bilder"), ImageExt),
+        SlideshowCue or "slideshow" => Filter(Loc.T("Bilder, PDF og video"), ImageExt.Concat(PdfExt).Concat(VideoExt).ToArray()),
         _ => Filter("PDF", PdfExt),
     };
 
@@ -402,12 +403,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         AudioCue a => a.FadeOut,
         VisualCue v => v.FadeOut,
         PlaylistCue p => p.FadeOut,
+        SlideshowCue s => s.Crossfade,
         _ => 0
     };
 
     private void ToggleHotCue(Cue cue)
     {
-        if (cue.IsRunning && cue is AudioCue or VisualCue or PlaylistCue) Engine.Stop(cue, FadeOutOf(cue));
+        if (cue.IsRunning && cue is AudioCue or VisualCue or PlaylistCue or SlideshowCue) Engine.Stop(cue, FadeOutOf(cue));
         else Engine.Fire(cue);
     }
 
@@ -473,6 +475,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.L: AddCue("light"); e.Handled = true; return;
                 case Key.I: AddCue("input"); e.Handled = true; return;
                 case Key.W: AddCue("web"); e.Handled = true; return;
+                case Key.B: AddCue("slideshow"); e.Handled = true; return;
             }
         }
 
@@ -587,6 +590,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
 
     bool IShowControl.ReleaseCue(string number) => FindCue(number) is { } c && Engine.Release(c);
+    bool IShowControl.StepCue(string number, int delta)
+    {
+        var running = Engine.FindActive(number).Where(a => a.CanStep).ToList();
+        foreach (var a in running) a.Step(delta);
+        return running.Count > 0;
+    }
 
     int IShowControl.FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate)
     {
@@ -685,6 +694,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "image" => new() { new ImageCue() },
             "pdf" => new() { new PdfCue() },
             "playlist" => new() { new PlaylistCue() },
+            "slideshow" => new() { new SlideshowCue() },
             "goto" => new() { new GotoCue() },
             "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
             "stop" => new() { new StopCue() },
@@ -858,16 +868,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ---------- Spilleliste ----------
     private static int MaxChannels(IEnumerable<string> files) => Math.Max(1, files.Select(f => AudioEngine.Probe(f).Channels).DefaultIfEmpty(2).Max());
 
-    private static (PlaylistCue? cue, ListBox? box) PlaylistOf(object sender) =>
-        (((FrameworkElement)sender).DataContext as PlaylistCue, ((FrameworkElement)sender).Tag as ListBox);
+    // Brukes av spillelister og lysbildeserier (lister med filer).
+    private static (IFileListCue? cue, ListBox? box) PlaylistOf(object sender) =>
+        (((FrameworkElement)sender).DataContext as IFileListCue, ((FrameworkElement)sender).Tag as ListBox);
 
     private void PlaylistAdd_Click(object sender, RoutedEventArgs e)
     {
-        if (((FrameworkElement)sender).DataContext is not PlaylistCue p) return;
-        var files = PickFiles(FilterFor("audio"), true).ToList();
+        var cue = ((FrameworkElement)sender).DataContext;
+        if (cue is not IFileListCue list) return;
+        var files = PickFiles(FilterFor(cue is SlideshowCue ? "slideshow" : "audio"), true).ToList();
         if (files.Count == 0) return;
-        p.Files = p.Files.Concat(files).ToList();
-        p.FileChannels = Math.Max(p.FileChannels, MaxChannels(files));
+        list.Files = list.Files.Concat(files).ToList();
+        if (cue is PlaylistCue p) p.FileChannels = Math.Max(p.FileChannels, MaxChannels(files));
     }
 
     private void PlaylistRemove_Click(object sender, RoutedEventArgs e)
@@ -896,6 +908,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Panic_Click(object sender, RoutedEventArgs e) => Panic();
     private void TestCue_Click(object sender, RoutedEventArgs e) { CommitFocusedTextBox(); if (SelectedCue != null) Engine.Fire(SelectedCue); }
     private void StopSelected_Click(object sender, RoutedEventArgs e) { if (SelectedCue != null) Engine.Stop(SelectedCue, FadeOutOf(SelectedCue)); }
+
+    private void StepActive_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ActiveCue a, Tag: string t }) a.Step(int.Parse(t, CultureInfo.InvariantCulture));
+    }
 
     private void SeekActive_Click(object sender, RoutedEventArgs e)
     {

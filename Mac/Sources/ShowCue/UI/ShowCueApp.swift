@@ -270,6 +270,7 @@ struct ShowCommands: Commands {
             Button(L("Ny OSC-cue")) { model.add(.osc) }.keyboardShortcut("7")
             Button(L("Ny MIDI-cue")) { model.add(.midi) }.keyboardShortcut("8")
             Button(L("Ny spilleliste")) { model.add(.playlist) }.keyboardShortcut("9")
+            Button(L("Ny lysbildeserie")) { model.add(.slideshow) }.keyboardShortcut("b", modifiers: [.command, .shift])
             Button(L("Ny «gå til»-cue")) { model.add(.goto) }.keyboardShortcut("0")
             Button(L("Ny beskjed-cue")) { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
             Button(L("Ny nettverks-cue")) { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])

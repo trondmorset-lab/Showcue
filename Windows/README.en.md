@@ -97,6 +97,7 @@ and sample rate are then used directly. ASIO is recommended for the lowest laten
 | `/hotkey/{key}` | Like pressing the hotkey, e.g. `/hotkey/F1` |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / resume all |
 | `/cue/{no}/devamp` | Release the loop in a cue (finishes and continues to the end of the file) |
+| `/cue/{no}/next`, `/cue/{no}/previous` | Step to the next / previous slide in a running slideshow |
 
 - The cue number can also be sent as an argument: `/cue/start "12"`.
 - Messages with argument 0 or false are ignored, so buttons that send “released” do not trigger twice.
@@ -155,6 +156,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 | **F1–F12, A–Z, 0–9** | Hotkeys (start/stop the cue without moving the playhead) |
 | **Ctrl+1 … Ctrl+8** | Add audio, video, image, PDF, fade, stop, OSC, MIDI |
 | **Ctrl+9 / Ctrl+0** | Add playlist / go to cue |
+| **Ctrl+Shift+B** | Add slideshow |
 | **Ctrl+P** | Pause / resume all |
 | **Ctrl+Shift+M / Ctrl+Shift+N** | Add message / network cue |
 | **Ctrl+K** | Button panel |
@@ -180,6 +182,10 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 - **Pause** (the button next to STOP ALL or Ctrl+P): freezes all audio, video, fades and pre-waits. Press again, or GO, to resume.
 - **Playlist:** a cue with several audio files played one after another with crossfades. Choose random order and
   whether the list should start over. Fade out is used when it is stopped. Good for walk-in and intervals.
+- **Slideshow:** a cue with images, PDFs and videos shown one after another on one screen, like a presentation.
+  Images and PDF pages are shown for *Time per slide* seconds (each PDF page becomes a slide of its own), videos play until they finish,
+  and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
+  (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
 - **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
