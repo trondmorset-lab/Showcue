@@ -53,9 +53,7 @@ Example with Dante Virtual Soundcard:
 The same applies to other multichannel audio interfaces and aggregate devices created in Audio MIDI Setup.
 The sample rate follows the device, and files with a different rate are converted automatically in high quality.
 
-| Audio patch | Settings |
-|---|---|
-| ![Audio patch: outputs (rows) to channels on the audio interface](../docs/skjermbilder/mac/en/lydpatch.png) | <img src="../docs/skjermbilder/mac/en/innstillinger.png" width="360" alt="Settings → Audio"> |
+![Audio patch: outputs (rows) to channels on the audio interface](../docs/skjermbilder/mac/en/lydpatch.png)
 
 ## Differences from the Windows version
 

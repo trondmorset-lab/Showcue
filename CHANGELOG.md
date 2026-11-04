@@ -19,6 +19,7 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
 
 ### Rettet
 - **Windows: nedtrekkslister** for lydenhet, skjerm og MIDI-kanal viste «[nøkkel, navn]» i stedet for bare navnet når de var lukket.
+- **Windows: fillista** i spilleliste og lysbildeserie var hvit i mørkt tema; den følger nå temaet.
 - **Typekolonnen i cuelista** er bredere, så «Lysbildeserie», «Spilleliste» og «Beskjed» ikke kuttes (Mac: ikke delt over to linjer).
 
 ## 0.15.0 – 2026-11-03
