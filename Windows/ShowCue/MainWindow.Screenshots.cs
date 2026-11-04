@@ -1,10 +1,8 @@
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ShowCue.Models;
@@ -40,10 +38,8 @@ public partial class MainWindow
             // Video og PDF i demoen er bare navn (filene lages ikke); de skal ikke vises som manglende.
             foreach (var c in Cues) c.Error = null;
             StatusText = "";
-            AllowLargerThanScreen(this);
             WindowState = WindowState.Normal;
             Left = 0; Top = 0;
-            Width = 1440; Height = 900;
 
             // Lysbildeserien og innslippsmusikken spiller, så «Aktive cuer» og utgangen viser noe.
             var slides = Cues.OfType<SlideshowCue>().First();
@@ -57,26 +53,24 @@ public partial class MainWindow
             Activate();
 
             SelectedCue = Cues.OfType<AudioCue>().Skip(1).First();
-            await Shot(this, Path.Combine(dir, "hovedvindu.png"), log);
+            await Shot(this, Path.Combine(dir, "hovedvindu.png"), log, MainSize);
 
             SelectedCue = slides;
-            await Shot(this, Path.Combine(dir, "lysbildeserie.png"), log);
+            await Shot(this, Path.Combine(dir, "lysbildeserie.png"), log, MainSize);
 
             var theme = ThemeManager.Current;
             ThemeManager.Apply(AppTheme.Light);
             SelectedCue = Cues.OfType<VideoCue>().First();
-            await Shot(this, Path.Combine(dir, "hovedvindu-lyst.png"), log);
+            await Shot(this, Path.Combine(dir, "hovedvindu-lyst.png"), log, MainSize);
             ThemeManager.Apply(theme);
             SelectedCue = Cues.OfType<AudioCue>().Skip(1).First();
 
             var patch = new PatchWindow(Engine.Audio, _settings.Buses, () => { }) { Owner = this, Left = 0, Top = 0 };
-            AllowLargerThanScreen(patch);
             patch.Show();
             await Shot(patch, Path.Combine(dir, "lydpatch.png"), log);
             patch.Close();
 
             var settings = new SettingsWindow(_settings.Copy(), Remote) { Owner = this, Left = 0, Top = 0 };
-            AllowLargerThanScreen(settings);
             settings.Show();
             await Shot(settings, Path.Combine(dir, "innstillinger.png"), log);
             settings.Close();
@@ -89,39 +83,21 @@ public partial class MainWindow
         Environment.Exit(0);
     }
 
+    /// <summary>Innholdet i hovedvinduet ved 1440×900 (uten tittellinje og kant).</summary>
+    private static readonly Size MainSize = new(1424, 861);
+
     /// <summary>
-    /// Lar vinduet bli større enn skjermen (som er liten på byggemaskinene), så bildene får vanlig vindusstørrelse.
+    /// Venter til vinduet er tegnet ferdig, og lagrer innholdet som PNG (2x oppløsning).
+    /// Med <paramref name="client"/> legges innholdet ut i den størrelsen, også når skjermen på byggemaskinen er mindre
+    /// enn vinduet. Vinduet klipper da innholdet, så delene tegnes hver for seg.
     /// </summary>
-    private static void AllowLargerThanScreen(Window w)
-    {
-        var source = HwndSource.FromHwnd(new WindowInteropHelper(w).EnsureHandle());
-        source?.AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
-        {
-            const int WM_GETMINMAXINFO = 0x0024;
-            if (msg == WM_GETMINMAXINFO)
-            {
-                var info = Marshal.PtrToStructure<MinMaxInfo>(lParam);
-                info.MaxTrackX = info.MaxTrackY = 8000;
-                Marshal.StructureToPtr(info, lParam, false);
-                handled = true;
-            }
-            return IntPtr.Zero;
-        });
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MinMaxInfo
-    {
-        public int ReservedX, ReservedY, MaxSizeX, MaxSizeY, MaxPositionX, MaxPositionY, MinTrackX, MinTrackY, MaxTrackX, MaxTrackY;
-    }
-
-    /// <summary>Venter til vinduet er tegnet ferdig, og lagrer innholdet som PNG (2x oppløsning).</summary>
-    private static async Task Shot(Window w, string file, List<string> log)
+    private static async Task Shot(Window w, string file, List<string> log, Size? client = null)
     {
         if (w.Content is not FrameworkElement root) return;
         var m = root.Margin;
         try
         {
+            if (client is Size c) { root.Width = c.Width; root.Height = c.Height; }
             await Task.Delay(1200);
             await w.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             w.UpdateLayout();
@@ -131,7 +107,10 @@ public partial class MainWindow
             var bg = new DrawingVisual();
             using (var dc = bg.RenderOpen()) dc.DrawRectangle(w.Background ?? Brushes.Black, null, new Rect(size));
             bmp.Render(bg);
-            bmp.Render(root);
+            if (client != null)
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) bmp.Render(VisualTreeHelper.GetChild(root, i));
+            else
+                bmp.Render(root);
             var png = new PngBitmapEncoder();
             png.Frames.Add(BitmapFrame.Create(bmp));
             using var fs = File.Create(file);
@@ -141,6 +120,11 @@ public partial class MainWindow
         catch (Exception ex)
         {
             log.Add(Path.GetFileName(file) + ": " + ex.Message);
+        }
+        finally
+        {
+            root.Width = double.NaN;
+            root.Height = double.NaN;
         }
     }
 
