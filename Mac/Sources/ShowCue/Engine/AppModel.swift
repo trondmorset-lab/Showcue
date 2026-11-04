@@ -446,7 +446,7 @@ final class AppModel: ObservableObject, ShowControl {
         }
     }
 
-    private func setShow(_ doc: ShowDocument, url: URL?) {
+    func setShow(_ doc: ShowDocument, url: URL?) {
         engine.stopAll(fade: 0)
         cues = doc.cues
         showURL = url

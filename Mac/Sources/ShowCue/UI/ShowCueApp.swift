@@ -56,7 +56,7 @@ enum AppIcon {
 /// når et utgangsvindu fantes, uten noe synlig vindu å avslutte fra.
 final class MainWindowCloser: NSObject {
     static let shared = MainWindowCloser()
-    private weak var window: NSWindow?
+    private(set) weak var window: NSWindow?
     private var closeObserver: NSObjectProtocol?
     /// Åpner hovedvinduet igjen (hvis det ble lukket med ⌘W og avslutningen ble avbrutt).
     var reopen: (() -> Void)?
@@ -93,7 +93,7 @@ struct MainWindowHook: NSViewRepresentable {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Språket velges før noe annet lages, så alle tekster kommer på riktig språk.
     let model: AppModel = {
-        Loc.use(AppSettings.load().language)
+        Loc.use(Screenshots.language ?? AppSettings.load().language)
         return AppModel()
     }()
     private var monitor: Any?
@@ -109,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         model.startup()
         launched = true
+        if let dir = Screenshots.directory { Screenshots.run(model, dir: dir); return }
         if let url = pendingOpen { pendingOpen = nil; model.open(url, confirm: false) }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
             guard let self else { return e }
