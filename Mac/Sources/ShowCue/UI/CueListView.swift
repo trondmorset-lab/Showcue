@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 private struct Col {
     let status, number, type, preWait, length, cont, trigger: CGFloat
     init(_ s: CGFloat) {
-        status = 30 * s; number = 60 * s; type = 66 * s
+        status = 30 * s; number = 60 * s; type = 122 * s
         preWait = 76 * s; length = 76 * s; cont = 28 * s; trigger = 104 * s
     }
 }
@@ -129,7 +129,7 @@ struct CueRow: View {
                 .padding(.horizontal, 8).frame(width: col.number, alignment: .leading)
             HStack(spacing: 2) {
                 Text(cue.typeIcon).frame(width: 16 * scale)
-                Text(cue.typeName).uiFont(12)
+                Text(cue.typeName).uiFont(12).lineLimit(1)
             }
             .foregroundColor(theme.muted).padding(.horizontal, 8).frame(width: col.type, alignment: .leading)
             Text(cue.displayName).lineLimit(1).padding(.horizontal, 8)
