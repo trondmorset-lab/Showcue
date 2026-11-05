@@ -37,6 +37,14 @@ Both have:
 Show files (`.showcue`) can be moved freely between Mac and Windows. Put the media files in the same folder as the show,
 or in a subfolder `Media`.
 
+## Screenshots
+
+![ShowCue on Mac: cue list, panel for the selected cue, active cues with a slideshow, hotkeys and output](docs/skjermbilder/mac/en/hovedvindu.png)
+
+| Windows | Light theme |
+|---|---|
+| ![ShowCue on Windows](docs/skjermbilder/windows/en/hovedvindu.png) | ![ShowCue with the light theme](docs/skjermbilder/mac/en/hovedvindu-lyst.png) |
+
 ## Download
 
 Ready-built programs are under **Releases** on GitHub:

@@ -823,7 +823,7 @@
                                 <Style TargetType="TextBlock"><Setter Property="FontFamily" Value="{StaticResource MonoFont}" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="{local:T 'TYPE'}" Width="66">
+                        <DataGridTemplateColumn Header="{local:T 'TYPE'}" Width="122">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">

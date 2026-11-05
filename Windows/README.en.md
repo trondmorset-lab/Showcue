@@ -5,6 +5,8 @@
 A cue-based playback program for Windows. Made for concerts and events:
 a GO button with a cue list, hotkeys for jingles and walk-in, and output to a projector.
 
+![The main window: GO and the next cue at the top, the cue list with the panel for the selected cue on the right, and active cues, hotkeys and output at the bottom](../docs/skjermbilder/windows/en/hovedvindu.png)
+
 ## Building the program
 
 1. Install the **.NET 10 SDK** (not just the runtime): https://dotnet.microsoft.com/download/dotnet/10.0
@@ -195,6 +197,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 - **Fade curves:** fade cues can use *smooth* (linear in dB, default), *S-curve* (soft start and end) or
   *linear amplitude* (like a physical fader).
 
+![The slideshow selected: the files in order, time per slide and crossfade. Step with ⏮ / ⏭ under *Active cues*](../docs/skjermbilder/windows/en/lysbildeserie.png)
+
 ## The toolbar
 
 | Menu | Content |
@@ -276,6 +280,8 @@ Both are also under *Settings → Appearance* and are remembered until next time
 and the quick button gets a colour stripe. Select several cues to colour them all at once.
 The colours are adapted to each theme (muted in dark and night, pastel in grey and light).
 
+![Light theme](../docs/skjermbilder/windows/en/hovedvindu-lyst.png)
+
 ## Settings
 
 - **Audio:** WASAPI (standard audio interfaces, USB and network audio interfaces in WDM mode) or **ASIO** (pro audio interfaces and network audio interfaces).
@@ -285,6 +291,8 @@ The colours are adapted to each theme (muted in dark and night, pastel in grey a
   Each visual cue can also have its own screen (*Screen* in the panel on the right); *Default* uses the screen from here.
   The output is also shown as a preview at the bottom right.
 - Settings and the audio patch are stored per computer in `%AppData%\ShowCue\settings.json`.
+
+<img src="../docs/skjermbilder/windows/en/innstillinger.png" width="480" alt="Settings → Audio">
 
 ## Show files
 

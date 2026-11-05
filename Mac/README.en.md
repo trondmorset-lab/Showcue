@@ -7,6 +7,14 @@ It has the same features as the Windows version, and **the show files (`.showcue
 
 Requires macOS 13 (Ventura) or newer. Runs on both Apple Silicon and Intel.
 
+## Screenshots
+
+![ShowCue on Mac with a demo show: the slideshow and the walk-in music are playing](../docs/skjermbilder/mac/en/hovedvindu.png)
+
+| Slideshow selected | Light theme |
+|---|---|
+| ![Slideshow](../docs/skjermbilder/mac/en/lysbildeserie.png) | ![Light theme](../docs/skjermbilder/mac/en/hovedvindu-lyst.png) |
+
 ## Building and starting
 
 **Easiest, with Xcode** (free from the App Store):
@@ -44,6 +52,8 @@ Example with Dante Virtual Soundcard:
 
 The same applies to other multichannel audio interfaces and aggregate devices created in Audio MIDI Setup.
 The sample rate follows the device, and files with a different rate are converted automatically in high quality.
+
+![Audio patch: outputs (rows) to channels on the audio interface](../docs/skjermbilder/mac/en/lydpatch.png)
 
 ## Differences from the Windows version
 

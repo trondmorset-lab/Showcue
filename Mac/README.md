@@ -7,6 +7,14 @@ Den har de samme funksjonene som Windows-versjonen, og **showfilene (`.showcue`)
 
 Krever macOS 13 (Ventura) eller nyere. Kjører både på Apple Silicon og Intel.
 
+## Skjermbilder
+
+![ShowCue på Mac med demoshow: lysbildeserien og innslippsmusikken spiller](../docs/skjermbilder/mac/nb/hovedvindu.png)
+
+| Lysbildeserie valgt | Lyst tema |
+|---|---|
+| ![Lysbildeserie](../docs/skjermbilder/mac/nb/lysbildeserie.png) | ![Lyst tema](../docs/skjermbilder/mac/nb/hovedvindu-lyst.png) |
+
 ## Bygge og starte
 
 **Enklest, med Xcode** (gratis fra App Store):
@@ -44,6 +52,10 @@ Eksempel med Dante Virtual Soundcard:
 
 Det samme gjelder andre flerkanals lydkort og aggregerte enheter laget i Lyd- og MIDI-oppsett.
 Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres automatisk av høy kvalitet.
+
+| Lydpatch | Innstillinger |
+|---|---|
+| ![Lydpatch: utganger (rader) til kanaler på lydkortet](../docs/skjermbilder/mac/nb/lydpatch.png) | <img src="../docs/skjermbilder/mac/nb/innstillinger.png" width="360" alt="Innstillinger → Lyd"> |
 
 ## Forskjeller fra Windows-versjonen
 

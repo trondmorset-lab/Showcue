@@ -2,6 +2,11 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.16.0 – skjermbilder i manualene
+- Skjermbildene tas av appen selv på ekte Windows- og Mac-maskiner (arbeidsflyten «Skjermbilder»), med et demoshow
+  som lages i koden. Da viser manualene alltid dagens brukerflate, og de kan lages på nytt med ett klikk.
+- Demoshowet bruker nøytrale navn og adresser og lager sine egne filer (ingen tredjeparts innhold i bildene).
+
 ## 0.16.0 – lysbildeserie
 - **Egen cuetype** i stedet for en «autokjør»-innstilling på hver bilde-cue: én cue i lista holder hele serien, og den kan stoppes,
   fades og blas i som én enhet. Lysbildene gjenbruker bilde-/video-avspillingen, så skalering, skjermvalg og videolyd virker likt.

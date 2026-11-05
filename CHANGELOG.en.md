@@ -15,6 +15,12 @@ The full history of earlier versions is in the Norwegian changelog.
   Slides crossfade, the slideshow can start again after the last slide (loop) and play in random order.
   Turn off *Advance automatically* to step through by hand.
 - **Stepping through a slideshow:** ⏮ / ⏭ under *Active cues*, or OSC `/cue/{nr}/next` and `/cue/{nr}/previous`.
+- **Screenshots in the manuals** (README for Windows and Mac, Norwegian and English), taken by the program itself.
+
+### Fixed
+- **Windows: drop-down lists** for audio device, screen and MIDI channel showed “[key, name]” instead of just the name when closed.
+- **Windows: the file list** in playlists and slideshows was white in the dark theme; it now follows the theme.
+- **The type column in the cue list** is wider, so “Slideshow”, “Playlist” and “Message” are no longer cut off (Mac: no longer split over two lines).
 
 ## 0.15.0 – 2026-11-03
 
