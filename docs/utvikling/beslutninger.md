@@ -2,6 +2,17 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.17.0 – gruppe-cue
+- **Gruppen peker på cuer med nummer** (som stopp-, fade- og gå til-cuer), ikke på cuer inni seg. Lista forblir flat, og cuene i gruppen kan
+  fortsatt kjøres og stoppes hver for seg. Ingen nytt lag av mapper å holde styr på i lista, i showfila eller i fjernstyringen.
+- **Alle startes samtidig.** Rekkefølge og forsinkelse styres av hver cues egen pre-wait og fortsett-innstilling, så gruppen trenger ingen egne tidsregler.
+- Leddene skilles med komma eller semikolon; `8-10` er et område av tall. Et cuenummer som selv inneholder bindestrek finnes først som det er.
+  Lesingen ligger i `CueTargets` (samme på begge plattformer og testet likt).
+- Gruppen kan ikke starte seg selv, og grupper som starter grupper stopper på 8 nivåer (`MaxGroupDepth`). To grupper som starter hverandre
+  med pre-wait kan fortsatt gå i ring, men hver runde er et eget GO med forsinkelse.
+- Manglende mål gir en feil på gruppen, men de andre starter. Deaktiverte mål hoppes over, som for GO.
+- Typenavn i showfila: `group`, feltet heter `Targets`.
+
 ## 0.16.0 – skjermbilder i manualene
 - Skjermbildene tas av appen selv på ekte Windows- og Mac-maskiner (arbeidsflyten «Skjermbilder»), med et demoshow
   som lages i koden. Da viser manualene alltid dagens brukerflate, og de kan lages på nytt med ett klikk.

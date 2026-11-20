@@ -203,6 +203,27 @@ public sealed class CueEngine : IDisposable
     }
 
     internal void RequestGoto(string target, bool fire) => GotoRequested?.Invoke(target, fire);
+
+    /// <summary>Største dybde for grupper som starter grupper (hindrer at to grupper starter hverandre i det uendelige).</summary>
+    internal const int MaxGroupDepth = 8;
+    private int _groupDepth;
+
+    /// <summary>Starter cuene i en gruppe-cue. Cuer som finnes startes selv om andre mangler; manglende vises som feil på gruppen.</summary>
+    internal void FireGroup(GroupCue group)
+    {
+        if (_groupDepth >= MaxGroupDepth) { group.Error = Loc.T("For mange grupper inni hverandre"); return; }
+        var missing = new List<string>();
+        var targets = CueTargets.Resolve(_cueList(), group.Targets, group, missing);
+        if (string.IsNullOrWhiteSpace(group.Targets)) group.Error = Loc.T("Mangler mål-cuer");
+        else if (missing.Count > 0) group.Error = Loc.F("Fant ikke cue {0}", string.Join(", ", missing));
+        _groupDepth++;
+        try
+        {
+            foreach (var t in targets)
+                if (!t.Disabled) Fire(t);
+        }
+        finally { _groupDepth--; }
+    }
     internal void ShowMemo(MemoCue memo) => MemoShown?.Invoke(memo);
 
     /// <summary>Pause alt som spiller. Klokka stopper også, så pre-wait, fader og bildetider står stille.</summary>

@@ -6,6 +6,15 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.17.0 – 2026-11-20
+
+### Nytt
+- **Gruppe-cue** (❖ *Styring → Gruppe*): starter flere andre cuer med én GO. Skriv cuenumrene som skal startes, f.eks. `2, 5, 8-10`
+  (`8-10` tar med alle cuer med et tall fra 8 til 10). Hver cue i gruppen følger sin egen pre-wait og fortsett-innstilling,
+  og deaktiverte cuer hoppes over. Finnes en cue ikke, startes de andre og gruppen viser hvilken som mangler.
+  En gruppe kan ikke starte seg selv, og grupper som starter grupper stopper på åtte nivåer.
+  *Nummerer* oppdaterer numrene i gruppene, også i endene av et område.
+
 ## 0.16.0 – 2026-11-04
 
 ### Nytt

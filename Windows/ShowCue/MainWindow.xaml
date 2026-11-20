@@ -244,6 +244,15 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type m:GroupCue}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Cuer som startes (numre, f.eks. 2, 5, 8-10)'}" />
+                <TextBox Text="{Binding Targets}" />
+                <TextBlock Style="{StaticResource Hint}"
+                           Text="{local:T 'Alle cuene i lista startes samtidig med én GO. Hver cue følger sin egen pre-wait. Skill numrene med komma; «8-10» tar med alle cuer fra 8 til 10. Deaktiverte cuer hoppes over.'}" />
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type m:PlaylistCue}">
             <StackPanel>
                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Spor (spilles ovenfra og ned)'}" />
@@ -689,6 +698,7 @@
                                     <MenuItem Header="{local:T '◢  Fade (valgt cue)'}" InputGestureText="Ctrl+5" Tag="fade" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '■  Stopp'}" InputGestureText="Ctrl+6" Tag="stop" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '↪  Gå til'}" InputGestureText="Ctrl+0" Tag="goto" Click="AddCue_Click" />
+                                    <MenuItem Header="{local:T '❖  Gruppe'}" Tag="group" Click="AddCue_Click" />
                                     <MenuItem Header="{local:T '✎  Beskjed'}" InputGestureText="Ctrl+Shift+M" Tag="memo" Click="AddCue_Click" />
                                 </ContextMenu>
                             </Button.ContextMenu>
