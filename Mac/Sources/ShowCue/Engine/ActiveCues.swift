@@ -822,6 +822,8 @@ final class InstantActive: ActiveCue {
             try engine.midi.send(MidiOut.bytes(for: cue), device: cue.device)
         case .goto:
             engine.requestGoto(cue.target, fire: cue.fire)
+        case .group:
+            engine.fireGroup(cue)
         case .memo:
             engine.onMemo?(cue)
         case .network:

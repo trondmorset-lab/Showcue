@@ -6,6 +6,15 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.17.0 – 2026-11-20
+
+### New
+- **Group cue** (❖ *Control → Group*): starts several other cues with one GO. Write the numbers of the cues to start, e.g. `2, 5, 8-10`
+  (`8-10` includes every cue with a number from 8 to 10). Each cue in the group follows its own pre-wait and continue setting,
+  and disabled cues are skipped. If a cue does not exist, the others still start and the group shows which one is missing.
+  A group cannot start itself, and groups that start groups stop at eight levels.
+  *Renumber* updates the numbers in groups, including both ends of a range.
+
 ## 0.16.0 – 2026-11-04
 
 ### New

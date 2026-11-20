@@ -144,6 +144,7 @@ struct CueInspector: View {
         case .playlist: playlistSection
         case .slideshow: slideshowSection
         case .goto: gotoSection
+        case .group: groupSection
         case .memo: memoSection
         case .network: networkSection
         case .timecode: timecodeSection
@@ -423,6 +424,13 @@ struct CueInspector: View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Mål-cue (nummer)")); TextInput($cue.target, mono: true)
             Toggle(L("Kjør mål-cuen med en gang (ellers flyttes bare GO-markøren)"), isOn: $cue.fire).padding(.top, 8)
+        }
+    }
+
+    private var groupSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel(L("Cuer som startes (numre, f.eks. 2, 5, 8-10)")); TextInput($cue.targets, mono: true)
+            Hint(L("Alle cuene i lista startes samtidig med én GO. Hver cue følger sin egen pre-wait. Skill numrene med komma; «8-10» tar med alle cuer fra 8 til 10. Deaktiverte cuer hoppes over."))
         }
     }
 

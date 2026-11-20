@@ -418,6 +418,20 @@ public sealed class GotoCue : Cue
     public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("(mål mangler)") : "→ " + Target) + (Fire ? "  + GO" : "");
 }
 
+/// <summary>Starter flere andre cuer med én GO. Hver cue i gruppen følger sin egen pre-wait og fortsett-innstilling.</summary>
+public sealed class GroupCue : Cue
+{
+    private string _targets = "";
+
+    /// <summary>Cuenumrene som skal startes, skilt med komma. Et område skrives «8-10».</summary>
+    public string Targets { get => _targets; set => SetCue(ref _targets, value?.Trim() ?? ""); }
+
+    public override string TypeName => Loc.T("Gruppe");
+    public override string TypeIcon => "❖";
+    protected override string DefaultName => string.IsNullOrEmpty(Targets) ? Loc.T("Gruppe") : Loc.F("Gruppe {0}", Targets);
+    public override string Summary => string.IsNullOrEmpty(Targets) ? Loc.T("(mål mangler)") : "→ " + Targets;
+}
+
 // ======================================================================
 //  SPILLELISTE
 // ======================================================================

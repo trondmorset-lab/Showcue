@@ -59,7 +59,7 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
         ["audio"] = typeof(AudioCue), ["video"] = typeof(VideoCue), ["image"] = typeof(ImageCue), ["pdf"] = typeof(PdfCue),
         ["fade"] = typeof(FadeCue), ["stop"] = typeof(StopCue), ["osc"] = typeof(OscCue), ["midi"] = typeof(MidiCue),
         ["goto"] = typeof(GotoCue), ["playlist"] = typeof(PlaylistCue), ["memo"] = typeof(MemoCue), ["network"] = typeof(NetworkCue),
-        ["web"] = typeof(WebCue), ["slideshow"] = typeof(SlideshowCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue),
+        ["web"] = typeof(WebCue), ["slideshow"] = typeof(SlideshowCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue), ["group"] = typeof(GroupCue),
     };
 
     public override bool CanConvert(Type t) => t == typeof(Cue);
