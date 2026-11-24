@@ -11,6 +11,10 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - `dbToGain(NaN)` ga NaN i hele mikseren. Bruk `db > -60` (usann for NaN), ikke `db <= -60`.
 - `TimeSpan.FromSeconds` med enorme verdier kaster; klokkevisninger begrenses til 99:59:59.
 - **Ødelagte OSC-pakker:** les aldri utenfor pakken (lengdefelt kan lyve, blob-lengde kan være negativ). Mac krasjet på `d[s..<s]` utenfor tabellen.
+- **ASIO:** en driver eies av én økt. Åpne aldri innganger og utganger hver for seg; bruk `InitRecordAndPlayback` og `AudioAvailable`.
+  `AsioOut` kan bare initialiseres én gang: feiler `InitRecordAndPlayback`, må objektet kastes og et nytt lages. `InputChannelOffset`
+  må settes *før* init (feil gir unntak ved for høy forskyvning). `GetAsInterleavedSamples` kaster for ukjente lydformater; fang det i
+  hendelsen, ellers faller driver-tråden. Ingen minnetildeling eller låsing i `AudioAvailable`.
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
 
 ## Avslutning

@@ -240,7 +240,11 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
   `kanal@verdi`, f.eks. `1@255 2-4@50% 10@0`, og fades over valgt tid. Kanaler som ikke nevnes, beholder nivået.
 - **Live-inngang** (◉ Inn): lyden fra inngangen valgt under *Innstillinger → Lyd* (WASAPI: mikrofon, linje inn,
   nettverkslydkort i WDM-modus) går gjennom routingmatrisen og lydpatchen med nivå og fades. Forsinkelse ca. 20–60 ms.
-  ASIO-innganger støttes ikke ennå – bruk nettverkslydkortet i WDM-modus.
+  **ASIO-innganger** (eksperimentelt): slå på *Bruk ASIO-innganger for live-inngang* under *Innstillinger → Lyd* (med ASIO valgt),
+  og velg første inngang og antall innganger. Inngangene hentes fra samme ASIO-økt som utgangen (en ASIO-driver kan bare
+  brukes av ett program om gangen). Funksjonen er av som standard og er ikke prøvd på ekte ASIO-utstyr ennå. Står den av,
+  brukes opptaksenheten (WASAPI) som før. Hvis driveren ikke har innganger eller ikke kan åpne dem, spiller lyden videre
+  uten innganger, og årsaken står i lydstatusen og i feilmeldingen når en inngang-cue startes.
 
 ## Mediefiler: finn og samle
 

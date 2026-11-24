@@ -1080,9 +1080,15 @@ public sealed class InputActive : PlaybackActive
         var mixer = Engine.Audio.Mixer ?? throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
         int rate = mixer.WaveFormat.SampleRate;
         LiveRing ring;
-        try { ring = Engine.Input.Open(Engine.Settings.InputDeviceId, rate); }
+        Action<LiveRing> release;
+        try
+        {
+            var s = Engine.Settings;
+            (ring, release) = Engine.Input.OpenFor(s.AudioDriver == AudioDriverType.Asio && s.AsioInputEnabled,
+                Engine.Audio.InputFeed, Engine.Audio.InputProblem, s.InputDeviceId, rate);
+        }
         catch (Exception ex) { throw new InvalidOperationException(Loc.T("Kunne ikke åpne inngangen: ") + ex.Message); }
-        var stream = new LiveInputStream(ring, rate, Engine.Input.Close);
+        var stream = new LiveInputStream(ring, rate, release);
         var pb = new CuePlayback(I, stream, I, new CuePlayback.Options(I.VolumeDb, 0, 0, false, I.FadeIn, I.FadeOut), rate);
         mixer.Add(pb);
         _begin = Engine.Now;

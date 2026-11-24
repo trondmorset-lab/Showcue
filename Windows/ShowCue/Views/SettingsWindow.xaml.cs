@@ -34,6 +34,9 @@ public partial class SettingsWindow : Window
         AsioBox.ItemsSource = asio;
         AsioBox.SelectedItem = asio.Contains(settings.AsioDriverName) ? settings.AsioDriverName : asio.FirstOrDefault();
         AsioChannelsBox.Text = settings.AsioMaxChannels.ToString();
+        AsioInputEnabledBox.IsChecked = settings.AsioInputEnabled;
+        AsioInputFirstBox.Text = settings.AsioInputFirstChannel.ToString();
+        AsioInputCountBox.Text = settings.AsioInputChannels.ToString();
 
         var previewDevices = new List<KeyValuePair<string, string>> { new("", Loc.T("Ingen egen enhet")) };
         previewDevices.AddRange(AudioEngine.GetWasapiDevices().Where(d => d.Key != ""));
@@ -181,6 +184,9 @@ public partial class SettingsWindow : Window
         Result.WasapiDeviceId = WasapiBox.SelectedValue as string ?? "";
         Result.AsioDriverName = AsioBox.SelectedItem as string ?? "";
         if (int.TryParse(AsioChannelsBox.Text, out var ac)) Result.AsioMaxChannels = Math.Clamp(ac, 2, 128);
+        Result.AsioInputEnabled = AsioInputEnabledBox.IsChecked == true;
+        if (int.TryParse(AsioInputFirstBox.Text, out var aif)) Result.AsioInputFirstChannel = AsioInputPlanner.ClampFirst(aif);
+        if (int.TryParse(AsioInputCountBox.Text, out var aic)) Result.AsioInputChannels = AsioInputPlanner.ClampCount(aic);
         Result.SampleRate = RateBox.SelectedItem is int r ? r : 48000;
         Result.VideoScreen = ScreenBox.SelectedValue is int s ? s : -1;
         if (int.TryParse(LatencyBox.Text, out var lat)) Result.LatencyMs = Math.Clamp(lat, 10, 500);

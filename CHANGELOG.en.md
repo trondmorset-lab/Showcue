@@ -6,6 +6,16 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.18.0 – 2026-11-24
+
+### New
+- **Windows: live inputs through ASIO (experimental).** Under *Settings → Audio* (ASIO) you can turn on *Use ASIO inputs for live input*
+  and choose the first input and the number of inputs. The inputs are taken from the same ASIO session as the output, so an input cue can use
+  e.g. a network audio interface in ASIO mode. The feature is **off by default** and has not been tried on real ASIO equipment yet;
+  when it is off, live input (WASAPI) and the audio output work exactly as before.
+  If the driver has no inputs, or cannot open them, audio keeps playing without inputs and the reason is shown in the audio status.
+- Mac needs no change: CoreAudio provides live inputs without sharing the output.
+
 ## 0.16.0 – 2026-11-04
 
 ### New

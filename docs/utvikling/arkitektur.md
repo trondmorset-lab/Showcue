@@ -50,6 +50,12 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 - **Mac – Voice + StreamingSource + SampleRing**: lydtråden leser bare ferdig dekodet lyd fra en ringbuffer.
   `AudioFeeder` er én bakgrunnstråd som fyller alle ringbuffere hvert 10. ms. Ringen har merker for rundestart,
   så «posisjon i runden» stemmer også når kilden looper. Spoling tømmer ringen med riktig posisjon i runden og dekoder derfra.
+- **Windows – live-innganger:** `AudioInput` åpner WASAPI-opptak (som før). Med *Bruk ASIO-innganger* (`AsioInputEnabled`, av som standard)
+  og ASIO som driver åpner `AudioEngine` i stedet utgang og innganger i samme økt (`AsioOut.InitRecordAndPlayback`), og
+  `AsioInputFeed.OnAudioAvailable` fører inngangene inn i `LiveRing` for hver live-cue (`LiveInputStream` brukes som før).
+  `AsioInputPlanner` (valg av kanaler) og `ChannelMap` (kanalomforming) har ingen maskinvareavhengighet. `AudioInput.OpenFor` velger kilde:
+  er ASIO-innganger slått på og ikke tilgjengelige, gir cuen en tydelig feilmelding (den faller aldri stille tilbake til en annen enhet).
+  Mac bruker CoreAudio og åpner innganger separat fra utgangen, så trenger ikke dette.
 - Alle tider/nivåer som kommer inn i lydmotoren saneres (NaN, uendelig, negative → gyldige verdier).
   En loop må være minst 10 ms, og to tilbakespolinger uten lyd imellom avslutter i stedet for å henge.
 

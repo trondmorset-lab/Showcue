@@ -240,7 +240,11 @@ Audio from the page goes to the system audio output, not through the audio patch
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,
   network audio interface in WDM mode) goes through the routing matrix and the audio patch with level and fades. Latency about 20–60 ms.
-  ASIO inputs are not supported yet – use the network audio interface in WDM mode.
+  **ASIO inputs** (experimental): turn on *Use ASIO inputs for live input* under *Settings → Audio* (with ASIO selected),
+  and choose the first input and the number of inputs. The inputs are taken from the same ASIO session as the output (an ASIO driver
+  can only be used by one program at a time). The feature is off by default and has not been tried on real ASIO equipment yet.
+  When it is off, the capture device (WASAPI) is used as before. If the driver has no inputs or cannot open them, audio keeps
+  playing without inputs, and the reason is shown in the audio status and in the error message when an input cue starts.
 
 ## Media files: find and collect
 

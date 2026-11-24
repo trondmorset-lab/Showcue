@@ -2,6 +2,22 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.18.0 – ASIO-innganger (Windows)
+- **Innganger i samme økt som utgangen.** En ASIO-driver eies av én økt, så live-innganger kan ikke åpnes separat: `AudioEngine`
+  bruker `InitRecordAndPlayback` og hører på `AudioAvailable`. Lyden går inn i de eksisterende `LiveRing`/`LiveInputStream`.
+  Samme samplingsfrekvens som utgangen, så ingen omsampling.
+- **Av som standard** (`AsioInputEnabled = false`), fordi funksjonen ikke er prøvd på ekte ASIO-utstyr. Er den av, kjører
+  utgangssti og WASAPI-opptak nøyaktig som før (`asio.Init(...)`).
+- **Ikke blokkerende i lydtråden.** `AsioInputFeed` lager alle buffere på forhånd (`PrepareBuffer`) og bytter hele lytterlisten
+  (kopi ved endring) i stedet for å låse; en blokk som er større enn forventet forkastes og telles (`DroppedBlocks`).
+  `LiveRing` har fortsatt sin lås, men i ASIO-løypa skriver og leser samme driver-tråd etter hverandre, så den er aldri i konflikt.
+  Unntatt lydformat (f.eks. MSB-formater) gir `Failed` i stedet for unntak i driver-tråden.
+- **Feil gir tekst, ikke krasj eller stille bytte:** kan ikke inngangene åpnes, startes økta på nytt med bare utganger (lyden
+  spiller videre) og årsaken står i lydstatusen; en inngang-cue gir feilmelding i stedet for å bruke WASAPI-enheten.
+- Logikk som kan testes uten maskinvare ligger i `AsioInputPlanner`, `ChannelMap` og `AsioInputFeed` (xUnit i `AsioInputTests`),
+  også med lagde buffere i stedet for en driver.
+- Mac: ingen endring; CoreAudio åpner innganger uavhengig av utgangen.
+
 ## 0.16.0 – skjermbilder i manualene
 - Skjermbildene tas av appen selv på ekte Windows- og Mac-maskiner (arbeidsflyten «Skjermbilder»), med et demoshow
   som lages i koden. Da viser manualene alltid dagens brukerflate, og de kan lages på nytt med ett klikk.

@@ -6,6 +6,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.18.0 – 2026-11-24
+
+### Nytt
+- **Windows: live-innganger via ASIO (eksperimentelt).** Under *Innstillinger → Lyd* (ASIO) kan du slå på *Bruk ASIO-innganger for live-inngang*
+  og velge første inngang og antall innganger. Inngangene hentes fra samme ASIO-økt som utgangen, så en inngang-cue kan bruke
+  f.eks. et nettverkslydkort i ASIO-modus. Funksjonen er **av som standard** og er ikke prøvd på ekte ASIO-utstyr ennå;
+  når den er av, virker live-inngang (WASAPI) og lydutgangen nøyaktig som før.
+  Har driveren ingen innganger, eller kan den ikke åpne dem, spiller lyden videre uten innganger, og årsaken vises i lydstatusen.
+- Mac trenger ingen endring: CoreAudio gir live-innganger uten at utgangen må deles.
+
 ## 0.16.0 – 2026-11-04
 
 ### Nytt
