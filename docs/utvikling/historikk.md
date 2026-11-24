@@ -2,7 +2,8 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
-| 0.16.1 | (åpen) | Robusthet: ødelagte showfiler (feltvis lesing på Windows, «null» hoppes over, cue uten type avvises på Mac), OSC-blob, DMX «NaN», `\xHH`, avslutning |
+| 0.17.0 | #21 | Gruppe-cue: starter flere cuer med én GO (numre og områder) |
+| 0.16.1 | #25 | Robusthet: ødelagte showfiler (feltvis lesing på Windows, «null» hoppes over, cue uten type avvises på Mac), OSC-blob, DMX «NaN», `\xHH`, avslutning |
 | 0.16.0 | #17 | Lysbildeserie: bilder, PDF-sider og videoer etter hverandre med krysstoning, loop, tilfeldig rekkefølge og blaing (⏮ / ⏭, OSC) |
 | 0.15.0 | #16 | Skjerm per visuell cue; Mac lar seg lukke etter video; sikrere avslutning på Windows |
 | 0.14.0 | #14, #15 | Spoling i sanntid i lyd og video (spolelinje, ±5 s, også under pause); media-cuer uten fil. Utviklingsnotater og stresstest i CI (#15) |

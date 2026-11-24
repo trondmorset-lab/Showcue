@@ -189,6 +189,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
   and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
   (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
 - **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
+- **Group:** starts several cues with one GO. Write the numbers, e.g. `2, 5, 8-10` (`8-10` is every cue from 8 to 10). Each cue follows its own pre-wait, and disabled cues are skipped.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
 - **Scrubbing while playing:** audio and video cues under *Active cues* have a scrub bar. Drag it to scrub in
@@ -205,7 +206,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 |---|---|
 | **File** | New, open, save, collect show, find missing media files |
 | **＋ Media** | Audio, video, image, PDF, web page, playlist, live input |
-| **Control** | Fade, stop, go to, message |
+| **Control** | Fade, stop, go to, group, message |
 | **Equipment** | Control other equipment: OSC, MIDI, network, timecode, lighting (Art-Net) |
 | **Edit** | Duplicate, delete, move, renumber, normalise loudness |
 | **Setup** | Audio patch, output window, settings, theme, zoom, about ShowCue |

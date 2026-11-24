@@ -699,6 +699,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "playlist" => new() { new PlaylistCue() },
             "slideshow" => new() { new SlideshowCue() },
             "goto" => new() { new GotoCue() },
+            "group" => new() { new GroupCue() },
             "fade" => new() { new FadeCue { Target = target is AudioCue or VisualCue ? target.Number : "" } },
             "stop" => new() { new StopCue() },
             "osc" => new() { new OscCue() },
@@ -783,7 +784,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, Loc.T("Gi alle cuer nye nummer (1, 2, 3)?\nFade-, stopp- og gå til-cuer oppdateres automatisk."), "ShowCue",
+        if (MessageBox.Show(this, Loc.T("Gi alle cuer nye nummer (1, 2, 3)?\nFade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk."), "ShowCue",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < Cues.Count; i++)
@@ -795,6 +796,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         foreach (var f in Cues.OfType<FadeCue>()) if (map.TryGetValue(f.Target, out var t)) f.Target = t;
         foreach (var s in Cues.OfType<StopCue>()) if (map.TryGetValue(s.Target, out var t)) s.Target = t;
         foreach (var g in Cues.OfType<GotoCue>()) if (map.TryGetValue(g.Target, out var t)) g.Target = t;
+        foreach (var g in Cues.OfType<GroupCue>()) g.Targets = CueTargets.Renumber(g.Targets, map);
     }
 
     private void PdfNextPage_Click(object sender, RoutedEventArgs e)

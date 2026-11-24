@@ -135,7 +135,7 @@ final class CueEngine: ObservableObject {
         case .timecode: return TimecodeActive(cue: cue, engine: self)
         case .light: return LightActive(cue: cue, engine: self)
         case .input: return InputActive(cue: cue, engine: self)
-        case .osc, .midi, .goto, .memo, .network: return InstantActive(cue: cue, engine: self)
+        case .osc, .midi, .goto, .group, .memo, .network: return InstantActive(cue: cue, engine: self)
         }
     }
 
@@ -220,6 +220,21 @@ final class CueEngine: ObservableObject {
     }
 
     func requestGoto(_ target: String, fire: Bool) { onGoto?(target, fire) }
+
+    /// Største dybde for grupper som starter grupper (hindrer at to grupper starter hverandre i det uendelige).
+    static let maxGroupDepth = 8
+    private var groupDepth = 0
+
+    /// Starter cuene i en gruppe-cue. Cuer som finnes startes selv om andre mangler; manglende vises som feil på gruppen.
+    func fireGroup(_ group: Cue) {
+        if groupDepth >= CueEngine.maxGroupDepth { group.error = L("For mange grupper inni hverandre"); return }
+        let found = CueTargets.resolve(cueList(), group.targets, excluding: group)
+        if group.targets.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { group.error = L("Mangler mål-cuer") }
+        else if !found.missing.isEmpty { group.error = L("Fant ikke cue {0}", found.missing.joined(separator: ", ")) }
+        groupDepth += 1
+        defer { groupDepth -= 1 }
+        for t in found.cues where !t.disabled { fire(t) }
+    }
 
     func stopAll(fade: Double) {
         if isPaused { resumeAll() } // stoppfader skal kunne høres
