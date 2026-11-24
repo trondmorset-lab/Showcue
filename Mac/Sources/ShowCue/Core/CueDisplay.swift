@@ -59,7 +59,7 @@ enum InspectorLayout {
     static func commonFields(_ tab: InspectorTab) -> [String] {
         switch tab {
         case .basic: return ["disabled"]
-        case .timing: return ["preWait", "continueMode", "timecodeTrigger"]
+        case .timing: return ["preWait", "continueMode", "timecodeTrigger", "clockTrigger"]
         case .advanced: return ["hotkey", "midiTrigger", "inButtonPanel", "color", "notes"]
         case .media: return []
         }

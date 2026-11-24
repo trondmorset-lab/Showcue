@@ -100,6 +100,8 @@ og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i 
   `/hotkey/{tast}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
   Dekoderen leser aldri utenfor pakken, uansett hva lengdefeltene påstår.
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
+- **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
+  hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.
 - **Status ut over OSC** (`OscFeedback`): format «Companion» (egendefinerte variabler `sc_*`, port 12321) eller generisk `/showcue/...`.
 
 ## Showfil

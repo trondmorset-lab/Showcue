@@ -84,6 +84,8 @@ public sealed class AppSettings
     public int MscInDeviceId { get; set; } = 127;
     /// <summary>Start cuer med tidskode-trigger fra innkommende MTC (på MIDI-inngangen).</summary>
     public bool MtcInEnabled { get; set; }
+    /// <summary>Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.</summary>
+    public bool ClockTriggersEnabled { get; set; }
     /// <summary>Lydenhet for live-inngang-cuer (WASAPI-opptaksenhet, tom = Windows standard).</summary>
     public string InputDeviceId { get; set; } = "";
     public int LatencyMs { get; set; } = 60;

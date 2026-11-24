@@ -64,7 +64,7 @@ public static class InspectorLayout
     public static IReadOnlyList<string> CommonFields(InspectorTab tab) => tab switch
     {
         InspectorTab.Basic => new[] { "disabled" },
-        InspectorTab.Timing => new[] { "preWait", "continueMode", "timecodeTrigger" },
+        InspectorTab.Timing => new[] { "preWait", "continueMode", "timecodeTrigger", "clockTrigger" },
         InspectorTab.Advanced => new[] { "hotkey", "midiTrigger", "inButtonPanel", "color", "notes" },
         _ => Array.Empty<string>(),
     };

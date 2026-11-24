@@ -165,6 +165,9 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var inButtonPanel = false
     /// Start cuen når innkommende tidskode (MTC) passerer dette tidspunktet, «tt:mm:ss:ff». Tom = ingen.
     @Published var timecodeTrigger = ""
+    /// Start cuen når veggklokka (lokal tid) passerer dette klokkeslettet, «tt:mm:ss». Tom = ingen.
+    /// Virker bare når «Klokke-triggere aktive» er på i innstillingene.
+    @Published var clockTrigger = "" { didSet { let n = ClockTriggers.normalize(clockTrigger); if n != clockTrigger { clockTrigger = n } } }
 
     // Filer (lyd, video, bilde, PDF)
     @Published var filePath = ""
@@ -504,7 +507,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     var durationText: String { duration > 0 ? TimeFormat.format(duration) : "" }
     var preWaitText: String { preWait > 0 ? TimeFormat.format(preWait) : "" }
     var triggerText: String {
-        [hotkey, MidiTriggers.describe(midiTrigger), timecodeTrigger.isEmpty ? "" : "TC " + timecodeTrigger]
+        [hotkey, MidiTriggers.describe(midiTrigger), timecodeTrigger.isEmpty ? "" : "TC " + timecodeTrigger,
+         clockTrigger.isEmpty ? "" : L("Kl.") + " " + clockTrigger]
             .filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
@@ -546,7 +550,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
         case Curve, Release, Fire, Targets, Files, Shuffle, Crossfade, SlideTime, AutoAdvance
         case InButtonPanel, Loudness, Text, Message, Url, Method
-        case TimecodeTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
+        case TimecodeTrigger, ClockTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
         case protocolKey = "Protocol"
     }
 
@@ -592,6 +596,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         if t == .network { port = v(.Port, 9000) }
         if t == .light { host = v(.Host, "255.255.255.255") }
         timecodeTrigger = Timecode.normalize(v(.TimecodeTrigger, ""))
+        clockTrigger = ClockTriggers.normalize(v(.ClockTrigger, ""))
         tcStart = Timecode.parse(v(.Start, "")).map(\.description) ?? "01:00:00:00"
         rate = v(.Rate, TimecodeRate.fps25); sendMtc = v(.SendMtc, true); sendLtc = v(.SendLtc, false)
         ltcBus = max(1, v(.LtcBus, 1)); ltcLevelDb = v(.LtcLevelDb, -12.0); length = v(.Length, 0.0)
@@ -641,6 +646,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(midiTrigger, forKey: .MidiTrigger)
         try c.encode(inButtonPanel, forKey: .InButtonPanel)
         try c.encode(timecodeTrigger, forKey: .TimecodeTrigger)
+        try c.encode(clockTrigger, forKey: .ClockTrigger)
         switch type {
         case .audio:
             try c.encode(filePath, forKey: .FilePath)

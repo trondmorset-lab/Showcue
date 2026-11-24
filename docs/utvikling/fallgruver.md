@@ -62,3 +62,6 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - `git filter-branch` på commits signert av GitHub: begrens området (`<commit>^..main`), ellers skrives hele historikken om.
 - En PR med en annen PR-gren som base blir lukket/merget sammen med den; sett base til `main`.
 - Byggesjekken på `main` kan feile selv om PR-en var grønn (ustabil test). Utgivelsen stopper da; rett testen i en ny PR.
+
+## Klokke og tid
+- `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.

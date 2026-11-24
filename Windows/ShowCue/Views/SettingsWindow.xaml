@@ -201,6 +201,8 @@
                     <TextBlock Style="{StaticResource Label}" Text="{local:T 'Mål for «Normaliser lydstyrke» (LUFS)'}" />
                     <TextBox x:Name="LoudnessBox" />
                     <TextBlock Style="{StaticResource Hint}" Text="{local:T '−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke.'}" />
+                    <CheckBox x:Name="ClockTriggersBox" Content="{local:T 'Klokke-triggere aktive (starter cuer med klokkeslett-trigger)'}" Margin="0,14,0,0" />
+                    <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka.'}" />
                 </StackPanel>
             </TabItem>
         </TabControl>

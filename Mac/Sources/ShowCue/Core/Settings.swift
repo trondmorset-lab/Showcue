@@ -92,6 +92,8 @@ struct AppSettings: Codable, Equatable {
     var mscInDeviceId = 127
     /// Start cuer med tidskode-trigger fra innkommende MTC (på MIDI-inngangen).
     var mtcInEnabled = false
+    /// Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.
+    var clockTriggersEnabled = false
     /// Lydenhet for live-inngang-cuer (UID, tom = systemets standard inngang).
     var inputDeviceUID = ""
 
@@ -118,7 +120,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, inputDeviceUID
+        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID
     }
 
     init(from decoder: Decoder) throws {
@@ -157,6 +159,7 @@ struct AppSettings: Codable, Equatable {
         loudnessTarget = v(.loudnessTarget, d.loudnessTarget)
         buttonPanelColumns = v(.buttonPanelColumns, d.buttonPanelColumns)
         mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
+        clockTriggersEnabled = v(.clockTriggersEnabled, d.clockTriggersEnabled)
         inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
         normalize()
     }

@@ -46,8 +46,10 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
 - **Cuelista** har kolonneoverskrifter. Raden for cuen som **spilles nå** er grønn med fremdriftslinje og tid igjen i kolonnen *Gjenstår*
   («∞» for loop og cuer som står til stoppet). Cuen **GO starter** har blå kant og ▶. Deaktiverte cuer er dempet (og hoppes over av GO).
 - **Panelet for valgt cue** er delt i faner: *Grunnleggende* (cuens egne felt), *Lyd/media* (nivå, fade, utganger, skalering og skjerm – bare for typer med lyd, bilde eller video),
-  *Tidsstyring* (pre-wait, etterpå, tidskode-trigger) og *Avansert* (hurtigtast, MIDI-trigger, knappepanel, farge, notater). Nummer og navn står alltid over fanene.
+  *Tidsstyring* (pre-wait, etterpå, tidskode-trigger, klokkeslett-trigger) og *Avansert* (hurtigtast, MIDI-trigger, knappepanel, farge, notater). Nummer og navn står alltid over fanene.
 - **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
+- **Klokkeslett-trigger:** skriv et klokkeslett (tt:mm:ss, lokal tid, f.eks. 19:00:00) i fanen *Tidsstyring*, og slå på *Klokke-triggere aktive* under *Innstillinger → Sikkerhet* (av som standard).
+  Cuen starter én gang når klokka på maskinen passerer klokkeslettet. Etter dvale, store hopp i klokka og omstilling til sommer-/vintertid starter ingen cuer. *Sjekk showet* advarer hvis innstillingen er av.
 
 ## Flerkanals lydkort og nettverkslyd
 
