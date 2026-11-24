@@ -50,6 +50,12 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 - **Mac – Voice + StreamingSource + SampleRing**: lydtråden leser bare ferdig dekodet lyd fra en ringbuffer.
   `AudioFeeder` er én bakgrunnstråd som fyller alle ringbuffere hvert 10. ms. Ringen har merker for rundestart,
   så «posisjon i runden» stemmer også når kilden looper. Spoling tømmer ringen med riktig posisjon i runden og dekoder derfra.
+- **Windows – live-innganger:** `AudioInput` åpner WASAPI-opptak (som før). Med *Bruk ASIO-innganger* (`AsioInputEnabled`, av som standard)
+  og ASIO som driver åpner `AudioEngine` i stedet utgang og innganger i samme økt (`AsioOut.InitRecordAndPlayback`), og
+  `AsioInputFeed.OnAudioAvailable` fører inngangene inn i `LiveRing` for hver live-cue (`LiveInputStream` brukes som før).
+  `AsioInputPlanner` (valg av kanaler) og `ChannelMap` (kanalomforming) har ingen maskinvareavhengighet. `AudioInput.OpenFor` velger kilde:
+  er ASIO-innganger slått på og ikke tilgjengelige, gir cuen en tydelig feilmelding (den faller aldri stille tilbake til en annen enhet).
+  Mac bruker CoreAudio og åpner innganger separat fra utgangen, så trenger ikke dette.
 - Alle tider/nivåer som kommer inn i lydmotoren saneres (NaN, uendelig, negative → gyldige verdier).
   En loop må være minst 10 ms, og to tilbakespolinger uten lyd imellom avslutter i stedet for å henge.
 
@@ -57,7 +63,7 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 
 `CueEngine` lager én `ActiveCue` per avfyrt cue (pre-wait → spiller → ferdig) og kaller `Tick` ca. 60 ganger i sekundet.
 Underklasser: lyd (`AudioActive`), live-inngang (`InputActive`) – begge `PlaybackActive`; video (`VideoActive`),
-bilde/PDF/nettside (`StillActive`), lysbildeserie (`SlideshowActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, beskjed).
+bilde/PDF/nettside (`StillActive`), lysbildeserie (`SlideshowActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, gruppe, beskjed). Gruppen starter andre cuer via `CueEngine.FireGroup`/`fireGroup`; numrene leses av `CueTargets`.
 Felles: stopp med fade, fade-cuer, pause/fortsett, slipp loop, spoling (`CanSeek`, `SeekLength`, `SeekPosition`, `Seek`, `ScrubPosition`, `Nudge`).
 
 **Utganger:** én standardutgang (skjermen i innstillingene, også vist som forhåndsvisning) og ved behov ekstra utganger for cuer med
@@ -92,7 +98,7 @@ bruker filsystemet, `AudioEngine`/`Monitors` (Windows) og `CoreAudioDevices`/`NS
 ## Showfil
 
 JSON (`.showcue`), lesbar. Cuer har `"type"` (`audio`, `video`, `image`, `pdf`, `web`, `fade`, `stop`, `osc`, `midi`, `goto`,
-`playlist`, `slideshow`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
+`playlist`, `slideshow`, `group`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
 Mediefiler letes etter ved siden av showfila og i `Media/` når stien ikke finnes (show flyttes mellom maskiner).
 Nøkkelen for knappepanelet er `InButtonPanel` (het `Cart` før 0.12.0; den gamle leses ikke).
 Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerflaten er endret).

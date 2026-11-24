@@ -274,6 +274,7 @@ struct ShowCommands: Commands {
             Button(L("Ny spilleliste")) { model.add(.playlist) }.keyboardShortcut("9")
             Button(L("Ny lysbildeserie")) { model.add(.slideshow) }.keyboardShortcut("b", modifiers: [.command, .shift])
             Button(L("Ny «gå til»-cue")) { model.add(.goto) }.keyboardShortcut("0")
+            Button(L("Ny gruppe-cue")) { model.add(.group) }
             Button(L("Ny beskjed-cue")) { model.add(.memo) }.keyboardShortcut("m", modifiers: [.command, .shift])
             Button(L("Ny nettverks-cue")) { model.add(.network) }.keyboardShortcut("n", modifiers: [.command, .shift])
             Button(L("Ny tidskode-cue")) { model.add(.timecode) }.keyboardShortcut("t", modifiers: [.command, .option])

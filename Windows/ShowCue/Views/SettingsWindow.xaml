@@ -54,6 +54,13 @@
                             <TextBlock Style="{StaticResource Label}" Text="{local:T 'Ønsket samplingsfrekvens'}" />
                             <ComboBox x:Name="RateBox" />
                             <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Hvis lydkortet ikke støtter valgt frekvens, brukes den første som virker (48, 44,1, 96 eller 88,2 kHz).'}" />
+                            <CheckBox x:Name="AsioInputEnabledBox" Content="{local:T 'Bruk ASIO-innganger for live-inngang (eksperimentelt)'}" Margin="0,12,0,0" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Første inngang'}" />
+                            <TextBox x:Name="AsioInputFirstBox" />
+                            <TextBlock Style="{StaticResource Label}" Text="{local:T 'Antall innganger'}" />
+                            <TextBox x:Name="AsioInputCountBox" />
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="{local:T 'Inngangene hentes fra samme ASIO-økt som utgangen, så driveren kan brukes til begge deler. Av som standard: da brukes opptaksenheten under «Live-inngang». Bytte krever at lyden startes på nytt (trykk OK). Funksjonen er ikke prøvd på ekte ASIO-utstyr ennå.'}" />
                         </StackPanel>
 
                         <TextBlock Style="{StaticResource Label}" Text="{local:T 'Forhåndslytting (bølgeformen) – egen lydenhet'}" Margin="0,18,0,3" />

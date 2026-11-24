@@ -14,6 +14,36 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
   at påkrevde felt er fylt ut og tider er gyldige, at valgt lydutgang, lydinngang og skjermer finnes, og at ingen cue-numre er like.
   Sjekken endrer ikke showet. Samme regler og tekster på Windows og Mac.
 
+## 0.18.0 – 2026-11-24
+
+### Nytt
+- **Windows: live-innganger via ASIO (eksperimentelt).** Under *Innstillinger → Lyd* (ASIO) kan du slå på *Bruk ASIO-innganger for live-inngang*
+  og velge første inngang og antall innganger. Inngangene hentes fra samme ASIO-økt som utgangen, så en inngang-cue kan bruke
+  f.eks. et nettverkslydkort i ASIO-modus. Funksjonen er **av som standard** og er ikke prøvd på ekte ASIO-utstyr ennå;
+  når den er av, virker live-inngang (WASAPI) og lydutgangen nøyaktig som før.
+  Har driveren ingen innganger, eller kan den ikke åpne dem, spiller lyden videre uten innganger, og årsaken vises i lydstatusen.
+- Mac trenger ingen endring: CoreAudio gir live-innganger uten at utgangen må deles.
+
+## 0.17.0 – 2026-11-20
+
+### Nytt
+- **Gruppe-cue** (❖ *Styring → Gruppe*): starter flere andre cuer med én GO. Skriv cuenumrene som skal startes, f.eks. `2, 5, 8-10`
+  (`8-10` tar med alle cuer med et tall fra 8 til 10). Hver cue i gruppen følger sin egen pre-wait og fortsett-innstilling,
+  og deaktiverte cuer hoppes over. Finnes en cue ikke, startes de andre og gruppen viser hvilken som mangler.
+  En gruppe kan ikke starte seg selv, og grupper som starter grupper stopper på åtte nivåer.
+  *Nummerer* oppdaterer numrene i gruppene, også i endene av et område.
+
+## 0.16.1 – 2026-11-24
+
+### Rettet
+- **Ødelagte showfiler:** på Windows gjør én ugyldig verdi (tekst i et tallfelt, ukjent valg) ikke lenger hele showet uåpnelig; feltet får standardverdi og resten av cuen leses som vanlig.
+  Tomme oppføringer («null») i cuelista, filllister og routing hoppes over på begge plattformer, og et show uten navn eller cuer åpnes tomt.
+- **Cue uten gyldig type:** Mac gjetter ikke lenger «Stopp» for en cue som mangler eller har ukjent type (kunne stoppe alt ved GO); filen avvises med melding, som på Windows.
+- **OSC inn (Windows):** en blob med enorm lengde i en pakke kunne gi ugyldig posisjon og få resten av meldingen til å gå tapt.
+- **Lys (Windows):** «NaN» og «Infinity» godtas ikke lenger som DMX-nivå (Mac avviste dem fra før).
+- **Nettverks-cue:** `\xHH` tolkes bare med to ekte sifre, likt på Windows og Mac (Windows godtok mellomrom, Mac godtok fortegn).
+- **Avslutning (Windows):** én feil i oppryddingen hindrer ikke lenger at lydutgangen frigjøres og programmet lukkes.
+
 ## 0.16.0 – 2026-11-04
 
 ### Nytt

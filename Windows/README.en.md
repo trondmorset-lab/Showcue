@@ -189,6 +189,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
   and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
   (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
 - **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
+- **Group:** starts several cues with one GO. Write the numbers, e.g. `2, 5, 8-10` (`8-10` is every cue from 8 to 10). Each cue follows its own pre-wait, and disabled cues are skipped.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
 - **Scrubbing while playing:** audio and video cues under *Active cues* have a scrub bar. Drag it to scrub in
@@ -205,7 +206,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 |---|---|
 | **File** | New, open, save, collect show, find missing media files, check the show |
 | **＋ Media** | Audio, video, image, PDF, web page, playlist, live input |
-| **Control** | Fade, stop, go to, message |
+| **Control** | Fade, stop, go to, group, message |
 | **Equipment** | Control other equipment: OSC, MIDI, network, timecode, lighting (Art-Net) |
 | **Edit** | Duplicate, delete, move, renumber, normalise loudness |
 | **Setup** | Audio patch, output window, settings, theme, zoom, about ShowCue |
@@ -240,7 +241,11 @@ Audio from the page goes to the system audio output, not through the audio patch
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,
   network audio interface in WDM mode) goes through the routing matrix and the audio patch with level and fades. Latency about 20–60 ms.
-  ASIO inputs are not supported yet – use the network audio interface in WDM mode.
+  **ASIO inputs** (experimental): turn on *Use ASIO inputs for live input* under *Settings → Audio* (with ASIO selected),
+  and choose the first input and the number of inputs. The inputs are taken from the same ASIO session as the output (an ASIO driver
+  can only be used by one program at a time). The feature is off by default and has not been tried on real ASIO equipment yet.
+  When it is off, the capture device (WASAPI) is used as before. If the driver has no inputs or cannot open them, audio keeps
+  playing without inputs, and the reason is shown in the audio status and in the error message when an input cue starts.
 
 ## Media files: find and collect
 

@@ -26,7 +26,7 @@ public static class NetworkSender
             var next = text[i + 1];
             byte? b = next switch { 'r' => (byte)13, 'n' => (byte)10, 't' => (byte)9, '0' => (byte)0, '\\' => (byte)'\\', _ => null };
             if (b is byte known) { Flush(); bytes.Add(known); i++; continue; }
-            if ((next == 'x' || next == 'X') && i + 3 < text.Length
+            if ((next == 'x' || next == 'X') && i + 3 < text.Length && Uri.IsHexDigit(text[i + 2]) && Uri.IsHexDigit(text[i + 3]) // ikke mellomrom eller fortegn
                 && byte.TryParse(text.AsSpan(i + 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var hex))
             {
                 Flush(); bytes.Add(hex); i += 3; continue;

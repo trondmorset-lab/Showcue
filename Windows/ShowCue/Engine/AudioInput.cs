@@ -1,6 +1,7 @@
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
 using NAudio.Wave;
+using ShowCue.Models;
 
 namespace ShowCue.Engine;
 
@@ -129,6 +130,29 @@ public sealed class AudioInput : IDisposable
             return c.MixFormat.Channels;
         }
         catch { return 0; }
+    }
+
+    /// <summary>Antall inngangskanaler en ny live-cue får: fra ASIO-inngangene når de er slått på, ellers fra opptaksenheten.</summary>
+    public static int ChannelsFor(bool asioMode, AsioInputFeed? feed, string deviceId) =>
+        asioMode ? feed?.Channels ?? 0 : ProbeChannels(deviceId);
+
+    /// <summary>Velger kilde for en ny live-cue. Med ASIO-innganger på hentes lyden fra den kjørende ASIO-økta (aldri fra WASAPI,
+    /// så en feil gir tydelig melding i stedet for en annen enhet). Ellers brukes opptaksenheten som før.</summary>
+    /// <param name="asioProblem">Årsak som er lagret hvis ASIO-inngangene ikke kunne åpnes ved oppstart.</param>
+    public (LiveRing Ring, Action<LiveRing> Release) OpenFor(bool asioMode, AsioInputFeed? feed, string asioProblem, string deviceId, int outputRate)
+    {
+        Action<LiveRing> release;
+        if (!asioMode)
+        {
+            release = Close;
+            return (Open(deviceId, outputRate), release);
+        }
+        if (feed == null)
+            throw new InvalidOperationException(string.IsNullOrEmpty(asioProblem) ? Loc.T("ASIO-innganger er ikke tilgjengelige. Sjekk lydstatus og innstillinger.") : asioProblem);
+        if (feed.Failed)
+            throw new InvalidOperationException(Loc.T("ASIO-driveren bruker et lydformat som ikke støttes for innganger."));
+        release = feed.Close;
+        return (feed.Open(), release);
     }
 
     /// <summary>Ny lytter. Starter opptaket om nødvendig.</summary>

@@ -11,11 +11,24 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - `dbToGain(NaN)` ga NaN i hele mikseren. Bruk `db > -60` (usann for NaN), ikke `db <= -60`.
 - `TimeSpan.FromSeconds` med enorme verdier kaster; klokkevisninger begrenses til 99:59:59.
 - **Ødelagte OSC-pakker:** les aldri utenfor pakken (lengdefelt kan lyve, blob-lengde kan være negativ). Mac krasjet på `d[s..<s]` utenfor tabellen.
+- **ASIO:** en driver eies av én økt. Åpne aldri innganger og utganger hver for seg; bruk `InitRecordAndPlayback` og `AudioAvailable`.
+  `AsioOut` kan bare initialiseres én gang: feiler `InitRecordAndPlayback`, må objektet kastes og et nytt lages. `InputChannelOffset`
+  må settes *før* init (feil gir unntak ved for høy forskyvning). `GetAsInterleavedSamples` kaster for ukjente lydformater; fang det i
+  hendelsen, ellers faller driver-tråden. Ingen minnetildeling eller låsing i `AudioAvailable`.
+- **Lengdefelt og addisjon:** `(n + 3) & ~3` på en `int` som er nesten `int.MaxValue` blir negativ (Windows). Sjekk `n <= resten av pakken` før du regner med lengden.
+- **`double.TryParse` godtar «NaN» og «Infinity»:** `v < 0 || v > 255` er usann for NaN. Skriv `!(v >= 0 && v <= 255)`.
+- **`byte.TryParse(…, HexNumber)` godtar mellomrom, Swifts `UInt8(_, radix: 16)` godtar «+»:** sjekk at begge tegn er sifre først (`\xHH`).
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
+
+## Showfiler
+- Windows leste en cue med ett ugyldig felt (f.eks. `"FadeTime": "tre"`) som feil for hele filen. Nå leses feltene hver for seg (`CueJsonConverter.ReadFieldByField`),
+  og «null» i `Cues`, `Files` og `Routes` fjernes i egenskapene. Mac har alltid brukt standardverdi per felt.
+- Mac gjettet cuetype `stop` når `type` manglet; en slik cue stopper alt ved GO. Mangler eller er typen ukjent, avvises filen (som på Windows).
 
 ## Avslutning
 - Mac: et vindu som bare skjules når det lukkes (utgangsvinduet), hindrer «avslutt når siste vindu lukkes». Hovedvinduet må avslutte appen selv.
 - Fullskjerm-utgang ligger over vanlige vinduer: skjul den før `NSAlert`/`MessageBox`, ellers ser programmet ut til å henge.
+- Windows: `OnClosing` kjører hvert oppryddingssteg for seg (`Try`), ellers kunne én feil hoppe over `Engine.Dispose()`.
 - Windows: skjulte vinduer holder WPF-prosessen i gang med standard `ShutdownMode`; én feil i oppryddingen kan hindre resten.
 
 ## WPF / XAML

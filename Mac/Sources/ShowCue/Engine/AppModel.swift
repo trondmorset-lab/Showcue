@@ -650,7 +650,7 @@ final class AppModel: ObservableObject, ShowControl {
         guard isEditable else { return }
         let a = NSAlert()
         a.messageText = L("Gi alle cuer nye nummer (1, 2, 3)?")
-        a.informativeText = L("Fade-, stopp- og gå til-cuer oppdateres automatisk.")
+        a.informativeText = L("Fade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk.")
         a.addButton(withTitle: L("Nummerer"))
         a.addButton(withTitle: L("Avbryt"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
@@ -663,6 +663,7 @@ final class AppModel: ObservableObject, ShowControl {
         for c in cues where c.type == .fade || c.type == .stop || c.type == .goto {
             if let n = map[c.target.lowercased()] { c.target = n }
         }
+        for c in cues where c.type == .group { c.targets = CueTargets.renumber(c.targets, map) }
     }
 
     func setColor(_ color: CueColor) {

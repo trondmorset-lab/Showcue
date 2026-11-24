@@ -5,6 +5,8 @@
   `AudioEngineTests`), fjernstyring (`RemoteTests`), tidskode/DMX (`TimecodeTests`), verktøy og språk (`ToolsTests`),
   autolagring/angre (`SafetyTests`), og `RobustnessTests` (feil funnet med stresstest).
   `TestAudio` lager testfiler (konstant verdi per kanal eller rampe = tid/10, så posisjonen kan leses rett av utgangen).
+  `AsioInputTests` dekker valg av ASIO-innganger, innstillinger, kanalomforming og ringbuffer-flyt med lagde driverbuffere.
+  Selve driveren (ekte ASIO-utstyr) kan ikke testes i CI eller i utviklingsmiljøet.
 - **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
 - Nye funksjoner får tester på begge plattformer. Rettede feil får en regresjonstest.
 

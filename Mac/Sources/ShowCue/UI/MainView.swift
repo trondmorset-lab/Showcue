@@ -216,6 +216,7 @@ struct ToolbarRow: View {
                     Button(L("◢  Fade – valgt cue (⌘5)")) { model.add(.fade) }
                     Button(L("■  Stopp (⌘6)")) { model.add(.stop) }
                     Button(L("↪  Gå til (⌘0)")) { model.add(.goto) }
+                    Button(L("❖  Gruppe")) { model.add(.group) }
                     Button(L("✎  Beskjed (⇧⌘M)")) { model.add(.memo) }
                 }
                 .help(L("Fade, stopp, gå til og beskjed"))
