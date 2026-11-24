@@ -203,7 +203,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 
 | Menu | Content |
 |---|---|
-| **File** | New, open, save, collect show, find missing media files |
+| **File** | New, open, save, collect show, find missing media files, check the show |
 | **＋ Media** | Audio, video, image, PDF, web page, playlist, live input |
 | **Control** | Fade, stop, go to, message |
 | **Equipment** | Control other equipment: OSC, MIDI, network, timecode, lighting (Art-Net) |
@@ -248,6 +248,19 @@ Audio from the page goes to the system audio output, not through the audio patch
   The same is available under *File → Find missing media files*.
 - *File → Collect the show and media files in one folder* copies the show and all the files it uses to a folder, with the files in
   `Media/`. Copy the folder to a USB stick or another computer (also a Mac), and the show finds the files by itself.
+
+## Check the show before the performance
+
+*File → Check the show* goes through the show and the machine and lists errors (✕), warnings (⚠) and OK (✓). The check changes nothing:
+
+- **Media files:** every file the cues point to (also in playlists and slideshows) exists and can be read; cues without a file and empty lists are reported.
+- **Values and targets:** fade, stop and “go to” cues point to a cue that exists (not itself, not a disabled cue), required fields are filled in
+  (addresses, web addresses), times are valid, and the end time is after the start time.
+- **Devices:** the selected audio output (if the show has audio), the preview output, the audio input (if the show has a live input) and the screens exist.
+  If a screen is missing the cue is shown in a normal window, which is reported as a warning.
+- **Cue numbers:** equal numbers (ignoring upper/lower case) are reported. Disabled cues are not checked, but their numbers are counted.
+
+Fix the problems and press *Check again*. On Mac the command is under *File* in the toolbar and under *Tools* in the menu bar.
 
 ## Safe during the show
 

@@ -108,7 +108,7 @@ Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagrin
 (`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
 i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
 (*Pause, spillelister og loop*), og knappepanelet, nettverks- og beskjed-cuer, lydstyrke-normalisering og finn/samle
-mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Knappepanel, nettverk, beskjed og lydstyrke* og *Mediefiler: finn og samle*. Tidskode, lys over Art-Net og
+mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Knappepanel, nettverk, beskjed og lydstyrke* og *Mediefiler: finn og samle*. *Sjekk showet* (under *Fil* og *Verktøy*) kontrollerer mediefiler, verdier, enheter og cue-numre før forestillingen – se *Sjekk showet før forestillingen*. Tidskode, lys over Art-Net og
 live-inngang er beskrevet under *Tidskode, lys og live-inngang* (på Mac velges inngangen blant CoreAudio-enhetene,
 og macOS spør om tilgang til mikrofonen første gang).
 

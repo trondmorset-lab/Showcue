@@ -73,6 +73,14 @@ Byttet sjekkes før lysbildene tikker, så en video krysstones over i neste før
 (sideantallet hentes i bakgrunnen og huskes i `MediaCache`). Blaing: `CanStep`/`Step(±1)` (`canStep`/`step`), OSC `/cue/{nr}/next|previous`.
 Filer i serien behandles som spillelistens (`IFileListCue` / `usesFileList`): finn/samle mediefiler og leting ved åpning.
 
+## Forhåndssjekk («Sjekk showet»)
+
+`PreflightCheck` (Windows `Models/PreflightCheck.cs`, Mac `Core/PreflightCheck.swift`) er ren logikk: cuer + `AppSettings` + miljø inn, liste av `PreflightFinding`
+(alvorlighet ok/advarsel/feil, fast kode, tekst, cuerad) ut, i rekkefølgen mediefiler → verdier og mål → enheter → cue-numre; en gruppe uten funn gir én ok-linje.
+Miljøet (`IPreflightEnvironment` / `PreflightEnvironment`) svarer på «finnes filen / lydutgangen / lydinngangen / skjermen?»; `SystemPreflightEnvironment`
+bruker filsystemet, `AudioEngine`/`Monitors` (Windows) og `CoreAudioDevices`/`NSScreen` (Mac). Vinduet er `Views/PreflightWindow.cs` (Windows) og
+`UI/PreflightView.swift` åpnet fra `AppModel.showPreflight()` (Mac). Menyvalg: *Fil → Sjekk showet* (Mac også *Verktøy*). Tester: `PreflightTests` på begge plattformer.
+
 ## Fjernstyring og status
 
 - **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,

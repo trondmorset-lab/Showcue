@@ -106,7 +106,7 @@ Show mode, undo, autosave (`~/Library/Application Support/ShowCue/Autolagring`),
 (`…/ShowCue/Sikkerhetskopier`) and preview to headphones work as on Windows – see *Safe during the show*
 in the README in the Windows folder. The same applies to pause, playlists, go to, release loop, run from here and fade curves
 (*Pause, playlists and loop*), and the button panel, network and message cues, loudness normalisation and find/collect
-media files (the *File*, *Edit* and *Tools* menus in the menu bar) – see *Button panel, network, message and loudness* and *Media files: find and collect*. Timecode, lighting over Art-Net and
+media files (the *File*, *Edit* and *Tools* menus in the menu bar) – see *Button panel, network, message and loudness* and *Media files: find and collect*. *Check the show* (under *File* and *Tools*) checks media files, values, devices and cue numbers before the performance – see *Check the show before the performance*. Timecode, lighting over Art-Net and
 live input are described under *Timecode, lighting and live input* (on a Mac the input is chosen among the CoreAudio devices,
 and macOS asks for access to the microphone the first time).
 

@@ -661,6 +661,7 @@
                                 <Separator />
                                 <MenuItem Header="{local:T 'Samle show og mediefiler i én mappe'}" Click="Collect_Click" />
                                 <MenuItem Header="{local:T 'Finn manglende mediefiler'}" Click="Relink_Click" />
+                                <MenuItem Header="{local:T 'Sjekk showet'}" Click="Preflight_Click" />
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

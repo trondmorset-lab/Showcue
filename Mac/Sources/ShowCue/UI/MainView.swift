@@ -194,6 +194,7 @@ struct ToolbarRow: View {
                 Divider()
                 Button(L("Samle show og mediefiler i én mappe")) { model.collectShow() }
                 Button(L("Finn manglende mediefiler")) { model.relinkMenu() }.disabled(model.showMode)
+                Button(L("Sjekk showet")) { model.showPreflight() }
             }
             Button("↶") { model.undo() }.disabled(!model.canUndo).help(L("Angre (⌘Z)"))
             Button("↷") { model.redo() }.disabled(!model.canRedo).help(L("Gjør om (⇧⌘Z)"))

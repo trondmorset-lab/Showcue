@@ -6,6 +6,14 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.19.0 – 2026-11-24
+
+### New
+- **Check the show** (*File → Check the show*; on Mac also under *Tools*): a pre-show check that lists errors, warnings and OK results.
+  It checks that all media files exist and can be read, that fade, stop and “go to” cues point to a cue that exists,
+  that required fields are filled in and times are valid, that the selected audio output, audio input and screens exist, and that no cue numbers are equal.
+  The check does not change the show. The same rules and texts on Windows and Mac.
+
 ## 0.16.0 – 2026-11-04
 
 ### New
