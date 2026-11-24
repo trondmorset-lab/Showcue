@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -9,8 +10,23 @@ namespace ShowCue.Models;
 public sealed class ShowDocument
 {
     public int FormatVersion { get; set; } = 1;
-    public string Title { get; set; } = Loc.T("Nytt show");
-    public ObservableCollection<Cue> Cues { get; set; } = new();
+    private string _title = Loc.T("Nytt show");
+    private ObservableCollection<Cue> _cues = new();
+
+    public string Title { get => _title; set => _title = value ?? ""; }
+
+    /// <summary>Cuene. En ødelagt fil kan ha «null» i stedet for lista eller for en cue: tomme oppføringer fjernes.</summary>
+    public ObservableCollection<Cue> Cues
+    {
+        get => _cues;
+        set
+        {
+            value ??= new();
+            for (int i = value.Count - 1; i >= 0; i--)
+                if (value[i] is null) value.RemoveAt(i);
+            _cues = value;
+        }
+    }
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -59,7 +75,7 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
         ["audio"] = typeof(AudioCue), ["video"] = typeof(VideoCue), ["image"] = typeof(ImageCue), ["pdf"] = typeof(PdfCue),
         ["fade"] = typeof(FadeCue), ["stop"] = typeof(StopCue), ["osc"] = typeof(OscCue), ["midi"] = typeof(MidiCue),
         ["goto"] = typeof(GotoCue), ["playlist"] = typeof(PlaylistCue), ["memo"] = typeof(MemoCue), ["network"] = typeof(NetworkCue),
-        ["web"] = typeof(WebCue), ["slideshow"] = typeof(SlideshowCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue),
+        ["web"] = typeof(WebCue), ["slideshow"] = typeof(SlideshowCue), ["timecode"] = typeof(TimecodeCue), ["light"] = typeof(LightCue), ["input"] = typeof(InputCue), ["group"] = typeof(GroupCue),
     };
 
     public override bool CanConvert(Type t) => t == typeof(Cue);
@@ -69,9 +85,26 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException(Loc.T("Cue må være et objekt"));
-        if (!root.TryGetProperty("type", out var t) || t.GetString() is not string name || !Types.TryGetValue(name, out var type))
+        if (!root.TryGetProperty("type", out var t) || t.ValueKind != JsonValueKind.String || !Types.TryGetValue(t.GetString() ?? "", out var type))
             throw new JsonException(Loc.T("Ukjent eller manglende cuetype"));
-        return (Cue?)root.Deserialize(type, options);
+        try { return (Cue?)root.Deserialize(type, options); }
+        catch (JsonException) { return ReadFieldByField(root, type, options); }
+    }
+
+    /// <summary>Når ett felt har ugyldig verdi (tekst i et tallfelt, ukjent navn i en liste …) leses de andre feltene
+    /// likevel; det ugyldige feltet beholder standardverdien. Én skadet verdi skal ikke gjøre hele showet uåpnelig.</summary>
+    private static Cue ReadFieldByField(JsonElement root, Type type, JsonSerializerOptions options)
+    {
+        var cue = (Cue)Activator.CreateInstance(type)!;
+        foreach (var prop in root.EnumerateObject())
+        {
+            var pi = type.GetProperty(prop.Name, BindingFlags.Public | BindingFlags.Instance);
+            if (pi == null || !pi.CanWrite || pi.GetIndexParameters().Length > 0) continue;
+            if (pi.GetCustomAttribute<JsonIgnoreAttribute>() is { Condition: JsonIgnoreCondition.Always }) continue;
+            try { pi.SetValue(cue, prop.Value.Deserialize(pi.PropertyType, options)); }
+            catch (Exception) { /* ugyldig verdi: feltet beholder standardverdien */ }
+        }
+        return cue;
     }
 
     public override void Write(Utf8JsonWriter writer, Cue value, JsonSerializerOptions options)

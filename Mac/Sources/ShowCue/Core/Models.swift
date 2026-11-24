@@ -4,7 +4,7 @@ import Combine
 // MARK: - Enums (tekstverdiene er de samme som i Windows-versjonen, så showfilene kan deles)
 
 enum CueType: String, Codable, CaseIterable {
-    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input, web, slideshow
+    case audio, video, image, pdf, fade, stop, osc, midi, playlist, goto, memo, network, timecode, light, input, web, slideshow, group
 }
 
 /// Hvordan en nettverks-cue sender.
@@ -209,6 +209,10 @@ final class Cue: ObservableObject, Identifiable, Codable {
     /// Kjør mål-cuen også (GO), ikke bare flytt markøren.
     @Published var fire = false
 
+    // Gruppe
+    /// Cuenumrene gruppen starter, skilt med komma. Et område skrives «8-10».
+    @Published var targets = ""
+
     // Spilleliste
     @Published var files: [String] = []
     @Published var shuffle = false
@@ -323,6 +327,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return L("Spilleliste")
         case .goto: return L("Gå til")
+        case .group: return L("Gruppe")
         case .memo: return L("Beskjed")
         case .network: return L("Nettverk")
         case .timecode: return L("Tidskode")
@@ -345,6 +350,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "♫"
         case .playlist: return "☰"
         case .goto: return "↪"
+        case .group: return "❖"
         case .memo: return "✎"
         case .network: return "⇄"
         case .timecode: return "⏱"
@@ -382,6 +388,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .midi: return "MIDI"
         case .playlist: return L("Spilleliste")
         case .goto: return target.isEmpty ? L("Gå til") : L("Gå til {0}", target)
+        case .group: return targets.isEmpty ? L("Gruppe") : L("Gruppe {0}", targets)
         case .memo: return memoFirstLine.isEmpty ? L("Beskjed") : memoFirstLine
         case .network:
             return networkProtocol == .http ? "HTTP \(method)" : "\(networkProtocol.rawValue.uppercased()) \(host)"
@@ -428,6 +435,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
                 + (crossfade > 0 ? L("  krysstoning {0}s", Cue.fmt(crossfade)) : "")
         case .goto:
             return (target.isEmpty ? L("(mål mangler)") : "→ " + target) + (fire ? "  + GO" : "")
+        case .group:
+            return targets.isEmpty ? L("(mål mangler)") : "→ " + targets
         case .memo:
             return memoFirstLine
         case .timecode:
@@ -533,7 +542,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
         case Host, Port, Address, Arguments
         case Device, MessageType, Channel, Data1, Data2, MscDeviceId, MscCommandFormat, MscCueNumber
-        case Curve, Release, Fire, Files, Shuffle, Crossfade, SlideTime, AutoAdvance
+        case Curve, Release, Fire, Targets, Files, Shuffle, Crossfade, SlideTime, AutoAdvance
         case InButtonPanel, Loudness, Text, Message, Url, Method
         case TimecodeTrigger, Start, Rate, SendMtc, SendLtc, LtcBus, LtcLevelDb, Length, Universe, Levels
         case protocolKey = "Protocol"
@@ -541,7 +550,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     convenience init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: K.self)
-        let t = (try? c.decode(CueType.self, forKey: .type)) ?? .stop
+        // Manglende eller ukjent cuetype avviser filen (som i Windows-versjonen); aldri gjett «stopp» for en cue som ikke kan leses.
+        let t = try c.decode(CueType.self, forKey: .type)
         self.init(type: t)
         func v<T: Decodable>(_ k: K, _ def: T) -> T { ((try? c.decodeIfPresent(T.self, forKey: k)) ?? nil) ?? def }
 
@@ -571,6 +581,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         data1 = v(.Data1, 60); data2 = v(.Data2, 127); mscDeviceId = v(.MscDeviceId, 127)
         mscCommandFormat = v(.MscCommandFormat, 1); mscCueNumber = v(.MscCueNumber, "1")
         curve = v(.Curve, FadeCurve.db); release = v(.Release, false); fire = v(.Fire, false)
+        targets = v(.Targets, "").trimmingCharacters(in: .whitespacesAndNewlines)
         files = v(.Files, [String]()); shuffle = v(.Shuffle, false); crossfade = v(.Crossfade, crossfade)
         slideTime = min(3600, max(0.5, v(.SlideTime, 5.0))); autoAdvance = v(.AutoAdvance, true)
         inButtonPanel = v(.InButtonPanel, false); loudness = (try? c.decodeIfPresent(Double.self, forKey: .Loudness)) ?? nil
@@ -647,6 +658,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .goto:
             try c.encode(target, forKey: .Target)
             try c.encode(fire, forKey: .Fire)
+        case .group:
+            try c.encode(targets.trimmingCharacters(in: .whitespacesAndNewlines), forKey: .Targets)
         case .playlist:
             try c.encode(files, forKey: .Files)
             try c.encode(shuffle, forKey: .Shuffle)
@@ -740,7 +753,8 @@ struct ShowDocument: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         formatVersion = (try? c.decodeIfPresent(Int.self, forKey: .formatVersion)) ?? 1
         title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? L("Show")
-        cues = try c.decodeIfPresent([Cue].self, forKey: .cues) ?? []
+        // «null» i lista er ingen cue (en ødelagt fil) og hoppes over.
+        cues = (try c.decodeIfPresent([Cue?].self, forKey: .cues) ?? []).compactMap { $0 }
     }
 
     func jsonData() throws -> Data {

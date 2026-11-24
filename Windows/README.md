@@ -189,6 +189,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
   og lysbildene krysstones. Velg loop og tilfeldig rekkefølge, eller slå av *Bytt automatisk* og bla med ⏮ / ⏭ under *Aktive cuer*
   (eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`). Stopp cuen for å avslutte serien.
 - **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
+- **Gruppe:** starter flere cuer med én GO. Skriv numrene, f.eks. `2, 5, 8-10` (`8-10` er alle cuer fra 8 til 10). Hver cue følger sin egen pre-wait, og deaktiverte cuer hoppes over.
 - **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
   runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.
 - **Spoling mens det spiller:** lyd- og video-cuer under *Aktive cuer* har en spolelinje. Dra i den for å spole i
@@ -205,7 +206,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 |---|---|
 | **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler |
 | **＋ Media** | Lyd, video, bilde, PDF, nettside, spilleliste, live-inngang |
-| **Styring** | Fade, stopp, gå til, beskjed |
+| **Styring** | Fade, stopp, gå til, gruppe, beskjed |
 | **Utstyr** | Styr annet utstyr: OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
 | **Rediger** | Dupliser, slett, flytt, nummerer, normaliser lydstyrke |
 | **Oppsett** | Lydpatch, utgangsvinduet, innstillinger, tema, om ShowCue |

@@ -52,4 +52,48 @@ final class RobustnessTests: XCTestCase {
         XCTAssertEqual(TimeFormat.format(1e15), "99:59:59")
         XCTAssertEqual(LoudnessMeter.gain(for: .nan, target: -23), 0)
     }
+
+    func testOscBlobWithHugeLengthIsIgnored() {
+        // Typetaggene «b» og «i», og en blob som påstår at den er nesten 2 GB lang.
+        let bytes: [UInt8] = [0x2F, 0x78, 0, 0, 0x2C, 0x62, 0x69, 0, 0x7F, 0xFF, 0xFF, 0xFF, 0, 0, 0, 5]
+        let msgs = Osc.decode(Data(bytes))
+        XCTAssertEqual(msgs.count, 1)
+        XCTAssertTrue(msgs[0].args.isEmpty)
+    }
+
+    func testDmxLevelsRejectNonFiniteNumbers() throws {
+        XCTAssertThrowsError(try DmxLevels.parse("1@NaN"))
+        XCTAssertThrowsError(try DmxLevels.parse("1@NaN%"))
+        XCTAssertThrowsError(try DmxLevels.parse("1@Infinity"))
+        XCTAssertEqual(try DmxLevels.parse("1@255 2@50%").count, 2)
+    }
+
+    func testHexEscapeNeedsTwoHexDigits() {
+        XCTAssertEqual(NetworkSender.unescape("\\x41"), Data([0x41]))
+        XCTAssertEqual(NetworkSender.unescape("\\x 4A"), Data("\\x 4A".utf8)) // mellomrom er ikke et sifferpar
+        XCTAssertEqual(NetworkSender.unescape("\\x+4A"), Data("\\x+4A".utf8)) // fortegn heller ikke
+    }
+
+    func testDamagedShowFileStillOpens() throws {
+        let json = #"""
+        {"Title":null,"Cues":[null,{"type":"fade","Target":"5","FadeTime":"tre"},
+         {"type":"audio","FilePath":"a.wav","VolumeDb":-6,"Loop":"ja","Routes":[{"Source":1,"Bus":2,"GainDb":0}]},
+         {"type":"playlist","Files":["b.wav"]},{"type":"osc","Host":"h","Port":"åtte"}]}
+        """#
+        let doc = try JSONDecoder().decode(ShowDocument.self, from: Data(json.utf8))
+        XCTAssertEqual(doc.cues.count, 4) // «null» er ingen cue
+        XCTAssertEqual(doc.cues[0].target, "5")
+        XCTAssertEqual(doc.cues[0].fadeTime, 3) // ugyldig verdi gir standardverdi
+        XCTAssertEqual(doc.cues[1].volumeDb, -6) // resten av cuen er intakt
+        XCTAssertFalse(doc.cues[1].loop)
+        XCTAssertEqual(doc.cues[2].files, ["b.wav"])
+        XCTAssertEqual(doc.cues[3].host, "h")
+        XCTAssertEqual(doc.cues[3].port, 8000)
+        _ = try doc.jsonData() // og kan lagres igjen
+
+        XCTAssertTrue(try JSONDecoder().decode(ShowDocument.self, from: Data(#"{"Cues":null}"#.utf8)).cues.isEmpty)
+        // Uten eller med ukjent cuetype avvises filen, i stedet for å gjette «stopp».
+        XCTAssertThrowsError(try JSONDecoder().decode(ShowDocument.self, from: Data(#"{"Cues":[{"Number":"1"}]}"#.utf8)))
+        XCTAssertThrowsError(try JSONDecoder().decode(ShowDocument.self, from: Data(#"{"Cues":[{"type":"tull"}]}"#.utf8)))
+    }
 }

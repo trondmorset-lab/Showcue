@@ -63,7 +63,7 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 
 `CueEngine` lager én `ActiveCue` per avfyrt cue (pre-wait → spiller → ferdig) og kaller `Tick` ca. 60 ganger i sekundet.
 Underklasser: lyd (`AudioActive`), live-inngang (`InputActive`) – begge `PlaybackActive`; video (`VideoActive`),
-bilde/PDF/nettside (`StillActive`), lysbildeserie (`SlideshowActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, beskjed).
+bilde/PDF/nettside (`StillActive`), lysbildeserie (`SlideshowActive`), fade, stopp, spilleliste, tidskode, lys, og «øyeblikks»-cuer (OSC, MIDI, nettverk, gå til, gruppe, beskjed). Gruppen starter andre cuer via `CueEngine.FireGroup`/`fireGroup`; numrene leses av `CueTargets`.
 Felles: stopp med fade, fade-cuer, pause/fortsett, slipp loop, spoling (`CanSeek`, `SeekLength`, `SeekPosition`, `Seek`, `ScrubPosition`, `Nudge`).
 
 **Utganger:** én standardutgang (skjermen i innstillingene, også vist som forhåndsvisning) og ved behov ekstra utganger for cuer med
@@ -90,7 +90,7 @@ Filer i serien behandles som spillelistens (`IFileListCue` / `usesFileList`): fi
 ## Showfil
 
 JSON (`.showcue`), lesbar. Cuer har `"type"` (`audio`, `video`, `image`, `pdf`, `web`, `fade`, `stop`, `osc`, `midi`, `goto`,
-`playlist`, `slideshow`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
+`playlist`, `slideshow`, `group`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
 Mediefiler letes etter ved siden av showfila og i `Media/` når stien ikke finnes (show flyttes mellom maskiner).
 Nøkkelen for knappepanelet er `InButtonPanel` (het `Cart` før 0.12.0; den gamle leses ikke).
 Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerflaten er endret).
