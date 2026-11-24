@@ -121,10 +121,32 @@ public sealed class AppSettings
         return new AppSettings();
     }
 
-    private static AppSettings Normalize(AppSettings s)
+    /// <summary>Retter innstillinger fra en ødelagt eller håndredigert fil: tall utenfor grensene (samme som i innstillingsvinduet)
+    /// settes til nærmeste grense, og patchen får ingen tomme oppføringer.</summary>
+    public static AppSettings Normalize(AppSettings s)
     {
         // En tom eller manglende patch (f.eks. fra eldre versjon) gir standardpatch.
+        if (s.Buses != null && s.Buses.Contains(null!)) s.Buses = s.Buses.Where(b => b != null).ToList();
         if (s.Buses == null || s.Buses.Count == 0) s.Buses = PatchBus.DefaultPatch(8);
+        foreach (var b in s.Buses)
+        {
+            b.Name ??= "";
+            b.GainDb = double.IsFinite(b.GainDb) ? Math.Clamp(b.GainDb, -60, 12) : 0;
+            b.Channels = (b.Channels ?? new()).Where(c => c is >= 1 and <= 512).ToList();
+        }
+        s.AsioMaxChannels = Math.Clamp(s.AsioMaxChannels, 2, 128);
+        s.SampleRate = Math.Clamp(s.SampleRate, 8000, 192000);
+        s.OscInPort = Math.Clamp(s.OscInPort, 1, 65535);
+        s.OscFeedbackPort = Math.Clamp(s.OscFeedbackPort, 1, 65535);
+        s.MidiInChannel = Math.Clamp(s.MidiInChannel, 0, 16);
+        s.MscInDeviceId = Math.Clamp(s.MscInDeviceId, 0, 127);
+        s.LatencyMs = Math.Clamp(s.LatencyMs, 10, 500);
+        s.PreviewBus = Math.Clamp(s.PreviewBus, 0, 128);
+        s.VideoScreen = Math.Clamp(s.VideoScreen, -1, 15);
+        s.LoudnessTarget = double.IsFinite(s.LoudnessTarget) ? Math.Clamp(s.LoudnessTarget, -40, -5) : -23;
+        s.ButtonPanelColumns = Math.Clamp(s.ButtonPanelColumns, 2, 8);
+        s.PanicFadeTime = double.IsFinite(s.PanicFadeTime) ? Math.Clamp(s.PanicFadeTime, 0, 30) : 1;
+        s.DoubleGoProtectionMs = Math.Clamp(s.DoubleGoProtectionMs, 0, 2000);
         s.AsioInputFirstChannel = ShowCue.Engine.AsioInputPlanner.ClampFirst(s.AsioInputFirstChannel);
         s.AsioInputChannels = ShowCue.Engine.AsioInputPlanner.ClampCount(s.AsioInputChannels);
         s.Zoom = UiZoom.Clamp(s.Zoom);
