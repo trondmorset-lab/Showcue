@@ -12,5 +12,7 @@ Les dette før større endringer. Hold det oppdatert når noe viktig endres (sam
 | [beslutninger.md](beslutninger.md) | Viktige valg og begrunnelsen, per versjon |
 | [fallgruver.md](fallgruver.md) | Feil som er gjort eller funnet, og hvordan de unngås |
 | [historikk.md](historikk.md) | Versjoner og pull requests |
+| [agenter.md](agenter.md) | Agenter og felles utviklingsdatabase |
+| [agentlogg.md](agentlogg.md) | Logg over agentenes arbeidsøkter |
 
 Brukerdokumentasjonen står i `README.md` / `README.en.md` (rot, `Windows/`, `Mac/`) og `CHANGELOG.md` / `CHANGELOG.en.md`.
