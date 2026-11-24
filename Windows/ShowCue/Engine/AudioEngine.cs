@@ -22,6 +22,10 @@ public sealed class AudioEngine : IDisposable
     /// <summary>Navn på kanalene på lydkortet (ASIO-drivere kan ha egne kanalnavn).</summary>
     public IReadOnlyList<string> ChannelNames { get; private set; } = Array.Empty<string>();
     public PatchMixer? Mixer => _mixer;
+    /// <summary>Innganger fra den kjørende ASIO-økta (null hvis de er av eller ikke kunne åpnes).</summary>
+    public AsioInputFeed? InputFeed { get; private set; }
+    /// <summary>Hvorfor ASIO-inngangene ikke er med (tom når alt er i orden eller de er av).</summary>
+    public string InputProblem { get; private set; } = "";
 
     public event Action<string>? StatusChanged;
     /// <summary>Lydutgangen er startet på nytt (antall kanaler kan ha endret seg).</summary>
@@ -84,9 +88,37 @@ public sealed class AudioEngine : IDisposable
                 ChannelNames = names;
 
                 _mixer = new PatchMixer(rate, channels, s.Buses);
-                asio.Init(new SampleToWaveProvider(_mixer));
+                var plan = AsioInputPlanner.Plan(s.AsioInputEnabled, asio.DriverInputChannelCount, s.AsioInputFirstChannel, s.AsioInputChannels);
+                if (plan.Status == AsioInputStatus.NoDriverInputs)
+                    InputProblem = Loc.T("ASIO-driveren har ingen innganger.");
+                if (plan.Status == AsioInputStatus.Ok)
+                {
+                    // Innganger hentes fra samme økt som utgangen: en ASIO-driver kan bare eies av én.
+                    var feed = new AsioInputFeed(plan.Channels, rate);
+                    try
+                    {
+                        asio.InputChannelOffset = plan.FirstChannel;
+                        asio.AudioAvailable += feed.OnAudioAvailable;
+                        asio.InitRecordAndPlayback(new SampleToWaveProvider(_mixer), plan.Channels, -1);
+                        feed.PrepareBuffer(asio.FramesPerBuffer);
+                        InputFeed = feed;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Driveren tok ikke imot innganger: start økta på nytt med bare utganger så showet kan kjøres.
+                        InputProblem = Loc.F("Kunne ikke åpne ASIO-innganger ({0}).", ex.Message);
+                        try { asio.AudioAvailable -= feed.OnAudioAvailable; } catch { }
+                        asio.Dispose();
+                        asio = new AsioOut(s.AsioDriverName);
+                        asio.Init(new SampleToWaveProvider(_mixer));
+                    }
+                }
+                else asio.Init(new SampleToWaveProvider(_mixer));
                 _output = asio;
-                SetStatus(Loc.F("ASIO: {0} · {1} kanaler · {2:0.#} kHz", s.AsioDriverName, channels, rate / 1000.0));
+                var status = Loc.F("ASIO: {0} · {1} kanaler · {2:0.#} kHz", s.AsioDriverName, channels, rate / 1000.0);
+                if (InputFeed != null) status += Loc.F(" · {0} innganger fra kanal {1}", plan.Channels, plan.FirstChannel + 1);
+                else if (InputProblem != "") status += " · " + InputProblem;
+                SetStatus(status);
             }
             catch
             {
@@ -183,6 +215,8 @@ public sealed class AudioEngine : IDisposable
         _mixer = null;
         lock (_testTones) _testTones.Clear();
         ChannelNames = Array.Empty<string>();
+        InputFeed = null;
+        InputProblem = "";
     }
 
     public void Dispose() => StopOutput();

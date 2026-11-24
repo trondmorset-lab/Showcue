@@ -35,6 +35,13 @@ public sealed class AppSettings
     public string AsioDriverName { get; set; } = "";
     /// <summary>Maks antall ASIO-kanaler som åpnes (nettverkslydkort kan ha 64 eller flere).</summary>
     public int AsioMaxChannels { get; set; } = 64;
+    /// <summary>Hent live-innganger fra ASIO-driveren (samme økt som utgangen). Av som standard til det er prøvd på ekte utstyr;
+    /// da brukes opptaksenheten (WASAPI) som før.</summary>
+    public bool AsioInputEnabled { get; set; }
+    /// <summary>Første ASIO-inngang som brukes, talt fra 1.</summary>
+    public int AsioInputFirstChannel { get; set; } = 1;
+    /// <summary>Antall ASIO-innganger som hentes fra og med første.</summary>
+    public int AsioInputChannels { get; set; } = 2;
     /// <summary>Ønsket samplingsfrekvens. For WASAPI brukes enhetens egen frekvens.</summary>
     public int SampleRate { get; set; } = 48000;
 
@@ -118,6 +125,8 @@ public sealed class AppSettings
     {
         // En tom eller manglende patch (f.eks. fra eldre versjon) gir standardpatch.
         if (s.Buses == null || s.Buses.Count == 0) s.Buses = PatchBus.DefaultPatch(8);
+        s.AsioInputFirstChannel = ShowCue.Engine.AsioInputPlanner.ClampFirst(s.AsioInputFirstChannel);
+        s.AsioInputChannels = ShowCue.Engine.AsioInputPlanner.ClampCount(s.AsioInputChannels);
         s.Zoom = UiZoom.Clamp(s.Zoom);
         s.ListTextScale = UiZoom.ClampList(s.ListTextScale);
         return s;

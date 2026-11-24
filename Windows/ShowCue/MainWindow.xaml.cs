@@ -707,7 +707,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             "web" => new() { new WebCue() },
             "timecode" => new() { new TimecodeCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
             "light" => new() { new LightCue() },
-            "input" => new() { new InputCue { FileChannels = Math.Max(1, AudioInput.ProbeChannels(_settings.InputDeviceId)) } },
+            "input" => new() { new InputCue { FileChannels = Math.Max(1, AudioInput.ChannelsFor(_settings.AudioDriver == AudioDriverType.Asio && _settings.AsioInputEnabled, Engine.Audio.InputFeed, _settings.InputDeviceId)) } },
             "network" => new() { new NetworkCue() },
             _ => new() { new MidiCue { Device = MidiDevices.FirstOrDefault() ?? "" } },
         };
@@ -1083,7 +1083,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void ToggleOutput_Click(object sender, RoutedEventArgs e) => Engine.ToggleOutput();
 
     private static string AudioKey(AppSettings s) =>
-        $"{s.AudioDriver}|{s.WasapiDeviceId}|{s.AsioDriverName}|{s.AsioMaxChannels}|{s.SampleRate}|{s.LatencyMs}";
+        $"{s.AudioDriver}|{s.WasapiDeviceId}|{s.AsioDriverName}|{s.AsioMaxChannels}|{s.SampleRate}|{s.LatencyMs}|{s.AsioInputEnabled}|{s.AsioInputFirstChannel}|{s.AsioInputChannels}";
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
@@ -1101,6 +1101,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             win.Result.AudioDriver = _settings.AudioDriver; win.Result.WasapiDeviceId = _settings.WasapiDeviceId;
             win.Result.AsioDriverName = _settings.AsioDriverName; win.Result.AsioMaxChannels = _settings.AsioMaxChannels;
             win.Result.SampleRate = _settings.SampleRate; win.Result.LatencyMs = _settings.LatencyMs;
+            win.Result.AsioInputEnabled = _settings.AsioInputEnabled; win.Result.AsioInputFirstChannel = _settings.AsioInputFirstChannel;
+            win.Result.AsioInputChannels = _settings.AsioInputChannels;
             restartAudio = false;
         }
         bool languageChanged = win.Result.Language != _settings.Language;
