@@ -2,6 +2,14 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.19.1 – robusthet 2
+- **Tidsløkka fanger unntak per aktiv cue** (`SafeTick.Run`, Windows `Engine/`). Feiler en cue: `Cue.Error` settes, én loggmelding, `Stop(0)` og `ForceRemove`. Når cuen er fjernet gjentas ingenting. `Ticked`-hendelsen fanges også og logges én gang.
+  Swift har ingen unntak i tidsløkka, så Mac trenger ikke tilsvarende.
+- **Grenser ved lasting er felles:** Mac bruker de samme grensene som Windows-modellen (`Cue.clampLoadedValues`, `AppSettings.normalize`); Windows har `AppSettings.Normalize` (offentlig, testet).
+  Grensene i innstillinger følger feltene i innstillingsvinduet. Antall filkanaler er satt til maks 1024 (begge plattformer) fordi `AudioRoute.Default` lager én rad per kanal.
+- **Gå til-cue som peker på seg selv er fortsatt bare en advarsel** (bevisst, uendret). Gruppe-cuer i «Sjekk showet»: tomt mål = feil (`targetEmpty`), mål som ikke finnes = feil (`targetMissing`),
+  deaktiverte mål = advarsel (`targetDisabled`), gruppe uten treff (f.eks. bare seg selv) = feil (`groupNoMatch`). Gruppen unntas selv av `CueTargets.Resolve`.
+
 ## 0.19.0 – sjekk showet
 - **Ren sjekklogikk adskilt fra GUI:** `PreflightCheck.Run` (Windows, `Models/`) og `PreflightCheck.run` (Mac, `Core/`) tar cuene, maskininnstillingene og en liten
   abstraksjon (`IPreflightEnvironment` / `PreflightEnvironment`: finnes filen, finnes lydutgangen/inngangen, finnes skjermen) og returnerer en liste funn
@@ -12,7 +20,7 @@ Viktige valg og begrunnelsen. Nyeste først.
   (manglende skjerm vises i et vanlig vindu, deaktivert eller selvrefererende mål, tom beskjed/liste, manglende lytteutgang).
 - Deaktiverte cuer hoppes over (GO hopper over dem), men numrene deres telles med for duplikater. Lydutgangen sjekkes bare hvis showet har cuer som lager lyd;
   tom enhets-ID betyr standardenheten og regnes som funnet. Stopp-cue uten mål betyr «stopp alt» og er gyldig.
-- Gruppe-cuer finnes ikke i showformatet ennå, så «gruppe utenfor hoved-lista» er ikke sjekket.
+- Gruppe-cuer ble lagt til i 0.19.1.
 - Windows-modellen gjør ugyldige tall om til gyldige (NaN, negative tider), Mac-modellen gjør ikke det; sjekken har samme regel på begge og fanger tallene på Mac.
   Testene er derfor like unntatt dette ene tilfellet.
 - Vinduet er minimalt (liste + «Sjekk på nytt») og følger eksisterende mønster: kodebygd vindu på Windows, eget `NSWindow` med SwiftUI på Mac.

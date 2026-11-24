@@ -42,6 +42,7 @@ public static class PreflightCheck
     public const string TargetMissing = "targetMissing";
     public const string TargetSelf = "targetSelf";
     public const string TargetDisabled = "targetDisabled";
+    public const string GroupNoMatch = "groupNoMatch";
     public const string ValuesOk = "valuesOk";
     public const string AudioDeviceMissing = "audioDeviceMissing";
     public const string PreviewDeviceMissing = "previewDeviceMissing";
@@ -202,6 +203,9 @@ public static class PreflightCheck
             case GotoCue g:
                 CheckTarget(c, index, g.Target, required: true, all, list);
                 break;
+            case GroupCue gr:
+                CheckGroup(gr, index, all, list);
+                break;
             case OscCue o:
                 Required(Loc.T("Adresse til mottaker"), o.Host);
                 Required(Loc.T("OSC-adresse"), o.Address);
@@ -243,6 +247,27 @@ public static class PreflightCheck
             list.Add(new(PreflightSeverity.Warning, TargetSelf, Loc.F("{0}: peker på seg selv.", label), index));
         else if (hits.All(x => x.Disabled))
             list.Add(new(PreflightSeverity.Warning, TargetDisabled, Loc.F("{0}: mål-cuen «{1}» er deaktivert.", label, t), index));
+    }
+
+    /// <summary>Gruppe-cue: listen må ha mål, målene må finnes, og minst én cue må treffes. Deaktiverte mål gir advarsel (GO hopper over dem).</summary>
+    private static void CheckGroup(GroupCue g, int index, IReadOnlyList<Cue> all, List<PreflightFinding> list)
+    {
+        var label = Label(g, index);
+        if (string.IsNullOrWhiteSpace(g.Targets))
+        {
+            list.Add(new(PreflightSeverity.Error, TargetEmpty, Loc.F("{0}: gruppen har ingen mål-cuer.", label), index));
+            return;
+        }
+        var missing = new List<string>();
+        var found = CueTargets.Resolve(all, g.Targets, g, missing);
+        if (missing.Count > 0)
+            list.Add(new(PreflightSeverity.Error, TargetMissing, Loc.F("{0}: mål-cuene finnes ikke: {1}", label, string.Join(", ", missing)), index));
+        else if (found.Count == 0)
+            list.Add(new(PreflightSeverity.Error, GroupNoMatch, Loc.F("{0}: gruppen treffer ingen cuer.", label), index));
+        var disabled = found.Where(x => x.Disabled).ToList();
+        if (disabled.Count > 0)
+            list.Add(new(PreflightSeverity.Warning, TargetDisabled,
+                Loc.F("{0}: mål-cuene er deaktivert: {1}", label, string.Join(", ", disabled.Select(x => x.Number))), index));
     }
 
     /// <summary>«https://…» eller «http://…» med noe etter, uten mellomrom.</summary>

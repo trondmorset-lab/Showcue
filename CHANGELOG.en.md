@@ -6,6 +6,15 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.19.1 – 2026-11-24
+
+### Fixed
+- **Windows: a cue that fails in the middle of a show** no longer causes a new error message every 16 milliseconds. The cue gets an error, is stopped and removed from the list, and the error is logged once; the other cues keep playing.
+- **Mac: values in the show file are limited when loading**, as on Windows (level −60…+12 dB, times 0–86,400 s, ports 1–65,535, MIDI values, universe, channel count). A corrupt or hand-edited file can no longer produce huge or invalid values.
+- **Check the show knows group cues** (Windows and Mac): an empty target list is an error, targets that do not exist are an error, disabled targets give a warning, and a group that matches no cue is an error.
+- **Settings are limited when loading** on Windows and Mac (ports, MIDI channel, double-GO protection, delay, fade time for stop all, channel count, button panel columns, patch level and channels, and more).
+- The channel count of an audio file is limited to 1024 on Windows, so a corrupt value cannot create a huge routing table.
+
 ## 0.19.0 – 2026-11-24
 
 ### New

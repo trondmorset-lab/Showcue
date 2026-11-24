@@ -44,6 +44,7 @@ enum PreflightCheck {
     static let targetMissing = "targetMissing"
     static let targetSelf = "targetSelf"
     static let targetDisabled = "targetDisabled"
+    static let groupNoMatch = "groupNoMatch"
     static let valuesOk = "valuesOk"
     static let audioDeviceMissing = "audioDeviceMissing"
     static let previewDeviceMissing = "previewDeviceMissing"
@@ -186,6 +187,8 @@ enum PreflightCheck {
             checkTarget(c, index, required: false, all, &list)
         case .goto:
             checkTarget(c, index, required: true, all, &list)
+        case .group:
+            checkGroup(c, index, all, &list)
         case .osc:
             required(L("Adresse til mottaker"), c.host)
             required(L("OSC-adresse"), c.address)
@@ -221,6 +224,25 @@ enum PreflightCheck {
             add(&list, .warning, targetSelf, L("{0}: peker på seg selv.", lbl), index)
         } else if hits.allSatisfy({ $0.disabled }) {
             add(&list, .warning, targetDisabled, L("{0}: mål-cuen «{1}» er deaktivert.", lbl, t), index)
+        }
+    }
+
+    /// Gruppe-cue: listen må ha mål, målene må finnes, og minst én cue må treffes. Deaktiverte mål gir advarsel (GO hopper over dem).
+    private static func checkGroup(_ g: Cue, _ index: Int, _ all: [Cue], _ list: inout [PreflightFinding]) {
+        let lbl = label(g, index)
+        if g.targets.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            add(&list, .error, targetEmpty, L("{0}: gruppen har ingen mål-cuer.", lbl), index)
+            return
+        }
+        let r = CueTargets.resolve(all, g.targets, excluding: g)
+        if !r.missing.isEmpty {
+            add(&list, .error, targetMissing, L("{0}: mål-cuene finnes ikke: {1}", lbl, r.missing.joined(separator: ", ")), index)
+        } else if r.cues.isEmpty {
+            add(&list, .error, groupNoMatch, L("{0}: gruppen treffer ingen cuer.", lbl), index)
+        }
+        let disabled = r.cues.filter { $0.disabled }
+        if !disabled.isEmpty {
+            add(&list, .warning, targetDisabled, L("{0}: mål-cuene er deaktivert: {1}", lbl, disabled.map { $0.number }.joined(separator: ", ")), index)
         }
     }
 
