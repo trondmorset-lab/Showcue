@@ -87,6 +87,13 @@ Miljøet (`IPreflightEnvironment` / `PreflightEnvironment`) svarer på «finnes 
 bruker filsystemet, `AudioEngine`/`Monitors` (Windows) og `CoreAudioDevices`/`NSScreen` (Mac). Vinduet er `Views/PreflightWindow.cs` (Windows) og
 `UI/PreflightView.swift` åpnet fra `AppModel.showPreflight()` (Mac). Menyvalg: *Fil → Sjekk showet* (Mac også *Verktøy*). Tester: `PreflightTests` på begge plattformer.
 
+## Hovedvinduet
+
+Toppfelt (GO, neste cue med type, klokke, nivåmåler, Pause, STOPP ALT), verktøylinje, cueliste og inspektør i faner, og bunnpaneler (aktive cuer, hurtigtaster, utgang).
+Hva som vises avgjøres av ren logikk i `CueDisplay` (radtilstand, «gjenstår») og `InspectorLayout` (faner per cuetype, felles felt per fane), Windows `Models/CueDisplay.cs`, Mac `Core/CueDisplay.swift`.
+Cuen har kjøretidsfeltene `RemainingText` og (Windows) `IsNext`/`RowState`, satt av motoren og hovedvinduet og aldri lagret i showfila. Cuetypens egne felt ligger i Grunnleggende,
+og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i `ContentControl.Resources`, Mac: `basicSection`/`mediaSection`). Se [beslutninger.md](beslutninger.md#0200--nytt-hovedvindu).
+
 ## Fjernstyring og status
 
 - **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,

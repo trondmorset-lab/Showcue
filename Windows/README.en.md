@@ -37,6 +37,15 @@ Requires Windows 10 (1809) or newer, 64-bit.
 All cues have **pre-wait** (delay before start), **auto-continue** (start the next at the same time),
 **auto-follow** (start the next when this one finishes), **hotkey**, **MIDI trigger** and **notes**.
 
+### The main window
+
+- **Top:** a large **GO** button, **NEXT CUE** with number, name and type in large text (blue edge), clock, level meters, **Pause** and **STOP ALL**.
+- **The cue list** has column headings. The row of the cue that is **playing now** is green with a progress bar and the time left in the *Remaining* column
+  (“∞” for loops and cues that run until stopped). The cue **GO will start** has a blue edge and ▶. Disabled cues are dimmed (and skipped by GO).
+- **The panel for the selected cue** is split into tabs: *Basic* (the cue's own fields), *Audio/media* (level, fades, outputs, scaling and screen – only for types with audio, pictures or video),
+  *Timing* (pre-wait, afterwards, timecode trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
+- **Bottom:** active cues with a progress bar and time left, hotkeys and output.
+
 ### Start and end (waveform)
 
 Audio and video cues have a waveform in the inspector where the start and end points are edited visually:

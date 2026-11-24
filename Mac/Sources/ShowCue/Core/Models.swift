@@ -270,6 +270,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var activeCount = 0
     @Published var progress: Double = 0
     @Published var isPreWaiting = false
+    /// «Gjenstår» mens cuen spiller (se `CueDisplay.remainingText`), ellers tom.
+    @Published var remainingText = ""
     @Published var error: String? = nil
     var isRunning: Bool { activeCount > 0 }
 

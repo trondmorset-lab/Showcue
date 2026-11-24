@@ -3,10 +3,10 @@ import UniformTypeIdentifiers
 
 /// Kolonnebredder (samme som Windows-versjonen) ved vanlig størrelse. Ganges med zoom.
 private struct Col {
-    let status, number, type, preWait, length, cont, trigger: CGFloat
+    let status, number, type, preWait, length, remaining, cont, trigger: CGFloat
     init(_ s: CGFloat) {
         status = 30 * s; number = 60 * s; type = 122 * s
-        preWait = 76 * s; length = 76 * s; cont = 28 * s; trigger = 104 * s
+        preWait = 76 * s; length = 76 * s; remaining = 80 * s; cont = 28 * s; trigger = 104 * s
     }
 }
 
@@ -64,6 +64,7 @@ struct CueListView: View {
             h(L("MÅL / FIL")).frame(maxWidth: .infinity, alignment: .leading)
             h(L("PRE-WAIT")).frame(width: col.preWait, alignment: .leading)
             h(L("LENGDE")).frame(width: col.length, alignment: .leading)
+            h(L("GJENSTÅR")).frame(width: col.remaining, alignment: .leading)
             Text("").frame(width: col.cont)
             h(L("TRIGGER")).frame(width: col.trigger, alignment: .leading)
         }
@@ -102,16 +103,29 @@ struct CueRow: View {
     let index: Int
     let selected: Bool
 
+    /// Spilles nå, neste (GO-markøren), deaktivert eller vanlig – se `CueDisplay.rowState`.
+    private var state: CueRowState {
+        CueDisplay.rowState(isRunning: cue.isRunning, isNext: model.playhead === cue, disabled: cue.disabled)
+    }
+
     private var background: Color {
-        if selected { return theme.playheadRow }
-        if cue.isRunning { return theme.runningRow }
-        if let t = theme.tint(cue.color) { return t }
-        return index % 2 == 1 ? theme.rowAlt : theme.panel
+        switch state {
+        case .playing: return theme.runningRow
+        case .next: return theme.playheadRow
+        case .disabled, .normal:
+            // Valgt, men ikke neste (flere valgt, eller deaktivert): nøytral markering.
+            if selected { return theme.panel3 }
+            if let t = theme.tint(cue.color) { return t }
+            return index % 2 == 1 ? theme.rowAlt : theme.panel
+        }
     }
 
     private var stripe: Color {
-        if selected { return theme.playhead }
-        return theme.stripe(cue.color) ?? .clear
+        switch state {
+        case .playing: return theme.running
+        case .next: return theme.playhead
+        case .disabled, .normal: return selected ? theme.faint : (theme.stripe(cue.color) ?? .clear)
+        }
     }
 
     var body: some View {
@@ -120,6 +134,7 @@ struct CueRow: View {
             ZStack {
                 if cue.isRunning { Circle().fill(theme.running).frame(width: 9, height: 9) }
                 if cue.isPreWaiting { Circle().fill(theme.wait).frame(width: 9, height: 9) }
+                if state == .next { Text("▶").uiFont(11).foregroundColor(theme.playhead) }
                 if let e = cue.error {
                     Text("!").uiFont(15, weight: .bold).foregroundColor(theme.danger).help(e)
                 }
@@ -136,7 +151,7 @@ struct CueRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .bottom) {
                     if cue.isRunning {
-                        ProgressBar(value: cue.progress, height: 3).padding(.horizontal, 8).offset(y: 9)
+                        ProgressBar(value: cue.progress, height: 4).padding(.horizontal, 8).offset(y: 9)
                     }
                 }
             Text(cue.summary).foregroundColor(theme.muted).lineLimit(1).padding(.horizontal, 8)
@@ -145,6 +160,8 @@ struct CueRow: View {
                 .padding(.horizontal, 8).frame(width: col.preWait, alignment: .leading)
             Text(cue.durationText).uiFont(13, design: .monospaced)
                 .padding(.horizontal, 8).frame(width: col.length, alignment: .leading)
+            Text(cue.remainingText).uiFont(13, weight: .semibold, design: .monospaced).foregroundColor(theme.running)
+                .padding(.horizontal, 8).frame(width: col.remaining, alignment: .leading)
             Text(cue.continueMode.glyph).uiFont(16).foregroundColor(theme.playhead)
                 .frame(width: col.cont)
             Text(cue.triggerText).uiFont(12.5, design: .monospaced).foregroundColor(theme.wait).lineLimit(1)
@@ -153,9 +170,9 @@ struct CueRow: View {
         .uiFont(13.5)
         .frame(height: 34 * scale)
         .background(background)
-        .overlay(Rectangle().fill(stripe).frame(width: 3), alignment: .leading)
+        .overlay(Rectangle().fill(stripe).frame(width: 4), alignment: .leading)
         .overlay(Rectangle().fill(theme.gridLine).frame(height: 1), alignment: .bottom)
-        .opacity(cue.disabled ? 0.4 : 1)
+        .opacity(state == .disabled ? 0.4 : 1)
         .contentShape(Rectangle())
         .onTapGesture {
             NSApp.keyWindow?.makeFirstResponder(nil)

@@ -19,7 +19,8 @@ struct BottomPanels: View {
                     }
                 }
             }
-            panel(L("HURTIGTASTER")) {
+            // Aktive cuer får mest plass; hurtigtastene har en øvre grense.
+            panel(L("HURTIGTASTER"), maxWidth: 440) {
                 let hot = model.cues.filter { !$0.hotkey.isEmpty }
                 if hot.isEmpty {
                     Text(L("Gi en cue en hurtigtast i panelet til høyre, så dukker den opp her. Hurtigtaster starter cuen uten å flytte GO-markøren."))
@@ -48,13 +49,13 @@ struct BottomPanels: View {
         .background(theme.bg)
     }
 
-    private func panel<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+    private func panel<C: View>(_ title: String, maxWidth: CGFloat = .infinity, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionHeader(title)
             content()
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: maxWidth, maxHeight: .infinity, alignment: .topLeading)
         .background(theme.panel)
     }
 }
@@ -69,7 +70,7 @@ struct ActiveRow: View {
             Text(active.cue.number).uiFont(13, design: .monospaced).foregroundColor(theme.muted).frame(width: 44, alignment: .leading)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    Text(active.cue.displayName).uiFont(13, weight: .semibold).lineLimit(1)
+                    Text(active.cue.displayName).uiFont(14, weight: .semibold).lineLimit(1)
                     Spacer()
                     Text(active.stateText).uiFont(11).foregroundColor(theme.muted)
                 }
@@ -85,11 +86,10 @@ struct ActiveRow: View {
                 }
             }
             VStack(alignment: .trailing, spacing: 0) {
-                Text(active.elapsedText)
-                Text(active.remainingText).foregroundColor(theme.wait)
+                Text(active.remainingText).uiFont(18, weight: .bold, design: .monospaced).foregroundColor(theme.running)
+                Text(active.elapsedText).uiFont(11.5, design: .monospaced).foregroundColor(theme.muted)
             }
-            .uiFont(13, design: .monospaced)
-            .frame(minWidth: 76, alignment: .trailing)
+            .frame(minWidth: 80, alignment: .trailing)
             .padding(.horizontal, 12)
             if active.canStep {
                 // Lysbildeserie: bla til forrige / neste lysbilde.

@@ -38,6 +38,7 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - `{local:T '…'}`: krøllparenteser i teksten må escapes (`\{ \}`), ellers byggefeil «Unexpected closing brace».
 - `Loc.T(...)` kan ikke brukes i `is`-mønstre, `case` eller `const` (må være konstant).
 - En `OneWay`-binding brytes hvis brukeren endrer verdien (f.eks. `Slider`); bruk `TwoWay` mot en egenskap som tolker endringen.
+- `TabControl` følger ikke de mørke temaene uten en stor mal; inspektørfanene er vanlige knapper med stil som markerer valgt fane (`ActiveInspectorTab`).
 - `ProgressBar`/`Slider` trenger egen stil for å se riktig ut i mørke temaer (se `Themes/Controls.xaml`).
 - Ikonfiler med bare PNG-bilder vises ikke alltid i små størrelser; bruk BMP (med AND-maske) for 16–128 px.
 
@@ -47,6 +48,8 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - macOS husker app-ikoner: etter nytt ikon, `touch /Applications/ShowCue.app && killall Dock`. Appen setter også ikonet selv ved oppstart.
 - Kjøring fra Xcode gir ingen app-pakke (ikonet hentes da fra ressurspakken ved siden av programfila).
 - ⌘0 er brukt («gå til»-cue); Option-tastene gir spesialtegn på norsk tastatur.
+
+- SwiftUI: en `ViewBuilder`-blokk tar høyst 10 elementer. En `switch` med mange felt per `case` (inspektørfanene) må gruppere i `VStack`.
 
 ## Tester
 - Tidsstempler: to filer skrevet rett etter hverandre kan få samme tid på Windows. Sett eldre tid eksplisitt når testen sammenligner.

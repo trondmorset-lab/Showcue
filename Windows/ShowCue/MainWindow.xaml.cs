@@ -85,15 +85,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         set
         {
             if (_selected == value) return;
-            if (_selected != null) _selected.PropertyChanged -= Selected_PropertyChanged;
+            if (_selected != null) { _selected.PropertyChanged -= Selected_PropertyChanged; _selected.IsNext = false; }
             _selected = value;
-            if (_selected != null) _selected.PropertyChanged += Selected_PropertyChanged;
+            if (_selected != null) { _selected.PropertyChanged += Selected_PropertyChanged; _selected.IsNext = true; }
             Raise();
             Raise(nameof(HasSelection));
             Raise(nameof(NoSelection));
             Raise(nameof(NextCueTitle));
+            Raise(nameof(NextCueTypeText));
+            // Fanen beholdes hvis den finnes for den nye cuetypen, ellers vises Grunnleggende.
+            ActiveInspectorTab = InspectorLayout.Resolve(_inspectorTab, _selected?.TypeKey);
+            Raise(nameof(ShowMediaTab));
+            Raise(nameof(MediaCue));
             if (_selected != null) CueGrid.ScrollIntoView(_selected);
         }
+    }
+
+    private InspectorTab _inspectorTab = InspectorTab.Basic;
+    /// <summary>Fanen som vises i inspektøren.</summary>
+    public InspectorTab ActiveInspectorTab
+    {
+        get => _inspectorTab;
+        set { if (_inspectorTab == value) return; _inspectorTab = value; Raise(); }
+    }
+    /// <summary>Lyd/media-fanen finnes bare for typer med lyd, bilde eller video.</summary>
+    public bool ShowMediaTab => _selected != null && InspectorLayout.HasMedia(_selected.TypeKey);
+    /// <summary>Innholdet i Lyd/media-fanen (null når fanen ikke finnes, så den ikke bygges for ingenting).</summary>
+    public Cue? MediaCue => ShowMediaTab ? _selected : null;
+    /// <summary>Typen til neste cue, f.eks. «▶ Video», vist ved siden av navnet i toppfeltet.</summary>
+    public string NextCueTypeText => _selected == null ? "" : _selected.TypeIcon + " " + _selected.TypeName;
+
+    private void InspectorTab_Click(object sender, RoutedEventArgs e)
+    {
+        CommitFocusedTextBox();
+        if (sender is FrameworkElement { Tag: string t } && Enum.TryParse<InspectorTab>(t, out var tab))
+            ActiveInspectorTab = InspectorLayout.Resolve(tab, _selected?.TypeKey);
     }
 
     public bool HasSelection => _selected != null;

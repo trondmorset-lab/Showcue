@@ -71,7 +71,7 @@ public abstract class Cue : ObservableObject
     /// <summary>Hurtigtast, f.eks. "F1", "Q" eller "1". Tom = ingen.</summary>
     public string Hotkey { get => _hotkey; set { if (SetCue(ref _hotkey, (value ?? "").Trim().ToUpperInvariant())) OnPropertyChanged(nameof(TriggerText)); } }
     /// <summary>Deaktiverte cues hoppes over av GO.</summary>
-    public bool Disabled { get => _disabled; set => SetCue(ref _disabled, value); }
+    public bool Disabled { get => _disabled; set { if (SetCue(ref _disabled, value)) OnPropertyChanged(nameof(RowState)); } }
     private CueColor _color;
     /// <summary>Fargemerking i lista.</summary>
     public CueColor Color { get => _color; set => SetCue(ref _color, value); }
@@ -95,6 +95,8 @@ public abstract class Cue : ObservableObject
     [JsonIgnore] public string TriggerText => string.Join(" · ",
         new[] { Hotkey, MidiTriggers.Describe(MidiTrigger), TimecodeTrigger.Length > 0 ? "TC " + TimecodeTrigger : "" }.Where(s => !string.IsNullOrEmpty(s)));
 
+    /// <summary>Typenøkkelen som står i showfila («audio», «video» …).</summary>
+    [JsonIgnore] public string TypeKey => CueJsonConverter.KeyOf(this);
     [JsonIgnore] public abstract string TypeName { get; }
     [JsonIgnore] public abstract string TypeIcon { get; }
     [JsonIgnore] public virtual string Summary => "";
@@ -110,12 +112,21 @@ public abstract class Cue : ObservableObject
     private double _progress;
     private bool _isPreWaiting;
     private string? _error;
+    private string _remainingText = "";
+
+    /// <summary>«Gjenstår» mens cuen spiller (se <see cref="CueDisplay.RemainingText"/>), ellers tom.</summary>
+    [JsonIgnore] public string RemainingText { get => _remainingText; set => Set(ref _remainingText, value ?? ""); }
 
     [JsonIgnore] public bool IsRunning => _activeCount > 0;
+    private bool _isNext;
+    /// <summary>Cuen GO starter (GO-markøren står på den). Settes av hovedvinduet.</summary>
+    [JsonIgnore] public bool IsNext { get => _isNext; set { if (Set(ref _isNext, value)) OnPropertyChanged(nameof(RowState)); } }
+    /// <summary>Hvordan raden vises i lista: spilles nå, neste, deaktivert eller vanlig.</summary>
+    [JsonIgnore] public CueRowState RowState => CueDisplay.RowState(IsRunning, _isNext, _disabled);
     [JsonIgnore] public int ActiveCount
     {
         get => _activeCount;
-        set { if (Set(ref _activeCount, Math.Max(0, value))) OnPropertyChanged(nameof(IsRunning)); }
+        set { if (Set(ref _activeCount, Math.Max(0, value))) { OnPropertyChanged(nameof(IsRunning)); OnPropertyChanged(nameof(RowState)); } }
     }
     [JsonIgnore] public double Progress { get => _progress; set => Set(ref _progress, value); }
     [JsonIgnore] public bool IsPreWaiting { get => _isPreWaiting; set => Set(ref _isPreWaiting, value); }

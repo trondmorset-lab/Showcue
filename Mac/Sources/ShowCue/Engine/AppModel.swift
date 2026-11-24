@@ -15,6 +15,8 @@ final class AppModel: ObservableObject, ShowControl {
     // Show
     @Published var cues: [Cue] = [] { didSet { observeCues() } }
     @Published var selection: Set<UUID> = []
+    /// Fanen som vises i inspektøren.
+    @Published var inspectorTab: InspectorTab = .basic
     @Published private(set) var showURL: URL?
     @Published private(set) var isDirty = false
     private var savedData = Data()

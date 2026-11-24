@@ -6,6 +6,16 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.20.0 – 2026-11-24
+
+### Changed
+- **A new, clearer main window** (Windows and Mac, same behaviour; no features removed, shortcuts unchanged):
+  - **Cue list:** the row that is *playing now* is green with a progress bar and a new **Remaining** column (time left, “∞” when the length is unknown).
+    The cue *GO will start* has a blue edge and ▶. Disabled cues are dimmed and are never counted as next.
+  - **The panel for the selected cue** is split into tabs: *Basic*, *Audio/media*, *Timing* and *Advanced*. All fields are still there, just grouped.
+    Only tabs with content for the cue type are shown (types without audio, pictures or video have no Audio/media tab). The tab is kept when you select another cue of a type that has it.
+  - **Top bar:** a larger GO button with “Space”, and *Next cue* in larger text with its type and a blue edge.
+  - **Active cues:** time left in large green text, and more room in the bottom panel.
 ## 0.19.1 – 2026-11-24
 
 ### Fixed

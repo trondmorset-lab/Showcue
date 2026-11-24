@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.20.0 | #28 (åpen) | Ny hovedvindu: tydelig «spilles nå»/«neste» i cuelista med kolonnen Gjenstår, faner i inspektøren, større GO og neste cue, bedre aktive cuer. Ren visningslogikk (`CueDisplay`, `InspectorLayout`) med tester på begge plattformer |
 | 0.19.1 | (åpen) | Robusthet 2: unntak i `CueEngine.Tick` fanges per cue (Windows); Mac begrenser verdier ved lasting som Windows; «Sjekk showet» kjenner gruppe-cuer; innstillinger begrenses ved lasting |
 | 0.19.0 | #26 | Sjekk showet: forhåndssjekk før show (mediefiler, verdier og mål, lydutgang/skjerm, duplikate cue-numre) med liste over feil og advarsler |
 | 0.18.0 | #24 | Windows: live-innganger via ASIO i samme økt som utgangen (eksperimentelt, av som standard) |

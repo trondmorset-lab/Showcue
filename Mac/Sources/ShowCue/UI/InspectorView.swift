@@ -18,6 +18,10 @@ struct InspectorView: View {
             }
         }
         .background(theme.panel)
+        // Fanen beholdes hvis den finnes for den nye cuetypen, ellers vises Grunnleggende.
+        .onChange(of: model.playhead?.id) { _ in
+            if let c = model.playhead { model.inspectorTab = InspectorLayout.resolve(model.inspectorTab, for: c.type.rawValue) }
+        }
     }
 }
 
@@ -55,13 +59,24 @@ struct CueInspector: View {
                 VStack(alignment: .leading, spacing: 0) { FieldLabel(L("Navn")); TextInput($cue.name, placeholder: cue.displayName) }
             }
 
-            typeSection
+            tabBar
 
-            Rectangle().fill(theme.line).frame(height: 1).padding(.top, 16).padding(.bottom, 8)
-            SectionHeader(L("AVSPILLING"))
-            Pair {
+            switch tab {
+            case .basic:
+                basicSection
+                Toggle(L("Deaktivert (hoppes over av GO)"), isOn: $cue.disabled).padding(.top, 14)
+            case .media:
+                mediaSection
+            case .timing:
                 FieldLabel(L("Pre-wait (s)")); NumberInput(value: $cue.preWait, range: 0...3600)
-            } _: {
+                FieldLabel(L("Etterpå"))
+                Picker("", selection: $cue.continueMode) {
+                    ForEach(ContinueMode.allCases, id: \.self) { Text($0.label).tag($0) }
+                }.labelsHidden()
+                FieldLabel(L("Tidskode-trigger (MTC inn, tt:mm:ss:ff)"))
+                TimecodeField(value: $cue.timecodeTrigger, allowEmpty: true)
+                    .help(L("Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen."))
+            case .advanced:
                 FieldLabel(L("Hurtigtast"))
                 Button(action: { model.hotkeyCapture = (model.hotkeyCapture === cue) ? nil : cue }) {
                     Text(model.hotkeyCapture === cue ? L("Trykk en tast …") : (cue.hotkey.isEmpty ? L("(ingen)") : cue.hotkey))
@@ -74,83 +89,121 @@ struct CueInspector: View {
                 }
                 .buttonStyle(.plain)
                 .help(L("Klikk og trykk en tast (F1–F12, A–Z, 0–9). ⌫ fjerner, Esc avbryter."))
-            }
-            FieldLabel(L("MIDI-trigger"))
-            HStack(spacing: 6) {
-                Text(cue.midiTrigger.isEmpty ? L("(ingen)") : MidiTriggers.describe(cue.midiTrigger))
-                    .uiFont(13, design: .monospaced)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 6).padding(.vertical, 5)
+                FieldLabel(L("MIDI-trigger"))
+                HStack(spacing: 6) {
+                    Text(cue.midiTrigger.isEmpty ? L("(ingen)") : MidiTriggers.describe(cue.midiTrigger))
+                        .uiFont(13, design: .monospaced)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 6).padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
+                    Button(L("Lær")) { model.learnMidi(for: cue) }.buttonStyle(PanelButtonStyle())
+                        .help(L("Klikk, og trykk så en tast/knapp på MIDI-kontrolleren"))
+                    Button("✕") { model.cancelLearn(); cue.midiTrigger = "" }.buttonStyle(PanelButtonStyle())
+                }
+                if !model.learnText.isEmpty { Hint(model.learnText).foregroundColor(theme.wait) }
+                Toggle(L("Vis i knappepanelet"), isOn: $cue.inButtonPanel).padding(.top, 14).help(L("Cuer med hurtigtast vises der uansett"))
+                VStack(alignment: .leading, spacing: 0) {
+                    FieldLabel(L("Farge"))
+                    HStack(spacing: 6) {
+                        ForEach(CueColor.allCases, id: \.self) { c in
+                            Button { model.setColor(c) } label: {
+                                ZStack {
+                                    Circle().fill(theme.stripe(c) ?? Color.clear).frame(width: 14, height: 14)
+                                    if c == .none {
+                                        Circle().stroke(theme.faint, lineWidth: 1.5).frame(width: 14, height: 14)
+                                        Rectangle().fill(theme.faint).frame(width: 1.5, height: 16).rotationEffect(.degrees(45))
+                                    }
+                                }
+                                .frame(width: 26, height: 26)
+                                .background(RoundedRectangle(cornerRadius: 5).fill(theme.panel3))
+                                .overlay(RoundedRectangle(cornerRadius: 5).stroke(cue.color == c ? theme.playhead : theme.line))
+                            }
+                            .buttonStyle(.plain)
+                            .help(c.label)
+                        }
+                    }
+                }
+                FieldLabel(L("Notater (vises ved NESTE CUE)"))
+                TextEditor(text: $cue.notes)
+                    .uiFont(13)
+                    .scrollContentBackground(.hidden)
+                    .padding(4)
+                    .frame(minHeight: 54)
                     .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
-                Button(L("Lær")) { model.learnMidi(for: cue) }.buttonStyle(PanelButtonStyle())
-                    .help(L("Klikk, og trykk så en tast/knapp på MIDI-kontrolleren"))
-                Button("✕") { model.cancelLearn(); cue.midiTrigger = "" }.buttonStyle(PanelButtonStyle())
             }
-            if !model.learnText.isEmpty { Hint(model.learnText).foregroundColor(theme.wait) }
-            FieldLabel(L("Tidskode-trigger (MTC inn, tt:mm:ss:ff)"))
-            TimecodeField(value: $cue.timecodeTrigger, allowEmpty: true)
-                .help(L("Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen."))
+        }
+    }
 
-            FieldLabel(L("Etterpå"))
-            Picker("", selection: $cue.continueMode) {
-                ForEach(ContinueMode.allCases, id: \.self) { Text($0.label).tag($0) }
-            }.labelsHidden()
-            Toggle(L("Deaktivert (hoppes over av GO)"), isOn: $cue.disabled).padding(.top, 8)
-            Toggle(L("Vis i knappepanelet"), isOn: $cue.inButtonPanel).padding(.top, 4).help(L("Cuer med hurtigtast vises der uansett"))
+    /// Fanen som vises: den lagrede hvis den finnes for cuetypen, ellers Grunnleggende.
+    private var tab: InspectorTab { InspectorLayout.resolve(model.inspectorTab, for: cue.type.rawValue) }
 
-            FieldLabel(L("Farge"))
-            HStack(spacing: 6) {
-                ForEach(CueColor.allCases, id: \.self) { c in
-                    Button { model.setColor(c) } label: {
-                        ZStack {
-                            Circle().fill(theme.stripe(c) ?? Color.clear).frame(width: 14, height: 14)
-                            if c == .none {
-                                Circle().stroke(theme.faint, lineWidth: 1.5).frame(width: 14, height: 14)
-                                Rectangle().fill(theme.faint).frame(width: 1.5, height: 16).rotationEffect(.degrees(45))
-                            }
-                        }
-                        .frame(width: 26, height: 26)
-                        .background(RoundedRectangle(cornerRadius: 5).fill(theme.panel3))
-                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(cue.color == c ? theme.playhead : theme.line))
+    /// Faner med innhold for cuetypen (bare de som finnes vises).
+    private var tabBar: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 4) {
+                ForEach(InspectorLayout.tabs(for: cue.type.rawValue), id: \.self) { t in
+                    Button { model.inspectorTab = t } label: {
+                        Text(tabLabel(t)).uiFont(12.5, weight: tab == t ? .semibold : .regular)
+                            .foregroundColor(tab == t ? theme.text : theme.muted)
+                            .lineLimit(1)
+                            .padding(.horizontal, 9).padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: 5).fill(tab == t ? theme.panel3 : Color.clear))
+                            .overlay(RoundedRectangle(cornerRadius: 5).stroke(tab == t ? theme.playhead : Color.clear))
                     }
                     .buttonStyle(.plain)
-                    .help(c.label)
                 }
+                Spacer(minLength: 0)
             }
+            .padding(.top, 12).padding(.bottom, 4)
+            Rectangle().fill(theme.line).frame(height: 1).padding(.bottom, 2)
+        }
+    }
 
-            FieldLabel(L("Notater (vises ved NESTE CUE)"))
-            TextEditor(text: $cue.notes)
-                .uiFont(13)
-                .scrollContentBackground(.hidden)
-                .padding(4)
-                .frame(minHeight: 54)
-                .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
+    private func tabLabel(_ t: InspectorTab) -> String {
+        switch t {
+        case .basic: return L("Grunnleggende")
+        case .media: return L("Lyd/media")
+        case .timing: return L("Tidsstyring")
+        case .advanced: return L("Avansert")
         }
     }
 
     // MARK: Typespesifikt
 
-    @ViewBuilder private var typeSection: some View {
+    @ViewBuilder private var basicSection: some View {
         switch cue.type {
-        case .audio: audioSection
-        case .video: videoSection
-        case .image, .pdf: stillSection
+        case .audio: audioBasic
+        case .video: videoBasic
+        case .image, .pdf: stillBasic
         case .fade: fadeSection
         case .stop: stopSection
         case .osc: oscSection
         case .midi: midiSection
-        case .playlist: playlistSection
-        case .slideshow: slideshowSection
+        case .playlist: playlistBasic
+        case .slideshow: slideshowBasic
         case .goto: gotoSection
         case .group: groupSection
         case .memo: memoSection
         case .network: networkSection
         case .timecode: timecodeSection
         case .light: lightSection
-        case .input: inputSection
-        case .web: webSection
+        case .input: inputBasic
+        case .web: webBasic
+        }
+    }
+
+    /// Lyd/media-fanen (bare typer med lyd, bilde eller video; se `InspectorLayout`).
+    @ViewBuilder private var mediaSection: some View {
+        switch cue.type {
+        case .audio: audioMedia
+        case .video: videoMedia
+        case .image, .pdf, .web: visualCommon
+        case .playlist: playlistMedia
+        case .slideshow: slideshowMedia
+        case .input: inputMedia
+        default: EmptyView()
         }
     }
 
@@ -170,7 +223,7 @@ struct CueInspector: View {
         }
     }
 
-    private var audioSection: some View {
+    private var audioBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             filePicker
             if cue.fileDuration > 0 { Hint(L("Filens lengde: {0} · {1} kanal(er)", TimeFormat.format(cue.fileDuration), cue.fileChannels)) }
@@ -187,6 +240,11 @@ struct CueInspector: View {
             } _: {
                 FieldLabel(L("Slutt (s, 0 = filslutt)")); NumberInput(value: $cue.endTime, range: 0...86400)
             }
+        }
+    }
+
+    private var audioMedia: some View {
+        VStack(alignment: .leading, spacing: 0) {
             Pair {
                 FieldLabel(L("Fade inn (s)")); NumberInput(value: $cue.fadeIn, range: 0...600)
             } _: {
@@ -236,7 +294,7 @@ struct CueInspector: View {
         }
     }
 
-    private var videoSection: some View {
+    private var videoBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             filePicker
             Pair {
@@ -244,7 +302,6 @@ struct CueInspector: View {
             } _: {
                 FieldLabel(L("Loop")); Toggle(L("Gjenta til stoppet"), isOn: $cue.loop).padding(.top, 4)
             }
-            visualCommon
             FieldLabel(L("Start og slutt")).padding(.top, 6)
             WaveformEditorView(cue: cue, preview: model.engine.preview).id(cue.id)
             Hint(L("Dra den grønne (start) og røde (slutt) markøren. Klikk for å flytte den blå markøren, dobbeltklikk for å lytte derfra. Knip på styreflaten for å zoome. Lyttingen spiller lydsporet gjennom lydpatchen. Med loop hopper videoen tilbake til start ved sluttpunktet."))
@@ -253,6 +310,12 @@ struct CueInspector: View {
             } _: {
                 FieldLabel(L("Slutt (s, 0 = filslutt)")); NumberInput(value: $cue.endTime, range: 0...86400)
             }
+        }
+    }
+
+    private var videoMedia: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            visualCommon
             FieldLabel(L("Lydspor → utganger (dB)")).padding(.top, 6)
             if cue.hasNoAudio { Hint(L("Videoen har ikke noe lydspor.")) }
             RoutingMatrixView(cue: cue)
@@ -263,7 +326,7 @@ struct CueInspector: View {
         }
     }
 
-    private var stillSection: some View {
+    private var stillBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             filePicker
             if cue.type == .pdf {
@@ -276,7 +339,6 @@ struct CueInspector: View {
             }
             FieldLabel(L("Vis i (s, 0 = til stoppet)"))
             NumberInput(value: $cue.holdTime, range: 0...86400)
-            visualCommon
         }
     }
 
@@ -306,14 +368,13 @@ struct CueInspector: View {
         }
     }
 
-    private var webSection: some View {
+    private var webBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Adresse (URL eller fil)")); TextInput($cue.url, mono: true)
             if cue.webURL == nil { Text(L("Ugyldig adresse")).foregroundColor(theme.danger).uiFont(12).padding(.top, 2) }
             Hint(L("F.eks. https://time.is eller en lokal .html-fil. Siden lastes når cuen starter og vises fullskjerm på utgangen, over bilder og video. Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen."))
             FieldLabel(L("Vis i (s, 0 = til stoppet)"))
             NumberInput(value: $cue.holdTime, range: 0...86400)
-            visualCommon
         }
     }
 
@@ -363,7 +424,7 @@ struct CueInspector: View {
         do { _ = try DmxLevels.parse(cue.levels); return "" } catch { return error.localizedDescription }
     }
 
-    private var inputSection: some View {
+    private var inputBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             Hint(L("Lyden fra inngangen som er valgt under Innstillinger → Lyd (mikrofon, linje inn eller nettverkslydkort)."))
             Pair {
@@ -371,6 +432,11 @@ struct CueInspector: View {
             } _: {
                 FieldLabel(L("Kanaler fra inngangen")); IntInput(value: $cue.fileChannels, range: 1...64)
             }
+        }
+    }
+
+    private var inputMedia: some View {
+        VStack(alignment: .leading, spacing: 0) {
             Pair {
                 FieldLabel(L("Fade inn (s)")); NumberInput(value: $cue.fadeIn, range: 0...600)
             } _: {
@@ -434,7 +500,7 @@ struct CueInspector: View {
         }
     }
 
-    private var playlistSection: some View {
+    private var playlistBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Spor"))
             VStack(alignment: .leading, spacing: 2) {
@@ -453,21 +519,26 @@ struct CueInspector: View {
             .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel2))
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
             Button(L("+ Legg til spor")) { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
-            Pair {
-                FieldLabel(L("Nivå (dB)")); NumberInput(value: $cue.volumeDb, range: -60...12)
-            } _: {
-                FieldLabel(L("Krysstoning (s)")); NumberInput(value: $cue.crossfade, range: 0...30)
-            }
+            FieldLabel(L("Nivå (dB)")); NumberInput(value: $cue.volumeDb, range: -60...12)
             Toggle(L("Tilfeldig rekkefølge"), isOn: $cue.shuffle).padding(.top, 8)
             Toggle(L("Start forfra etter siste spor"), isOn: $cue.loop).padding(.top, 4)
-            FieldLabel(L("Fade ut ved stopp (s)")); NumberInput(value: $cue.fadeOut, range: 0...600)
+        }
+    }
+
+    private var playlistMedia: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Pair {
+                FieldLabel(L("Krysstoning (s)")); NumberInput(value: $cue.crossfade, range: 0...30)
+            } _: {
+                FieldLabel(L("Fade ut ved stopp (s)")); NumberInput(value: $cue.fadeOut, range: 0...600)
+            }
             FieldLabel(L("Utganger (dB per filkanal → utgang)")).padding(.top, 6)
             RoutingMatrixView(cue: cue)
             Hint(L("Stopp-cue med «slipp loop» lar spillelista spille ferdig sporet som går og stoppe."))
         }
     }
 
-    private var slideshowSection: some View {
+    private var slideshowBasic: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Lysbilder (bilder, PDF og video, vises ovenfra og ned)"))
             VStack(alignment: .leading, spacing: 2) {
@@ -487,16 +558,18 @@ struct CueInspector: View {
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.line))
             Button(L("+ Legg til filer")) { model.addTracks(to: cue) }.buttonStyle(PanelButtonStyle()).padding(.top, 6)
             Toggle(L("Bytt automatisk"), isOn: $cue.autoAdvance).padding(.top, 8)
-            Pair {
-                FieldLabel(L("Tid per bilde (s)")); NumberInput(value: $cue.slideTime, range: 0.5...3600).disabled(!cue.autoAdvance)
-            } _: {
-                FieldLabel(L("Krysstoning (s)")); NumberInput(value: $cue.crossfade, range: 0...10)
-            }
+            FieldLabel(L("Tid per bilde (s)")); NumberInput(value: $cue.slideTime, range: 0.5...3600).disabled(!cue.autoAdvance)
             Toggle(L("Start forfra etter siste lysbilde"), isOn: $cue.loop).padding(.top, 8)
             Toggle(L("Tilfeldig rekkefølge"), isOn: $cue.shuffle).padding(.top, 4)
+            Hint(L("Bilder og PDF-sider vises i valgt tid; hver side i en PDF blir et eget lysbilde. Videoer spiller til de er ferdige. Bla med ⏮ / ⏭ under Aktive cuer (eller OSC /cue/nr/next og /cue/nr/previous). Stopp cuen for å avslutte serien."))
+        }
+    }
+
+    private var slideshowMedia: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            FieldLabel(L("Krysstoning (s)")); NumberInput(value: $cue.crossfade, range: 0...10)
             visualOutput
             FieldLabel(L("Lydnivå for video (dB)")); NumberInput(value: $cue.volumeDb, range: -60...12)
-            Hint(L("Bilder og PDF-sider vises i valgt tid; hver side i en PDF blir et eget lysbilde. Videoer spiller til de er ferdige. Bla med ⏮ / ⏭ under Aktive cuer (eller OSC /cue/nr/next og /cue/nr/previous). Stopp cuen for å avslutte serien."))
         }
     }
 

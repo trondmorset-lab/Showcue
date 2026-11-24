@@ -152,7 +152,7 @@ public sealed class CueEngine : IDisposable
     {
         Active.Remove(a);
         a.Cue.ActiveCount--;
-        if (!a.Cue.IsRunning) { a.Cue.Progress = 0; a.Cue.IsPreWaiting = false; }
+        if (!a.Cue.IsRunning) { a.Cue.Progress = 0; a.Cue.IsPreWaiting = false; a.Cue.RemainingText = ""; }
         if (a.Started && !a.WasStopped && a.Cue.ContinueMode == ContinueMode.AutoFollow)
             FireNextAfter(a.Cue);
     }
@@ -306,6 +306,7 @@ public sealed class CueEngine : IDisposable
                 if (a.Done) return;
                 a.Tick();
                 a.Cue.Progress = a.Progress;
+                a.Cue.RemainingText = CueDisplay.RemainingText(a.Started, a.Duration, a.Elapsed);
             }, out var error))
                 FailActive(a, error);
         }

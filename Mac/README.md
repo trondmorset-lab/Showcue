@@ -40,6 +40,15 @@ Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/ShowCue.ap
 
 Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. Si ja, ellers virker ikke OSC.
 
+## Hovedvinduet
+
+- **Øverst:** en stor **GO**-knapp, **NESTE CUE** med nummer, navn og type i stor skrift (blå kant), klokke, nivåmålere, **Pause** og **STOPP ALT**.
+- **Cuelista** har kolonneoverskrifter. Raden for cuen som **spilles nå** er grønn med fremdriftslinje og tid igjen i kolonnen *Gjenstår*
+  («∞» for loop og cuer som står til stoppet). Cuen **GO starter** har blå kant og ▶. Deaktiverte cuer er dempet (og hoppes over av GO).
+- **Panelet for valgt cue** er delt i faner: *Grunnleggende* (cuens egne felt), *Lyd/media* (nivå, fade, utganger, skalering og skjerm – bare for typer med lyd, bilde eller video),
+  *Tidsstyring* (pre-wait, etterpå, tidskode-trigger) og *Avansert* (hurtigtast, MIDI-trigger, knappepanel, farge, notater). Nummer og navn står alltid over fanene.
+- **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
+
 ## Flerkanals lydkort og nettverkslyd
 
 DVS på Mac er en vanlig CoreAudio-enhet:

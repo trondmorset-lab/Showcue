@@ -2,6 +2,17 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.20.0 – nytt hovedvindu
+- **Eierens godkjente forslag (mockup) er bygd innenfor de eksisterende temaene**: samme farger (`Running`/`RunningRow`, `Playhead`/`PlayheadRow`), samme font og samme kontroller. Ingen motor, showformat eller snarveier er endret.
+- **Visningsregler er ren logikk med tester på begge plattformer** (`CueDisplay` og `InspectorLayout`, Windows `Models/CueDisplay.cs`, Mac `Core/CueDisplay.swift`, `CueDisplayTests`):
+  radtilstand (spilles nå > deaktivert > neste > vanlig), «gjenstår»-tekst (m:ss rundet opp, «∞» uten varighet, tom før start) og hvilke faner en cuetype har.
+  XAML og SwiftUI bruker resultatet; regelen står ikke to steder.
+- **«Neste» er cuen GO starter.** En deaktivert cue hoppes over av GO, så den vises aldri som neste (den kan likevel være valgt for redigering, med nøytral markering).
+- **Faner:** Grunnleggende (typens egne felt + *Deaktivert*), Lyd/media (bare typer med lyd, bilde eller video), Tidsstyring (pre-wait, etterpå, tidskode-trigger), Avansert (hurtigtast, MIDI-trigger, knappepanel, farge, notater).
+  Nummer og navn står alltid over fanene. Testen `CommonFieldsKeepEveryFieldFromTheOldListExactlyOnce` sikrer at ingen felt forsvinner. Fanen beholdes ved bytte av cue hvis den finnes for den nye typen.
+- **Windows: faneknappene er vanlige knapper med egen stil** (ikke `TabControl`, som ikke følger de mørke temaene uten en stor mal). Lyd/media-innholdet er egne `DataTemplate`-er i en `ContentControl` med lokale ressurser, bundet til `MediaCue` (null for typer uten fanen).
+- **«Gjenstår» i lista** settes av `CueEngine.Tick` (Windows) / `tick()` (Mac) på `Cue.RemainingText`/`remainingText` (kjøretid, lagres ikke) og endres bare når teksten endres (ca. én gang i sekundet).
+- Ikke gjort: egen fargestripe for cuetype (stripen i venstre kant er allerede brukerens cuefarge), fremdriftslinje over hele raden på Windows (står under navnet, som før), og beskjed-banneret dekker fortsatt «Neste cue» mens det vises.
 ## 0.19.1 – robusthet 2
 - **Tidsløkka fanger unntak per aktiv cue** (`SafeTick.Run`, Windows `Engine/`). Feiler en cue: `Cue.Error` settes, én loggmelding, `Stop(0)` og `ForceRemove`. Når cuen er fjernet gjentas ingenting. `Ticked`-hendelsen fanges også og logges én gang.
   Swift har ingen unntak i tidsløkka, så Mac trenger ikke tilsvarende.

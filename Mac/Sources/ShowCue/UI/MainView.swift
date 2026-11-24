@@ -42,9 +42,13 @@ struct TopBar: View {
     var body: some View {
         HStack(spacing: 18) {
             Button(action: model.go) {
-                Text("GO").uiFont(30, weight: .bold).foregroundColor(theme.goText)
-                    .frame(width: 170, height: 92)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(theme.go))
+                VStack(spacing: 0) {
+                    Text("GO").uiFont(40, weight: .bold)
+                    Text(L("Mellomrom")).uiFont(12).opacity(0.85)
+                }
+                .foregroundColor(theme.goText)
+                .frame(width: 200, height: 92)
+                .background(RoundedRectangle(cornerRadius: 6).fill(theme.go))
             }
             .buttonStyle(.plain)
             .help(L("Mellomrom"))
@@ -123,6 +127,8 @@ struct NextCueInfo: View {
                 SectionHeader(L("NESTE CUE"))
                 Text(L("— slutt på lista —")).uiFont(26, weight: .semibold).foregroundColor(theme.muted)
             }
+            .padding(.leading, 14)
+            .overlay(Rectangle().fill(theme.playhead).frame(width: 3), alignment: .leading)
         }
     }
 }
@@ -135,14 +141,20 @@ private struct NextCueContent: View {
         VStack(alignment: .leading, spacing: 2) {
             SectionHeader(L("NESTE CUE"))
             HStack(alignment: .firstTextBaseline, spacing: 14) {
-                Text(cue.number).uiFont(26, weight: .bold, design: .monospaced).foregroundColor(theme.playhead)
-                Text(cue.displayName).uiFont(26, weight: .semibold).lineLimit(1)
+                Text(cue.number).uiFont(30, weight: .bold, design: .monospaced).foregroundColor(theme.playhead)
+                Text(cue.displayName).uiFont(30, weight: .semibold).lineLimit(1)
+                Text("\(cue.typeIcon) \(cue.typeName)").uiFont(13).foregroundColor(theme.muted).lineLimit(1)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(theme.panel3))
             }
             Text(cue.summary).uiFont(13).foregroundColor(theme.muted).lineLimit(1)
             if !cue.notes.isEmpty {
                 Text(cue.notes).uiFont(13).foregroundColor(theme.wait).lineLimit(1)
             }
         }
+        // Blå kant som i cuelista: dette er cuen GO starter.
+        .padding(.leading, 14)
+        .overlay(Rectangle().fill(theme.playhead).frame(width: 3), alignment: .leading)
     }
 }
 
