@@ -61,3 +61,7 @@ Viktige valg og begrunnelsen. Nyeste først.
 - GPL-3.0 med eieren som opphavsrettshaver. `THIRD-PARTY-NOTICES.txt` med NAudio (MIT), WebView2 SDK (BSD, sjekkes ordrett i CI), .NET (MIT), Art-Net-merknad.
   Kodeker leveres av operativsystemet.
 - Eieren kan senere tilby programmet på andre vilkår (dobbel lisens) for kode han selv eier; bidrag fra andre krever samtykke.
+
+## 0.16.1 – robusthet
+- Showfiler leses tolerant der det ikke gir tap av data: ugyldig verdi i ett felt gir standardverdi for det feltet (Windows som Mac), «null» i lister hoppes over.
+  Ukjent eller manglende cuetype avvises derimot på begge plattformer, så en cue aldri blir noe annet enn den var.

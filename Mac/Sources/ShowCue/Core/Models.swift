@@ -541,7 +541,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
 
     convenience init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: K.self)
-        let t = (try? c.decode(CueType.self, forKey: .type)) ?? .stop
+        // Manglende eller ukjent cuetype avviser filen (som i Windows-versjonen); aldri gjett «stopp» for en cue som ikke kan leses.
+        let t = try c.decode(CueType.self, forKey: .type)
         self.init(type: t)
         func v<T: Decodable>(_ k: K, _ def: T) -> T { ((try? c.decodeIfPresent(T.self, forKey: k)) ?? nil) ?? def }
 
@@ -740,7 +741,8 @@ struct ShowDocument: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         formatVersion = (try? c.decodeIfPresent(Int.self, forKey: .formatVersion)) ?? 1
         title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? L("Show")
-        cues = try c.decodeIfPresent([Cue].self, forKey: .cues) ?? []
+        // «null» i lista er ingen cue (en ødelagt fil) og hoppes over.
+        cues = (try c.decodeIfPresent([Cue?].self, forKey: .cues) ?? []).compactMap { $0 }
     }
 
     func jsonData() throws -> Data {

@@ -49,6 +49,10 @@ public abstract class Cue : ObservableObject
     /// <summary>Verdi innenfor grensene; NaN blir 0 (eller nærmeste grense).</summary>
     protected static double Range(double v, double min, double max) => Math.Clamp(double.IsNaN(v) ? 0 : v, min, max);
     protected static int Range(int v, int min, int max) => Math.Clamp(v, min, max);
+    /// <summary>Routing uten tomme oppføringer (en ødelagt showfil kan ha «null» i lista).</summary>
+    protected static List<AudioRoute>? CleanRoutes(List<AudioRoute>? v) => v != null && v.Contains(null!) ? v.Where(r => r != null).ToList() : v;
+    /// <summary>Filliste uten tomme oppføringer; null gir tom liste.</summary>
+    protected static List<string> CleanFiles(List<string>? v) => v == null ? new List<string>() : v.Contains(null!) ? v.Where(f => f != null).ToList() : v;
 
     private string _number = "";
     private string _name = "";
@@ -170,7 +174,7 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
     public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(0, value)); }
     /// <summary>Routing fra filkanal til utgang (buss). null = standard (mono → 1+2, stereo → 1/2, osv.).
     /// Tom liste = alt av. Listen byttes ut i sin helhet ved endring.</summary>
-    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
 
     /// <summary>Gjeldende routing (standard hvis ingen er satt).</summary>
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
@@ -266,7 +270,7 @@ public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
     /// <summary>Antall kanaler i lydsporet. 0 = ingen lyd, -1 = ikke undersøkt ennå.</summary>
     public int FileChannels { get => _fileChannels; set { if (SetCue(ref _fileChannels, value)) OnPropertyChanged(nameof(HasNoAudio)); } }
     /// <summary>Routing fra lydsporets kanaler til utganger. null = standard.</summary>
-    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
     [JsonIgnore] public bool HasNoAudio => _fileChannels == 0;
     public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
@@ -440,7 +444,7 @@ public sealed class PlaylistCue : Cue, IRoutedAudio, IFileListCue
     private List<AudioRoute>? _routes;
 
     /// <summary>Filene i spillelista. Listen byttes ut i sin helhet ved endring.</summary>
-    public List<string> Files { get => _files; set => SetCue(ref _files, value ?? new()); }
+    public List<string> Files { get => _files; set => SetCue(ref _files, CleanFiles(value)); }
     public bool Shuffle { get => _shuffle; set => SetCue(ref _shuffle, value); }
     /// <summary>Start på nytt når lista er ferdig.</summary>
     public bool Loop { get => _loop; set => SetCue(ref _loop, value); }
@@ -451,7 +455,7 @@ public sealed class PlaylistCue : Cue, IRoutedAudio, IFileListCue
     public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
     /// <summary>Antall kanaler i routingmatrisen (det største antallet blant filene).</summary>
     public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
-    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
 
     public override string TypeName => Loc.T("Spilleliste");
@@ -477,7 +481,7 @@ public sealed class SlideshowCue : Cue, IRoutedAudio, IFileListCue
     private List<AudioRoute>? _routes;
 
     /// <summary>Bilder, PDF-er (alle sidene blir lysbilder) og videoer, i rekkefølge.</summary>
-    public List<string> Files { get => _files; set => SetCue(ref _files, value ?? new()); }
+    public List<string> Files { get => _files; set => SetCue(ref _files, CleanFiles(value)); }
     /// <summary>Hvor lenge hvert bilde / hver PDF-side vises (sekunder). Videoer spiller til de er ferdige.</summary>
     public double SlideTime { get => _slideTime; set => SetCue(ref _slideTime, Range(value, 0.5, 3600)); }
     /// <summary>Krysstoning mellom lysbildene (sekunder).</summary>
@@ -494,7 +498,7 @@ public sealed class SlideshowCue : Cue, IRoutedAudio, IFileListCue
     /// <summary>Nivå for lyden i video-lysbilder.</summary>
     public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
     public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
-    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
 
     public override string TypeName => Loc.T("Lysbildeserie");
@@ -620,7 +624,7 @@ public sealed class InputCue : Cue, IRoutedAudio
 
     /// <summary>Antall kanaler fra inngangen (settes fra lydenheten).</summary>
     public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Range(value, 1, 64)); }
-    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, value); }
+    public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
     public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
     public double FadeIn { get => _fadeIn; set => SetCue(ref _fadeIn, Seconds(value)); }

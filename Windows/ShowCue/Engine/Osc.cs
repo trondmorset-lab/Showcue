@@ -125,7 +125,15 @@ public static class Osc
                     case 'h': args.Add(((long)ReadInt(d, ref pos) << 32) | (uint)ReadInt(d, ref pos)); break;
                     case 'd': args.Add(BitConverter.Int64BitsToDouble(((long)ReadInt(d, ref pos) << 32) | (uint)ReadInt(d, ref pos))); break;
                     case 's': case 'S': args.Add(ReadString(d, ref pos, end)); break;
-                    case 'b': { int n = ReadInt(d, ref pos); pos += n >= 0 ? (n + 3) & ~3 : end + 1; args.Add(Array.Empty<byte>()); break; }
+                    case 'b':
+                    {
+                        // Lengdefeltet kan lyve: bare en lengde som får plass i resten av pakken er gyldig.
+                        // (Å legge til tre på en enorm lengde ville ellers gitt negativ posisjon.)
+                        int n = ReadInt(d, ref pos);
+                        if (n >= 0 && n <= end - pos) { pos += (n + 3) & ~3; args.Add(Array.Empty<byte>()); }
+                        else pos = end + 1;
+                        break;
+                    }
                     case 'T': args.Add(true); break;
                     case 'F': args.Add(false); break;
                     case 'N': case 'I': break;
