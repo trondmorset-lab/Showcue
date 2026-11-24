@@ -15,6 +15,17 @@ The full history of earlier versions is in the Norwegian changelog.
   A group cannot start itself, and groups that start groups stop at eight levels.
   *Renumber* updates the numbers in groups, including both ends of a range.
 
+## 0.16.1 – 2026-11-24
+
+### Fixed
+- **Damaged show files:** on Windows a single invalid value (text in a number field, an unknown choice) no longer makes the whole show unopenable; the field gets its default value and the rest of the cue is read as usual.
+  Empty entries (“null”) in the cue list, file lists and routing are skipped on both platforms, and a show without a title or cues opens empty.
+- **Cue without a valid type:** the Mac version no longer guesses “Stop” for a cue with a missing or unknown type (which could stop everything on GO); the file is rejected with a message, as on Windows.
+- **OSC in (Windows):** a blob with an enormous length in a packet could give an invalid position and make the rest of the message get lost.
+- **Light (Windows):** “NaN” and “Infinity” are no longer accepted as DMX levels (the Mac version already rejected them).
+- **Network cue:** `\xHH` is only interpreted with two real hex digits, the same on Windows and Mac (Windows accepted spaces, Mac accepted signs).
+- **Quitting (Windows):** one failure during clean-up no longer prevents the audio output from being released and the program from closing.
+
 ## 0.16.0 – 2026-11-04
 
 ### New

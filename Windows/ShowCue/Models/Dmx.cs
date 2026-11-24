@@ -22,11 +22,11 @@ public static class DmxLevels
             double value;
             if (v.EndsWith('%'))
             {
-                if (!double.TryParse(v[..^1].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var pct) || pct < 0 || pct > 100)
+                if (!double.TryParse(v[..^1].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var pct) || !(pct >= 0 && pct <= 100)) // «NaN» og «Infinity» er ikke gyldige nivåer
                 { error = Loc.F("«{0}»: prosent må være 0–100", raw); return false; }
                 value = pct * 255 / 100;
             }
-            else if (!double.TryParse(v.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value) || value < 0 || value > 255)
+            else if (!double.TryParse(v.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value) || !(value >= 0 && value <= 255))
             { error = Loc.F("«{0}»: verdi må være 0–255", raw); return false; }
             for (int c = from; c <= to; c++) levels[c] = (byte)Math.Round(value, MidpointRounding.AwayFromZero);
         }

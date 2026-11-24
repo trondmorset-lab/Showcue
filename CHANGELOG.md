@@ -15,6 +15,17 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
   En gruppe kan ikke starte seg selv, og grupper som starter grupper stopper på åtte nivåer.
   *Nummerer* oppdaterer numrene i gruppene, også i endene av et område.
 
+## 0.16.1 – 2026-11-24
+
+### Rettet
+- **Ødelagte showfiler:** på Windows gjør én ugyldig verdi (tekst i et tallfelt, ukjent valg) ikke lenger hele showet uåpnelig; feltet får standardverdi og resten av cuen leses som vanlig.
+  Tomme oppføringer («null») i cuelista, filllister og routing hoppes over på begge plattformer, og et show uten navn eller cuer åpnes tomt.
+- **Cue uten gyldig type:** Mac gjetter ikke lenger «Stopp» for en cue som mangler eller har ukjent type (kunne stoppe alt ved GO); filen avvises med melding, som på Windows.
+- **OSC inn (Windows):** en blob med enorm lengde i en pakke kunne gi ugyldig posisjon og få resten av meldingen til å gå tapt.
+- **Lys (Windows):** «NaN» og «Infinity» godtas ikke lenger som DMX-nivå (Mac avviste dem fra før).
+- **Nettverks-cue:** `\xHH` tolkes bare med to ekte sifre, likt på Windows og Mac (Windows godtok mellomrom, Mac godtok fortegn).
+- **Avslutning (Windows):** én feil i oppryddingen hindrer ikke lenger at lydutgangen frigjøres og programmet lukkes.
+
 ## 0.16.0 – 2026-11-04
 
 ### Nytt
