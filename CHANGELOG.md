@@ -6,6 +6,14 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.19.0 – 2026-11-24
+
+### Nytt
+- **Sjekk showet** (*Fil → Sjekk showet*; på Mac også under *Verktøy*): en forhåndssjekk før forestillingen som viser en liste med feil, advarsler og ok.
+  Den kontrollerer at alle mediefiler finnes og kan leses, at fade-, stopp- og «gå til»-cuer peker på en cue som finnes,
+  at påkrevde felt er fylt ut og tider er gyldige, at valgt lydutgang, lydinngang og skjermer finnes, og at ingen cue-numre er like.
+  Sjekken endrer ikke showet. Samme regler og tekster på Windows og Mac.
+
 ## 0.18.0 – 2026-11-24
 
 ### Nytt

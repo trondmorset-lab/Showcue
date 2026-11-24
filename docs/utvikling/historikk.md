@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.19.0 | #26 | Sjekk showet: forhåndssjekk før show (mediefiler, verdier og mål, lydutgang/skjerm, duplikate cue-numre) med liste over feil og advarsler |
 | 0.18.0 | #24 | Windows: live-innganger via ASIO i samme økt som utgangen (eksperimentelt, av som standard) |
 | 0.17.0 | #21 | Gruppe-cue: starter flere cuer med én GO (numre og områder) |
 | 0.16.1 | #25 | Robusthet: ødelagte showfiler (feltvis lesing på Windows, «null» hoppes over, cue uten type avvises på Mac), OSC-blob, DMX «NaN», `\xHH`, avslutning |

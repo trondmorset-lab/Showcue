@@ -204,7 +204,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 
 | Meny | Innhold |
 |---|---|
-| **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler |
+| **Fil** | Nytt, åpne, lagre, samle show, finn manglende mediefiler, sjekk showet |
 | **＋ Media** | Lyd, video, bilde, PDF, nettside, spilleliste, live-inngang |
 | **Styring** | Fade, stopp, gå til, gruppe, beskjed |
 | **Utstyr** | Styr annet utstyr: OSC, MIDI, nettverk, tidskode, lys (Art-Net) |
@@ -253,6 +253,19 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
   Det samme finnes under *Fil → Finn manglende mediefiler*.
 - *Fil → Samle show og mediefiler i én mappe* kopierer showet og alle filene det bruker til en mappe, med filene i
   `Media/`. Kopier mappa til en minnepinne eller en annen maskin (også Mac), så finner showet filene selv.
+
+## Sjekk showet før forestillingen
+
+*Fil → Sjekk showet* går gjennom showet og maskinen og viser en liste med feil (✕), advarsler (⚠) og ok (✓). Sjekken endrer ingenting:
+
+- **Mediefiler:** alle filer cuene peker på (også i spillelister og lysbildeserier) finnes og kan leses; cuer uten fil og tomme lister meldes.
+- **Verdier og mål:** fade-, stopp- og «gå til»-cuer peker på en cue som finnes (ikke seg selv, ikke en deaktivert cue), påkrevde felt er fylt ut
+  (adresser, nettadresser), tider er gyldige, og sluttiden ligger etter starttiden.
+- **Enheter:** valgt lydutgang (hvis showet har lyd), lytteutgang, lydinngang (hvis showet har live-inngang) og skjermene finnes. Mangler en skjerm,
+  vises cuen i et vanlig vindu, og det meldes som advarsel.
+- **Cue-numre:** like numre (uten hensyn til store/små bokstaver) meldes. Deaktiverte cuer sjekkes ikke, men numrene deres telles med.
+
+Rett feilene og trykk *Sjekk på nytt*. På Mac ligger valget under *Fil* i verktøylinja og under *Verktøy* i menylinja.
 
 ## Trygt under forestillingen
 

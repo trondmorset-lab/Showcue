@@ -1009,6 +1009,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         StatusText = Loc.F("Fant {0} fil(er).", found) + (left > 0 ? Loc.F(" {0} mangler fortsatt.", left) : Loc.T(" Alle mediefiler er på plass."));
     }
 
+    /// <summary>Forhåndssjekk før show: viser en liste over feil og advarsler i showet og på maskinen.</summary>
+    private void Preflight_Click(object sender, RoutedEventArgs e)
+    {
+        CommitFocusedTextBox();
+        var env = new SystemPreflightEnvironment();
+        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env)) { Owner = this }.ShowDialog();
+    }
+
     private void Collect_Click(object sender, RoutedEventArgs e)
     {
         CommitFocusedTextBox();

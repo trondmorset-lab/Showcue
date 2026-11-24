@@ -253,6 +253,7 @@ struct ShowCommands: Commands {
         }
         CommandMenu(L("Verktøy")) {
             Button(L("Finn manglende mediefiler")) { model.relinkMenu() }
+            Button(L("Sjekk showet")) { model.showPreflight() }
             Button(L("Samle show og mediefiler i én mappe")) { model.collectShow() }
             Divider()
             Button(L("Normaliser lydstyrke for valgte lyd-cuer")) { model.normalizeSelected() }

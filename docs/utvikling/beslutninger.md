@@ -2,6 +2,22 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.19.0 – sjekk showet
+- **Ren sjekklogikk adskilt fra GUI:** `PreflightCheck.Run` (Windows, `Models/`) og `PreflightCheck.run` (Mac, `Core/`) tar cuene, maskininnstillingene og en liten
+  abstraksjon (`IPreflightEnvironment` / `PreflightEnvironment`: finnes filen, finnes lydutgangen/inngangen, finnes skjermen) og returnerer en liste funn
+  med fast kode (`mediaMissing`, `targetMissing` …), alvorlighet og tekst. Testene bruker en falsk maskin, så de trenger ingen filer eller maskinvare.
+  Den ekte maskinen er `SystemPreflightEnvironment` (Windows `Engine/`, Mac `Engine/`).
+- Mediefiler hentes med `MediaTools.MediaPaths`/`mediaPaths` (samme logikk som «finn manglende mediefiler»), ikke en ny kopi.
+- **Alvorlighet:** feil = showet går ikke som planlagt (fil, mål, lydutgang, påkrevd felt, duplikat nummer); advarsel = programmet går videre med en reserveløsning eller det er sannsynligvis en glipp
+  (manglende skjerm vises i et vanlig vindu, deaktivert eller selvrefererende mål, tom beskjed/liste, manglende lytteutgang).
+- Deaktiverte cuer hoppes over (GO hopper over dem), men numrene deres telles med for duplikater. Lydutgangen sjekkes bare hvis showet har cuer som lager lyd;
+  tom enhets-ID betyr standardenheten og regnes som funnet. Stopp-cue uten mål betyr «stopp alt» og er gyldig.
+- Gruppe-cuer finnes ikke i showformatet ennå, så «gruppe utenfor hoved-lista» er ikke sjekket.
+- Windows-modellen gjør ugyldige tall om til gyldige (NaN, negative tider), Mac-modellen gjør ikke det; sjekken har samme regel på begge og fanger tallene på Mac.
+  Testene er derfor like unntatt dette ene tilfellet.
+- Vinduet er minimalt (liste + «Sjekk på nytt») og følger eksisterende mønster: kodebygd vindu på Windows, eget `NSWindow` med SwiftUI på Mac.
+  Hovedvinduet er ikke endret ut over ett menyvalg (en GUI-redesign er under godkjenning hos eieren).
+
 ## 0.18.0 – ASIO-innganger (Windows)
 - **Innganger i samme økt som utgangen.** En ASIO-driver eies av én økt, så live-innganger kan ikke åpnes separat: `AudioEngine`
   bruker `InitRecordAndPlayback` og hører på `AudioAvailable`. Lyden går inn i de eksisterende `LiveRing`/`LiveInputStream`.

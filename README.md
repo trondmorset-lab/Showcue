@@ -21,7 +21,7 @@ Det finnes i to utgaver som deler showformat:
 Begge har:
 - Cuer for lyd, video, bilde, PDF, nettside, fade, stopp, OSC, MIDI, spilleliste, lysbildeserie, «gå til», gruppe, beskjed og nettverk (UDP/TCP/HTTP)
 - **Tidskode** (MTC/LTC ut, MTC-triggere inn), **lys over Art-Net** og **live-inngang** gjennom lydpatchen
-- **Knappepanel** med store knapper (jingler, effekter, berøringsskjerm), **lydstyrke-normalisering** (LUFS) og **finn/samle mediefiler**
+- **Knappepanel** med store knapper (jingler, effekter, berøringsskjerm), **lydstyrke-normalisering** (LUFS) **finn/samle mediefiler** og **forhåndssjekk før show** (*Fil → Sjekk showet*)
 - **Lysbildeserie** som bytter mellom bilder, PDF-sider og videoer automatisk (eller manuelt), med krysstoning og loop
 - **Pause/fortsett alt**, **spoling i sanntid** i lyd og video som spiller, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen

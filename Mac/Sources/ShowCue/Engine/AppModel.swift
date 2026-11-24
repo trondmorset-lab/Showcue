@@ -24,6 +24,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Teksten fra siste memo-cue (tom = ingen beskjed vises).
     @Published var memoText = ""
     private var panelWindow: NSWindow?
+    private var preflightWindow: NSWindow?
     private var loudnessTask: Task<Void, Never>?
     @Published var learnText = ""
     @Published private(set) var remoteStatus = ""
@@ -744,6 +745,27 @@ final class AppModel: ObservableObject, ShowControl {
         } catch {
             alert(L("Kunne ikke samle showet: {0}", error.localizedDescription))
         }
+    }
+
+    // MARK: - Forhåndssjekk
+
+    /// Kjører forhåndssjekken mot gjeldende show og maskininnstillinger.
+    func runPreflight() -> [PreflightFinding] {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment())
+    }
+
+    /// «Sjekk showet»: åpner vinduet med funnene (sjekken kjøres hver gang vinduet vises).
+    func showPreflight() {
+        if let w = preflightWindow { w.close(); preflightWindow = nil }
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
+                         styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        w.title = L("Sjekk showet")
+        w.isReleasedWhenClosed = false
+        w.contentView = NSHostingView(rootView: PreflightView().environmentObject(self))
+        w.center()
+        w.makeKeyAndOrderFront(nil)
+        preflightWindow = w
     }
 
     // MARK: - Lydstyrke
