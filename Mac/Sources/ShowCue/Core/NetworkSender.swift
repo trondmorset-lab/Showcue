@@ -15,7 +15,7 @@ enum NetworkSender {
             if ch == "\\", i + 1 < chars.count {
                 let next = chars[i + 1]
                 if let b = escapes[next] { out.append(b); i += 2; continue }
-                if next == "x" || next == "X", i + 3 < chars.count, let b = UInt8(String(chars[i + 2...i + 3]), radix: 16) {
+                if next == "x" || next == "X", i + 3 < chars.count, chars[i + 2].isHexDigit, chars[i + 3].isHexDigit, let b = UInt8(String(chars[i + 2...i + 3]), radix: 16) {
                     out.append(b); i += 4; continue
                 }
             }

@@ -358,13 +358,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!ConfirmDiscard()) { e.Cancel = true; return; }
         // Sikkerhetsnett: henger en lyd- eller videodriver under avslutningen, avsluttes prosessen likevel etter 8 sekunder.
         new Thread(() => { Thread.Sleep(8000); Environment.Exit(0); }) { IsBackground = true, Name = "Avslutningsvakt" }.Start();
-        ShowSafety.DeleteAutosave(_showPath);
-        _settings.Save();
-        _patchWindow?.Close();
-        _panelWindow?.Close();
-        _loudnessCancel?.Cancel();
-        Remote.Dispose();
-        Engine.Dispose();
+        // Hvert steg for seg, så én feil i oppryddingen aldri hindrer at lydutgangen frigjøres og programmet lukkes.
+        static void Try(Action step) { try { step(); } catch { /* avslutter uansett */ } }
+        Try(() => ShowSafety.DeleteAutosave(_showPath));
+        Try(_settings.Save);
+        Try(() => _patchWindow?.Close());
+        Try(() => _panelWindow?.Close());
+        Try(() => _loudnessCancel?.Cancel());
+        Try(Remote.Dispose);
+        Try(Engine.Dispose);
     }
 
     // ==================================================================

@@ -84,4 +84,61 @@ public class RobustnessTests
         Assert.NotNull(ShowSafety.PendingAutosave(show, root));
         Assert.NotNull(ShowSafety.Backup(show, root));
     }
+
+    [Fact]
+    public void OscBlobWithHugeLengthIsIgnored()
+    {
+        // Typetaggene «b» og «i», og en blob som påstår at den er nesten 2 GB lang.
+        var bytes = new List<byte> { (byte)'/', (byte)'x', 0, 0 };
+        bytes.AddRange(new byte[] { (byte)',', (byte)'b', (byte)'i', 0 });
+        bytes.AddRange(new byte[] { 0x7F, 0xFF, 0xFF, 0xFF });
+        bytes.AddRange(new byte[] { 0, 0, 0, 5 });
+        var arr = bytes.ToArray();
+        var msg = Assert.Single(Osc.Decode(arr, arr.Length));
+        Assert.Empty(msg.Args);
+    }
+
+    [Fact]
+    public void DmxLevelsRejectNonFiniteNumbers()
+    {
+        Assert.False(DmxLevels.TryParse("1@NaN", out _, out _));
+        Assert.False(DmxLevels.TryParse("1@NaN%", out _, out _));
+        Assert.False(DmxLevels.TryParse("1@Infinity", out _, out _));
+        Assert.True(DmxLevels.TryParse("1@255 2@50%", out var ok, out _));
+        Assert.Equal(2, ok.Count);
+    }
+
+    [Fact]
+    public void HexEscapeNeedsTwoHexDigits()
+    {
+        Assert.Equal(new byte[] { 0x41 }, NetworkSender.Unescape("\\x41"));
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes("\\x 4A"), NetworkSender.Unescape("\\x 4A")); // mellomrom er ikke et sifferpar
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes("\\x+4A"), NetworkSender.Unescape("\\x+4A")); // fortegn heller ikke
+    }
+
+    [Fact]
+    public void DamagedShowFileStillOpens()
+    {
+        var json = "{\"Title\":null,\"Cues\":[null,{\"type\":\"fade\",\"Target\":\"5\",\"FadeTime\":\"tre\"},"
+            + "{\"type\":\"audio\",\"FilePath\":\"a.wav\",\"VolumeDb\":-6,\"Loop\":\"ja\",\"Routes\":[null,{\"Source\":1,\"Bus\":2,\"GainDb\":0}]},"
+            + "{\"type\":\"playlist\",\"Files\":[null,\"b.wav\"]},{\"type\":\"osc\",\"Host\":\"h\",\"Port\":\"åtte\"}]}";
+        var doc = JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!;
+        Assert.Equal("", doc.Title);
+        Assert.Equal(4, doc.Cues.Count); // «null» er ingen cue
+        var fade = Assert.IsType<FadeCue>(doc.Cues[0]);
+        Assert.Equal("5", fade.Target);
+        Assert.Equal(3, fade.FadeTime); // ugyldig verdi gir standardverdi
+        var audio = Assert.IsType<AudioCue>(doc.Cues[1]);
+        Assert.Equal(-6, audio.VolumeDb); // resten av cuen er intakt
+        Assert.False(audio.Loop);
+        Assert.Single(audio.Routes!);
+        Assert.Equal(new List<string> { "b.wav" }, Assert.IsType<PlaylistCue>(doc.Cues[2]).Files);
+        var osc = Assert.IsType<OscCue>(doc.Cues[3]);
+        Assert.Equal("h", osc.Host);
+        Assert.Equal(8000, osc.Port);
+        doc.ToJson(); // og kan lagres igjen
+
+        Assert.Empty(JsonSerializer.Deserialize<ShowDocument>("{\"Cues\":null}", ShowDocument.JsonOptions)!.Cues);
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ShowDocument>("{\"Cues\":[{\"Number\":\"1\"}]}", ShowDocument.JsonOptions)); // uten cuetype
+    }
 }
