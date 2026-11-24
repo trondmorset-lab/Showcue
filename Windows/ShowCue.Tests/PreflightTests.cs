@@ -98,6 +98,27 @@ public class PreflightTests
     }
 
     [Fact]
+    public void GroupCuesAreChecked()
+    {
+        var cues = new List<Cue>
+        {
+            new MemoCue { Number = "1", Text = "a" },
+            new MemoCue { Number = "2", Text = "b", Disabled = true },
+            new GroupCue { Number = "10", Targets = "" },          // tomt
+            new GroupCue { Number = "11", Targets = "1, 99" },     // 99 finnes ikke
+            new GroupCue { Number = "12", Targets = "1, 2" },      // 2 er deaktivert
+            new GroupCue { Number = "13", Targets = "13" },        // bare seg selv: ingen treff
+            new GroupCue { Number = "14", Targets = "1-2" },       // område med deaktivert
+            new GroupCue { Number = "15", Targets = "1" },         // i orden
+        };
+        var f = Run(cues);
+        Assert.Equal(new[] { "targetEmpty", "targetMissing", "groupNoMatch" }, Codes(f, PreflightSeverity.Error));
+        Assert.Equal(new[] { 2, 3, 5 }, f.Where(x => x.Severity == PreflightSeverity.Error).Select(x => x.CueIndex));
+        Assert.Equal(new[] { "targetDisabled", "targetDisabled" }, Codes(f, PreflightSeverity.Warning));
+        Assert.Equal(new[] { 4, 6 }, f.Where(x => x.Severity == PreflightSeverity.Warning).Select(x => x.CueIndex));
+    }
+
+    [Fact]
     public void RequiredFieldsAndAddresses()
     {
         var cues = new List<Cue>

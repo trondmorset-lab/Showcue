@@ -121,6 +121,34 @@ public class ShowFileTests
         Assert.Equal(new[] { 33, 34 }, st2.Buses[4].Channels);
         Assert.Equal(9000, st2.OscInPort);
     }
+
+    [Fact]
+    public void SettingsOutOfRangeAreClampedOnLoad()
+    {
+        var json = """
+            {"AsioMaxChannels":100000,"SampleRate":-5,"OscInPort":0,"OscFeedbackPort":99999,"MidiInChannel":40,"MscInDeviceId":-3,
+             "LatencyMs":0,"PreviewBus":-1,"VideoScreen":9999,"LoudnessTarget":50,"ButtonPanelColumns":0,"PanicFadeTime":1e9,
+             "DoubleGoProtectionMs":-100,"Buses":[null,{"Name":null,"GainDb":500,"Channels":[0,5,-2,100000]}]}
+            """;
+        var s = AppSettings.Normalize(JsonSerializer.Deserialize<AppSettings>(json, ShowDocument.JsonOptions)!);
+        Assert.Equal(128, s.AsioMaxChannels);
+        Assert.Equal(8000, s.SampleRate);
+        Assert.Equal(1, s.OscInPort);
+        Assert.Equal(65535, s.OscFeedbackPort);
+        Assert.Equal(16, s.MidiInChannel);
+        Assert.Equal(0, s.MscInDeviceId);
+        Assert.Equal(10, s.LatencyMs);
+        Assert.Equal(0, s.PreviewBus);
+        Assert.Equal(15, s.VideoScreen);
+        Assert.Equal(-5, s.LoudnessTarget);
+        Assert.Equal(2, s.ButtonPanelColumns);
+        Assert.Equal(30, s.PanicFadeTime);
+        Assert.Equal(0, s.DoubleGoProtectionMs);
+        var bus = Assert.Single(s.Buses);
+        Assert.Equal(12, bus.GainDb);
+        Assert.Equal(new[] { 5 }, bus.Channels);
+        Assert.Equal("", bus.Name);
+    }
 }
 
 public class CueModelTests

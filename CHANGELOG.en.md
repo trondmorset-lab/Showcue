@@ -16,6 +16,14 @@ The full history of earlier versions is in the Norwegian changelog.
     Only tabs with content for the cue type are shown (types without audio, pictures or video have no Audio/media tab). The tab is kept when you select another cue of a type that has it.
   - **Top bar:** a larger GO button with “Space”, and *Next cue* in larger text with its type and a blue edge.
   - **Active cues:** time left in large green text, and more room in the bottom panel.
+## 0.19.1 – 2026-11-24
+
+### Fixed
+- **Windows: a cue that fails in the middle of a show** no longer causes a new error message every 16 milliseconds. The cue gets an error, is stopped and removed from the list, and the error is logged once; the other cues keep playing.
+- **Mac: values in the show file are limited when loading**, as on Windows (level −60…+12 dB, times 0–86,400 s, ports 1–65,535, MIDI values, universe, channel count). A corrupt or hand-edited file can no longer produce huge or invalid values.
+- **Check the show knows group cues** (Windows and Mac): an empty target list is an error, targets that do not exist are an error, disabled targets give a warning, and a group that matches no cue is an error.
+- **Settings are limited when loading** on Windows and Mac (ports, MIDI channel, double-GO protection, delay, fade time for stop all, channel count, button panel columns, patch level and channels, and more).
+- The channel count of an audio file is limited to 1024 on Windows, so a corrupt value cannot create a huge routing table.
 
 ## 0.19.0 – 2026-11-24
 

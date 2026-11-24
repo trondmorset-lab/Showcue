@@ -182,7 +182,7 @@ public sealed class AudioCue : Cue, IFileCue, IRoutedAudio, ITrimmable
 
     public string FilePath { get => _filePath; set => SetCue(ref _filePath, value ?? ""); }
     /// <summary>Antall kanaler i lydfila. Fylles inn automatisk.</summary>
-    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(0, value)); }
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Range(value, 0, 1024)); }
     /// <summary>Routing fra filkanal til utgang (buss). null = standard (mono → 1+2, stereo → 1/2, osv.).
     /// Tom liste = alt av. Listen byttes ut i sin helhet ved endring.</summary>
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
@@ -279,7 +279,7 @@ public sealed class VideoCue : VisualCue, IRoutedAudio, ITrimmable
     }
 
     /// <summary>Antall kanaler i lydsporet. 0 = ingen lyd, -1 = ikke undersøkt ennå.</summary>
-    public int FileChannels { get => _fileChannels; set { if (SetCue(ref _fileChannels, value)) OnPropertyChanged(nameof(HasNoAudio)); } }
+    public int FileChannels { get => _fileChannels; set { if (SetCue(ref _fileChannels, Range(value, -1, 1024))) OnPropertyChanged(nameof(HasNoAudio)); } }
     /// <summary>Routing fra lydsporets kanaler til utganger. null = standard.</summary>
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
@@ -479,7 +479,7 @@ public sealed class PlaylistCue : Cue, IRoutedAudio, IFileListCue
     /// <summary>Fade ut når spillelista stoppes.</summary>
     public double FadeOut { get => _fadeOut; set => SetCue(ref _fadeOut, Seconds(value)); }
     /// <summary>Antall kanaler i routingmatrisen (det største antallet blant filene).</summary>
-    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Range(value, 1, 1024)); }
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
 
@@ -522,7 +522,7 @@ public sealed class SlideshowCue : Cue, IRoutedAudio, IFileListCue
     public int OutputScreen { get => _outputScreen; set => SetCue(ref _outputScreen, Range(value, -2, 15)); }
     /// <summary>Nivå for lyden i video-lysbilder.</summary>
     public double VolumeDb { get => _volumeDb; set => SetCue(ref _volumeDb, Range(value, -60, 12)); }
-    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Math.Max(1, value)); }
+    public int FileChannels { get => _fileChannels; set => SetCue(ref _fileChannels, Range(value, 1, 1024)); }
     public List<AudioRoute>? Routes { get => _routes; set => SetCue(ref _routes, CleanRoutes(value)); }
     public IReadOnlyList<AudioRoute> EffectiveRoutes(int fileChannels) => _routes ?? AudioRoute.Default(fileChannels);
 

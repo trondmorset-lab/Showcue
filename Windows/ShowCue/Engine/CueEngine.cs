@@ -291,19 +291,39 @@ public sealed class CueEngine : IDisposable
         else EnsureOutput();
     }
 
+    private bool _tickedFaultLogged;
+
     private void Tick()
     {
         var now = Now;
         foreach (var a in Active.ToList())
         {
             if (a.Done) continue;
-            if (!a.Started && now >= a.StartAt) StartActive(a);
-            if (a.Done) continue;
-            a.Tick();
-            a.Cue.Progress = a.Progress;
-            a.Cue.RemainingText = CueDisplay.RemainingText(a.Started, a.Duration, a.Elapsed);
+            // Feil i én cue skal aldri stoppe de andre, og aldri gjentas hver tick: cuen får feil, stoppes og fjernes.
+            if (!SafeTick.Run(() =>
+            {
+                if (!a.Started && now >= a.StartAt) StartActive(a);
+                if (a.Done) return;
+                a.Tick();
+                a.Cue.Progress = a.Progress;
+                a.Cue.RemainingText = CueDisplay.RemainingText(a.Started, a.Duration, a.Elapsed);
+            }, out var error))
+                FailActive(a, error);
         }
-        Ticked?.Invoke();
+        if (!SafeTick.Run(() => Ticked?.Invoke(), out var tickedError) && !_tickedFaultLogged)
+        {
+            _tickedFaultLogged = true; // meldes én gang
+            SafeTick.Run(() => Log?.Invoke(Loc.F("Feil i oppdatering av visningen: {0}", tickedError)), out _);
+        }
+    }
+
+    /// <summary>En aktiv cue feilet i tidsløkka: sett feil på cuen, logg én gang, stopp den og ta den ut av lista (hvert steg for seg).</summary>
+    private void FailActive(ActiveCue a, string error)
+    {
+        SafeTick.Run(() => a.Cue.Error = error, out _);
+        SafeTick.Run(() => Log?.Invoke(Loc.F("Cue {0}: {1}", a.Cue.Number, error)), out _);
+        SafeTick.Run(() => { if (!a.Done) a.Stop(0); }, out _);
+        SafeTick.Run(() => { if (!a.Done || Active.Contains(a)) ForceRemove(a); }, out _);
     }
 
     /// <summary>Ved avslutning. Hvert steg for seg, så én feil aldri hindrer resten (og programmet i å lukkes).</summary>

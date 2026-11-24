@@ -21,6 +21,59 @@ public class RobustnessTests
     }
 
     [Fact]
+    public void SafeTickCatchesExceptionsAndReportsTheMessage()
+    {
+        var ran = 0;
+        Assert.True(SafeTick.Run(() => ran++, out var ok));
+        Assert.Equal(1, ran);
+        Assert.Equal("", ok);
+        Assert.False(SafeTick.Run(() => throw new InvalidOperationException("feil i cue"), out var msg));
+        Assert.Equal("feil i cue", msg);
+        Assert.False(SafeTick.Run(() => throw new Exception(""), out var noText));
+        Assert.Equal("Exception", noText); // tom melding gir typenavnet, aldri tom feiltekst
+    }
+
+    /// <summary>Samme showfil og samme forventede verdier som i Mac-testen: begge plattformer begrenser likt ved lasting.</summary>
+    [Fact]
+    public void CueValuesAreClampedOnLoad()
+    {
+        var json = """
+            {"Cues":[
+              {"type":"audio","VolumeDb":1e300,"StartTime":-5,"EndTime":1e12,"FadeIn":-1,"FadeOut":1e300,"PreWait":-3,"FileChannels":100000000,
+               "Routes":[{"Source":1,"Bus":1,"GainDb":500}]},
+              {"type":"osc","Port":99999},
+              {"type":"network","Port":-4},
+              {"type":"fade","TargetDb":-1e9,"TargetOpacity":900,"FadeTime":1e9},
+              {"type":"light","Universe":999999,"FadeTime":1e9},
+              {"type":"midi","Channel":99,"Data1":-1,"Data2":500,"MscDeviceId":1000,"MscCommandFormat":-9},
+              {"type":"timecode","LtcBus":9999,"LtcLevelDb":50,"Length":-1},
+              {"type":"playlist","Crossfade":1e9},
+              {"type":"slideshow","Crossfade":1e9},
+              {"type":"input","FileChannels":0}
+            ]}
+            """;
+        var c = JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!.Cues;
+        var a = (AudioCue)c[0];
+        Assert.Equal(new[] { 12.0, 0, 86400, 0, 86400, 0 }, new[] { a.VolumeDb, a.StartTime, a.EndTime, a.FadeIn, a.FadeOut, a.PreWait });
+        Assert.Equal(1024, a.FileChannels);
+        Assert.Equal(12, a.Routes![0].GainDb);
+        Assert.Equal(65535, ((OscCue)c[1]).Port);
+        Assert.Equal(1, ((NetworkCue)c[2]).Port);
+        var f = (FadeCue)c[3];
+        Assert.Equal(new[] { -60.0, 100, 86400 }, new[] { f.TargetDb, f.TargetOpacity, f.FadeTime });
+        var l = (LightCue)c[4];
+        Assert.Equal(32767, l.Universe);
+        Assert.Equal(600, l.FadeTime);
+        var m = (MidiCue)c[5];
+        Assert.Equal(new[] { 16, 0, 127, 127, 0 }, new[] { m.Channel, m.Data1, m.Data2, m.MscDeviceId, m.MscCommandFormat });
+        var t = (TimecodeCue)c[6];
+        Assert.Equal(new[] { 64.0, 0, 0 }, new[] { t.LtcBus, t.Length, t.LtcLevelDb });
+        Assert.Equal(30, ((PlaylistCue)c[7]).Crossfade);
+        Assert.Equal(10, ((SlideshowCue)c[8]).Crossfade);
+        Assert.Equal(1, ((InputCue)c[9]).FileChannels);
+    }
+
+    [Fact]
     public void NonFiniteValuesAreSanitized()
     {
         var c = new AudioCue { StartTime = double.NaN, EndTime = double.PositiveInfinity, FadeIn = -1, FadeOut = 1e300, VolumeDb = double.NaN, FileDuration = double.NaN };

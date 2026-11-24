@@ -3,6 +3,9 @@
 Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 
 ## Lyd og avspilling
+- **Unntak i en tidsløkke gjentas:** et unntak fra `a.Tick()` i `CueEngine.Tick` (Windows, hver 16. ms) ga samme modale melding igjen og igjen. Fang per cue (`SafeTick.Run`), sett feil på cuen og fjern den, logg én gang.
+- **Grenser må gjelde ved lasting, ikke bare i redigeringen:** på Mac ble ikke `volumeDb`, port, tider o.l. begrenset når showet ble lest. Ny cuetype eller nytt felt: legg grensen i begge modeller
+  (Windows-setter, Mac `clampLoadedValues`) og i `AppSettings.Normalize`/`normalize` for innstillinger. Antall filkanaler uten øvre grense gir en enorm routingtabell.
 - **Uendelig tilbakespoling:** en loop kortere enn én blokk (start og slutt nesten like, eller en fil på ett sample) fikk
   lyd-/dekodertråden til å spole tilbake for alltid. Krav: loop ≥ 10 ms, og avbryt hvis to tilbakespolinger skjer uten lyd imellom.
 - **NaN/uendelig:** `Math.Max(0, NaN)` og `Math.Clamp(NaN, …)` gir NaN i C#. I Swift krasjer `Int(NaN)`/`Int(.infinity)` og for store tall

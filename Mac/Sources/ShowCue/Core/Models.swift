@@ -596,6 +596,35 @@ final class Cue: ObservableObject, Identifiable, Codable {
         rate = v(.Rate, TimecodeRate.fps25); sendMtc = v(.SendMtc, true); sendLtc = v(.SendLtc, false)
         ltcBus = max(1, v(.LtcBus, 1)); ltcLevelDb = v(.LtcLevelDb, -12.0); length = v(.Length, 0.0)
         universe = v(.Universe, 0); levels = v(.Levels, "1@255")
+        clampLoadedValues()
+    }
+
+    /// Begrenser verdier fra en ødelagt eller håndredigert showfil til de samme grensene som Windows-versjonen (og feltene i redigeringen):
+    /// tid 0–86400 s, nivå −60…+12 dB, port 1–65535, MIDI-verdier og universe innenfor sine områder. Uten dette kunne f.eks. en
+    /// port på 99999 eller et nivå på 1e300 gi feil eller støy midt i et show.
+    private func clampLoadedValues() {
+        func secs(_ v: Double) -> Double { v.isFinite ? min(86400, max(0, v)) : 0 }
+        func range(_ v: Double, _ lo: Double, _ hi: Double) -> Double { v.isFinite ? min(hi, max(lo, v)) : min(hi, max(lo, 0)) }
+        preWait = secs(preWait)
+        startTime = secs(startTime); endTime = secs(endTime)
+        fadeIn = secs(fadeIn); fadeOut = secs(fadeOut)
+        fileDuration = secs(fileDuration); knownDuration = secs(knownDuration); holdTime = secs(holdTime)
+        volumeDb = range(volumeDb, -60, 12)
+        targetDb = range(targetDb, -60, 12)
+        targetOpacity = range(targetOpacity, 0, 100)
+        fadeTime = type == .light ? range(fadeTime, 0, 600) : secs(fadeTime)
+        crossfade = range(crossfade, 0, type == .slideshow ? 10 : 30)
+        length = secs(length)
+        ltcBus = min(64, max(1, ltcBus)); ltcLevelDb = range(ltcLevelDb, -40, 0)
+        port = min(65535, max(1, port))
+        universe = min(32767, max(0, universe))
+        channel = min(16, max(1, channel))
+        data1 = min(127, max(0, data1)); data2 = min(127, max(0, data2))
+        mscDeviceId = min(127, max(0, mscDeviceId)); mscCommandFormat = min(127, max(0, mscCommandFormat))
+        fileChannels = type == .input ? min(64, max(1, fileChannels)) : min(1024, max(-1, fileChannels))
+        if let r = routes {
+            routes = r.map { AudioRoute($0.source, $0.bus, range($0.gainDb, -60, 12)) }
+        }
     }
 
     func encode(to encoder: Encoder) throws {

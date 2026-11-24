@@ -91,6 +91,23 @@ final class PreflightTests: XCTestCase {
         XCTAssertEqual(codes(f, .warning), ["targetDisabled", "targetSelf", "targetDisabled"])
     }
 
+    func testGroupCuesAreChecked() {
+        let f = run([
+            cue(.memo, "1") { $0.text = "a" },
+            cue(.memo, "2") { $0.text = "b"; $0.disabled = true },
+            cue(.group, "10") { $0.targets = "" },          // tomt
+            cue(.group, "11") { $0.targets = "1, 99" },     // 99 finnes ikke
+            cue(.group, "12") { $0.targets = "1, 2" },      // 2 er deaktivert
+            cue(.group, "13") { $0.targets = "13" },        // bare seg selv: ingen treff
+            cue(.group, "14") { $0.targets = "1-2" },       // område med deaktivert
+            cue(.group, "15") { $0.targets = "1" },         // i orden
+        ])
+        XCTAssertEqual(codes(f, .error), ["targetEmpty", "targetMissing", "groupNoMatch"])
+        XCTAssertEqual(f.filter { $0.severity == .error }.map { $0.cueIndex }, [2, 3, 5])
+        XCTAssertEqual(codes(f, .warning), ["targetDisabled", "targetDisabled"])
+        XCTAssertEqual(f.filter { $0.severity == .warning }.map { $0.cueIndex }, [4, 6])
+    }
+
     func testRequiredFieldsAndAddresses() {
         let f = run([
             cue(.osc, "1") { $0.host = ""; $0.address = "/x" },

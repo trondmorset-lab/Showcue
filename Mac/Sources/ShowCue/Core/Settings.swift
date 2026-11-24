@@ -158,6 +158,30 @@ struct AppSettings: Codable, Equatable {
         buttonPanelColumns = v(.buttonPanelColumns, d.buttonPanelColumns)
         mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
         inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
+        normalize()
+    }
+
+    /// Retter innstillinger fra en ødelagt eller håndredigert fil: tall utenfor grensene (samme som i innstillingsvinduet og i
+    /// Windows-versjonen) settes til nærmeste grense, og patchen får bare gyldige kanaler.
+    mutating func normalize() {
+        func clampD(_ x: Double, _ lo: Double, _ hi: Double, _ fallback: Double) -> Double { x.isFinite ? min(hi, max(lo, x)) : fallback }
+        if buses.isEmpty { buses = PatchBus.defaultPatch(8) }
+        for i in buses.indices {
+            buses[i].gainDb = clampD(buses[i].gainDb, -60, 12, 0)
+            buses[i].channels = buses[i].channels.filter { $0 >= 1 && $0 <= 512 }
+        }
+        maxChannels = min(512, max(2, maxChannels))
+        bufferFrames = min(1024, max(64, bufferFrames))
+        previewBus = min(128, max(0, previewBus))
+        videoScreen = min(15, max(-1, videoScreen))
+        oscInPort = min(65535, max(1, oscInPort))
+        oscFeedbackPort = min(65535, max(1, oscFeedbackPort))
+        midiInChannel = min(16, max(0, midiInChannel))
+        mscInDeviceId = min(127, max(0, mscInDeviceId))
+        panicFadeTime = clampD(panicFadeTime, 0, 30, 1)
+        doubleGoProtectionMs = min(2000, max(0, doubleGoProtectionMs))
+        loudnessTarget = clampD(loudnessTarget, -40, -5, -23)
+        buttonPanelColumns = min(8, max(2, buttonPanelColumns))
     }
 
     /// Nøkkel for lydoppsettet: bare endringer her krever omstart av lyden.

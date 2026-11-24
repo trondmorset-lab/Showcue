@@ -16,6 +16,14 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
     Bare faner med innhold for cuetypen vises (typer uten lyd, bilde eller video har ingen Lyd/media-fane). Fanen beholdes når du velger en annen cue av en type som har den.
   - **Toppfeltet:** større GO-knapp med «Mellomrom», og *Neste cue* i større skrift med type og blå kant.
   - **Aktive cuer:** tid igjen i stor, grønn skrift, og mer plass i bunnpanelet.
+## 0.19.1 – 2026-11-24
+
+### Rettet
+- **Windows: en cue som feiler midt i et show** gir ikke lenger en ny feilmelding hvert 16. millisekund. Cuen får feil, stoppes og tas ut av lista, og feilen loggføres én gang; de andre cuene spiller videre.
+- **Mac: verdier i showfila begrenses ved lasting**, som på Windows (nivå −60…+12 dB, tider 0–86 400 s, porter 1–65 535, MIDI-verdier, universe, antall kanaler). En ødelagt eller håndredigert fil kan ikke lenger gi enorme eller ugyldige verdier.
+- **Sjekk showet kjenner gruppe-cuer** (Windows og Mac): tom mål-liste er feil, mål som ikke finnes er feil, deaktiverte mål gir advarsel, og en gruppe som ikke treffer noen cue er feil.
+- **Innstillinger begrenses ved lasting** på Windows og Mac (porter, MIDI-kanal, dobbel-GO-sperre, forsinkelse, fade-tid for stopp alt, antall kanaler, knappepanelets kolonner, patchens nivå og kanaler m.m.).
+- Antall kanaler i en lydfil begrenses til 1024 på Windows, så en ødelagt verdi ikke kan gi en enorm routingtabell.
 
 ## 0.19.0 – 2026-11-24
 
