@@ -6,6 +6,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.20.0 – 2026-11-24
+
+### Endret
+- **Ny, tydeligere hovedvindu** (Windows og Mac, samme oppførsel; ingen funksjoner er fjernet, og snarveiene er uendret):
+  - **Cuelista:** raden som *spilles nå* er grønn med fremdriftslinje og ny kolonne **Gjenstår** (tid igjen, «∞» uten kjent lengde).
+    Cuen *GO starter* har blå kant og ▶. Deaktiverte cuer er dempet og regnes ikke som neste.
+  - **Panelet for valgt cue** er delt i faner: *Grunnleggende*, *Lyd/media*, *Tidsstyring* og *Avansert*. Alle feltene er med, bare gruppert.
+    Bare faner med innhold for cuetypen vises (typer uten lyd, bilde eller video har ingen Lyd/media-fane). Fanen beholdes når du velger en annen cue av en type som har den.
+  - **Toppfeltet:** større GO-knapp med «Mellomrom», og *Neste cue* i større skrift med type og blå kant.
+  - **Aktive cuer:** tid igjen i stor, grønn skrift, og mer plass i bunnpanelet.
+
 ## 0.19.0 – 2026-11-24
 
 ### Nytt

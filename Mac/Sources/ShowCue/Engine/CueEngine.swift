@@ -155,7 +155,7 @@ final class CueEngine: ObservableObject {
     private func completed(_ a: ActiveCue) {
         active.removeAll { $0 === a }
         a.cue.activeCount = max(0, a.cue.activeCount - 1)
-        if !a.cue.isRunning { a.cue.progress = 0; a.cue.isPreWaiting = false }
+        if !a.cue.isRunning { a.cue.progress = 0; a.cue.isPreWaiting = false; a.cue.remainingText = "" }
         if a.started && !a.wasStopped && a.cue.continueMode == .autoFollow { fireNext(after: a.cue) }
     }
 
@@ -253,6 +253,8 @@ final class CueEngine: ObservableObject {
             a.tick()
             let p = a.progress
             if abs(a.cue.progress - p) > 0.002 { a.cue.progress = p }
+            let r = CueDisplay.remainingText(started: a.started, duration: a.duration, elapsed: a.elapsed)
+            if a.cue.remainingText != r { a.cue.remainingText = r }
         }
         onTick?()
     }

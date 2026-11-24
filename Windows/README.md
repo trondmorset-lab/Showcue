@@ -37,6 +37,15 @@ Krever Windows 10 (1809) eller nyere, 64-bit.
 Alle cues har **pre-wait** (forsinkelse før start), **auto-continue** (start neste samtidig),
 **auto-follow** (start neste når denne er ferdig), **hurtigtast**, **MIDI-trigger** og **notater**.
 
+### Hovedvinduet
+
+- **Øverst:** en stor **GO**-knapp, **NESTE CUE** med nummer, navn og type i stor skrift (blå kant), klokke, nivåmålere, **Pause** og **STOPP ALT**.
+- **Cuelista** har kolonneoverskrifter. Raden for cuen som **spilles nå** er grønn med fremdriftslinje og tid igjen i kolonnen *Gjenstår*
+  («∞» for loop og cuer som står til stoppet). Cuen **GO starter** har blå kant og ▶. Deaktiverte cuer er dempet (og hoppes over av GO).
+- **Panelet for valgt cue** er delt i faner: *Grunnleggende* (cuens egne felt), *Lyd/media* (nivå, fade, utganger, skalering og skjerm – bare for typer med lyd, bilde eller video),
+  *Tidsstyring* (pre-wait, etterpå, tidskode-trigger) og *Avansert* (hurtigtast, MIDI-trigger, knappepanel, farge, notater). Nummer og navn står alltid over fanene.
+- **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
+
 ### Start og slutt (bølgeform)
 
 Lyd- og video-cuer har en bølgeform i inspektøren der start- og sluttpunktet redigeres visuelt:

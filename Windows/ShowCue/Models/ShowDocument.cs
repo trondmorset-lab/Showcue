@@ -80,6 +80,9 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
 
     public override bool CanConvert(Type t) => t == typeof(Cue);
 
+    /// <summary>Typenøkkelen i showfila («audio», «video» …) for en cue.</summary>
+    public static string KeyOf(Cue cue) => Types.FirstOrDefault(kv => kv.Value == cue.GetType()).Key ?? "";
+
     public override Cue? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using var doc = JsonDocument.ParseValue(ref reader);
