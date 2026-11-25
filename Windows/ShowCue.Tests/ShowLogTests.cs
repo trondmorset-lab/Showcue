@@ -320,7 +320,7 @@ public class ShowLogTests
                 threads.ForEach(t => t.Join());
                 Assert.True(log.Flush(5000));
                 Assert.Empty(errors);
-                Assert.Equal(12000, log.Total); // alle ble talt i minnet
+                Assert.True(log.Total >= 12000); // alle ble talt i minnet (pluss evt. «dropped»-linjer)
                 Assert.True(log.Snapshot().Count <= 100 + 1);
             }
         }

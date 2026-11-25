@@ -711,7 +711,7 @@ public static class Program
                 log.WriteFile = true;
                 log.Record(ShowLogKind.AppExit);
                 if (!log.Flush(20000)) Bug("Show log flood", "køen ble ikke tømt", "");
-                if (log.Total != threads * perThread + 1) Bug("Show log flood", $"talt {log.Total} hendelser, ventet {threads * perThread + 1}", "");
+                if (log.Total < threads * perThread + 1) Bug("Show log flood", $"talt {log.Total} hendelser, ventet minst {threads * perThread + 1}", "");
                 if (log.Snapshot().Count > 200) Bug("Show log flood", "minnet vokste over grensen", "");
                 path = log.FilePath;
             }

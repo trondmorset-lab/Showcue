@@ -256,7 +256,7 @@ final class ShowLogTests: XCTestCase {
             for i in 0..<2000 { log.record(.start, number: "\(i)", name: "T\(t)", cueType: "audio", how: .go, text: "x\ny") }
         }
         XCTAssertTrue(log.flush(timeout: 5))
-        XCTAssertEqual(log.total, 12000, "alle ble talt i minnet")
+        XCTAssertGreaterThanOrEqual(log.total, 12000, "alle ble talt i minnet (pluss evt. «dropped»-linjer)")
         XCTAssertLessThanOrEqual(log.snapshot().count, 100)
         log.close()
     }
