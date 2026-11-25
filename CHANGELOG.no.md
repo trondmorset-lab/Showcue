@@ -6,6 +6,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.27.0 – 2026-11-25
+
+### Nytt
+- **Showlogg** (Windows og Mac, samme oppførsel): en logg over hva som skjedde under showet, til rapporter og feilsøking. Hver linje har klokkeslett (ISO 8601), tid siden programmet startet og hva som skjedde:
+  cue startet (nummer, navn, type og hvordan: GO, auto-follow, auto-continue, hurtigtast, OSC, MIDI, tidskode, klokke, gruppe, knappepanel eller manuelt), cue ferdig eller stoppet, pause og fortsett, stopp alt (panikk), GO-markøren flyttet av brukeren,
+  feil og advarsler (fil mangler, lydenhet mistet, feilen som vises på cuen), show åpnet og lagret, og programstart og avslutning.
+- **Fil → Showlogg** (på Mac også *Verktøy → Showlogg*) viser hendelsene i denne kjøringen fortløpende, nyeste nederst, med filter (alle, bare feil og advarsler, cuer, styring, show og program).
+  *Åpne eldre logg* viser en tidligere kjøring. *Eksporter CSV* og *Eksporter tekst* lagrer det som vises; CSV-fila er trygg å åpne i et regneark (felt som begynner med `=`, `+`, `-` eller `@` gjøres uskadelige).
+- Én loggfil per kjøring i mappa `Logs` ved siden av `Autolagring` og `Sikkerhetskopier` (Windows `%AppData%\ShowCue\Logs`, Mac `~/Library/Application Support/ShowCue/Logs`). De 30 nyeste filene beholdes, og en fil slutter å vokse ved 5 MB.
+- **Skriv showlogg** (*Innstillinger → Sikkerhet*) er **på** som standard. Loggingen bremser eller stopper aldri showet: hendelser legges i en kø og skrives av en bakgrunnstråd, og er køen full kastes de eldste (telles og vises i loggvinduet). Diskfeil meldes én gang og avbryter aldri showet.
+
 ## 0.21.0 – 2026-11-24
 
 ### Nytt

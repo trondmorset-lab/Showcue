@@ -10,6 +10,7 @@ ShowCue er ett program i to utgaver som deler showformat, oversettelser og versj
 | Tester | `Windows/ShowCue.Tests` (xUnit) | `Mac/Tests/ShowCueTests` (XCTest) |
 | Innstillinger | `%AppData%\ShowCue\settings.json` | `~/Library/Application Support/ShowCue/settings.json` |
 | Autolagring / kopier | `…\ShowCue\Autolagring`, `…\Sikkerhetskopier` | samme mappenavn under Application Support |
+| Showlogg | `…\ShowCue\Logs` | samme mappenavn under Application Support |
 
 Felles: `VERSION` (versjon), `i18n/en.json` (engelsk), `THIRD-PARTY-NOTICES.txt`, `LICENSE` (GPL-3.0), `assets/` (logo).
 
@@ -117,6 +118,18 @@ Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerfl
 Tekster står på norsk i koden og er nøklene i `i18n/en.json`. Windows: `Loc.T("…")`, `Loc.F("… {0}", x)`, XAML `{local:T '…'}`.
 Mac: `L("…")`, `L("… {0}", x)`. Språket velges ved oppstart (innstilling, ellers systemspråket) og byttes ved omstart.
 Se [regler.md](regler.md#språk-og-tekst).
+
+## Showlogg
+
+Windows `Engine/ShowLog.cs` (WPF-fri, også i stresstesten), Mac `Core/ShowLog.swift`. Samme filformat og samme tester på begge.
+- **Ren logikk:** `ShowLogFormat` (kutting, escaping, tid, linje inn/ut), `ShowLogExport` (CSV, tekst, innlesing), `ShowLogFiles` (filnavn, hvilke filer som slettes), `BoundedQueue` (kø med fast størrelse, kaster eldste og teller).
+- **`ShowLog`** (én per kjøring, `ShowLog.Current`/`current`): `Record` kutter navn (80) og tekst (300), tar ev. tid fra klokka, legger hendelsen i minnet (siste 5000, til vinduet) og i køen (4096), og returnerer. En bakgrunnstråd (`Showlogg`) tømmer køen og skriver til `Logs/showlog åååå-mm-dd tt.mm.ss.log`.
+  Fila lages ved første skriving; de eldste filene slettes så høyst 30 står igjen; ved 5 MB skrives en sluttlinje og resten kastes. I/O-feil svelges, skriving gis opp for resten av kjøringen, og `FaultReported`/`onFault` kalles én gang.
+- **Hvordan en cue ble startet** settes med `ShowLog.Via(kilde)` (Mac `ShowLog.via(kilde) { … }`) rundt kallet som starter den; verdien er per tråd, og `keepExisting` lar en ytre kilde (OSC, hurtigtast) vinne over en indre (GO). `CueEngine.Fire` leser den og lagrer den på `ActiveCue.How`.
+  Motoren setter selv `AutoFollow`, `AutoContinue` og `Group`. Hovedvinduet setter GO, hurtigtast, knappepanel, manuelt (dobbeltklikk/Test), tidskode og klokke; `RemoteControl` setter OSC og MIDI (MSC regnes som MIDI).
+- **Hendelsespunkter:** start (etter `Begin`), stoppet/ferdig (`OnCompleted`), pause/fortsett (`PauseAll`/`ResumeAll`), stopp alt (`Panic`, `IShowControl.StopAll/HardStop`), GO-markør flyttet av bruker (`SelectedCue`-setter / `select`, ikke når programmet flytter den selv), feil (endring av `Cue.Error`, lydenhetfeil i `AudioEngine`, feil i visningsoppdateringen), show åpnet (`SetShow`) og lagret, programstart og avslutning.
+- **Vindu:** `Views/ShowLogWindow.cs` / `UI/ShowLogView.swift` leser nye hendelser fra minnet hvert 0,3 s (`ReadSince`), så motoren aldri venter på vinduet. Eksporten tar det som vises (etter filteret).
+- **Fil:** én linje per hendelse, felt skilt med tabulator: ISO-tid med tidssone, tid siden start (`tt:mm:ss.mmm`), type (`start`, `finish`, `stop`, `pause`, `resume`, `stopall`, `playhead`, `warning`, `error`, `open`, `save`, `appstart`, `appexit`, `dropped`), cuenummer, cuetype, hvordan, navn, tekst. Første linje og linjer som begynner med `#` er kommentarer.
 
 ## Zoom og tekststørrelse
 

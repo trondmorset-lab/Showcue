@@ -250,6 +250,8 @@ struct SettingsView: View {
             Hint(L("−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke."))
             Toggle(L("Klokke-triggere aktive (starter cuer med klokkeslett-trigger)"), isOn: $draft.clockTriggersEnabled).padding(.top, 14)
             Hint(L("Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka."))
+            Toggle(L("Skriv showlogg"), isOn: $draft.writeShowLog).padding(.top, 14)
+            Hint(L("Skriver en logg over hva som skjedde under showet (cuer, pause, stopp, feil) til en fil per kjøring i mappa Logs. De 30 nyeste beholdes. Loggen kan også vises og eksporteres fra Fil-menyen."))
         }
     }
 }

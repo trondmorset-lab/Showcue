@@ -248,6 +248,10 @@ Audio from the page goes to the system audio output, not through the audio patch
   The cue starts when incoming MIDI Time Code passes the time (not when skipping past it).
 - **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
   The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
+- **Show log:** *File → Show log* lists what happened in this run, live (cue started with number, name, type and how it was started, finished or stopped, pause, stop all, GO cursor moved, errors and warnings, show opened and saved, program start and exit).
+  Use the filter for errors and warnings only, *Open an older log* for a previous run, and *Export CSV* / *Export text* to save what is shown (UTF-8; the CSV uses commas and has a byte order mark so spreadsheets read æøå correctly).
+  One file per run is written to the `Logs` folder next to `Autolagring` and `Sikkerhetskopier` (`%AppData%\ShowCue\Logs`); the 30 newest are kept and a file stops at 5 MB. Turn it off under *Settings → Safety → Write show log* (on by default).
+  Each line is plain text with tab-separated fields: ISO time, time since start, event, cue number, type, how, name and text (backslash, tab and line breaks in texts are written as `\\`, `\t` and `\n`).
 - **Light cue** (✺ Light): sends DMX over Art-Net (UDP 6454) to a node or as a broadcast. Levels are written
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,

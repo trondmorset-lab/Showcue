@@ -11,6 +11,8 @@ class ActiveCue: ObservableObject, Identifiable {
     /// Start så mange sekunder inn i cuen (prøver: «spill fra her»).
     var startOffset: Double = 0
 
+    /// Hvordan cuen ble startet (for showloggen).
+    var how: StartSource = .unknown
     @Published private(set) var started = false
     @Published var elapsed: Double = 0
     @Published var duration: Double = 0

@@ -114,6 +114,7 @@ final class CueEngine: ObservableObject {
     func fire(_ cue: Cue, offset: Double = 0) {
         if isPaused { resumeAll() } // GO etter pause fortsetter alt
         let a = make(cue)
+        a.how = ShowLog.currentSource
         a.startOffset = max(0, offset)
         a.startAt = now + (offset > 0 ? 0 : cue.preWait)
         a.onCompleted = { [weak self] in self?.completed($0) }
@@ -143,20 +144,22 @@ final class CueEngine: ObservableObject {
         a.cue.isPreWaiting = active.contains { $0.cue === a.cue && $0 !== a && !$0.started }
         do {
             try a.begin()
+            ShowLog.add(.start, cue: a.cue, how: a.how)
         } catch {
             a.cue.error = error.localizedDescription
             onLog?(L("Cue {0}: {1}", a.cue.number, error.localizedDescription))
             if !a.done { a.stop(fade: 0) }
             if !a.done { forceRemove(a) }
         }
-        if a.cue.continueMode == .autoContinue { fireNext(after: a.cue) }
+        if a.cue.continueMode == .autoContinue { fireNext(after: a.cue, how: .autoContinue) }
     }
 
     private func completed(_ a: ActiveCue) {
         active.removeAll { $0 === a }
         a.cue.activeCount = max(0, a.cue.activeCount - 1)
+        ShowLog.add(a.wasStopped ? .stop : .finish, cue: a.cue, how: a.how)
         if !a.cue.isRunning { a.cue.progress = 0; a.cue.isPreWaiting = false; a.cue.remainingText = "" }
-        if a.started && !a.wasStopped && a.cue.continueMode == .autoFollow { fireNext(after: a.cue) }
+        if a.started && !a.wasStopped && a.cue.continueMode == .autoFollow { fireNext(after: a.cue, how: .autoFollow) }
     }
 
     private func forceRemove(_ a: ActiveCue) {
@@ -167,10 +170,10 @@ final class CueEngine: ObservableObject {
         }
     }
 
-    private func fireNext(after cue: Cue) {
+    private func fireNext(after cue: Cue, how: StartSource) {
         let list = cueList()
         guard let i = list.firstIndex(where: { $0 === cue }) else { return }
-        if let next = list[(i + 1)...].first(where: { !$0.disabled }) { fire(next) }
+        if let next = list[(i + 1)...].first(where: { !$0.disabled }) { ShowLog.via(how) { fire(next) } }
     }
 
     /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
@@ -201,6 +204,7 @@ final class CueEngine: ObservableObject {
         guard !isPaused else { return }
         pausedAt = CACurrentMediaTime()
         isPaused = true
+        ShowLog.add(.pause)
         active.filter { $0.started && !$0.done }.forEach { $0.pause() }
     }
 
@@ -208,6 +212,7 @@ final class CueEngine: ObservableObject {
         guard isPaused else { return }
         pausedTotal += CACurrentMediaTime() - pausedAt
         isPaused = false
+        ShowLog.add(.resume)
         active.filter { $0.started && !$0.done }.forEach { $0.resume() }
     }
 
@@ -233,7 +238,7 @@ final class CueEngine: ObservableObject {
         else if !found.missing.isEmpty { group.error = L("Fant ikke cue {0}", found.missing.joined(separator: ", ")) }
         groupDepth += 1
         defer { groupDepth -= 1 }
-        for t in found.cues where !t.disabled { fire(t) }
+        ShowLog.via(.group) { for t in found.cues where !t.disabled { fire(t) } }
     }
 
     func stopAll(fade: Double) {

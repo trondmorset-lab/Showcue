@@ -94,6 +94,8 @@ struct AppSettings: Codable, Equatable {
     var mtcInEnabled = false
     /// Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.
     var clockTriggersEnabled = false
+    /// Skriv showloggen til fil (en fil per kjøring i Logs-mappa). På som standard: den er begrenset og ufarlig.
+    var writeShowLog = true
     /// Lydenhet for live-inngang-cuer (UID, tom = systemets standard inngang).
     var inputDeviceUID = ""
 
@@ -120,7 +122,7 @@ struct AppSettings: Codable, Equatable {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID
+        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID, writeShowLog
     }
 
     init(from decoder: Decoder) throws {
@@ -161,6 +163,7 @@ struct AppSettings: Codable, Equatable {
         mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
         clockTriggersEnabled = v(.clockTriggersEnabled, d.clockTriggersEnabled)
         inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
+        writeShowLog = v(.writeShowLog, d.writeShowLog)
         normalize()
     }
 

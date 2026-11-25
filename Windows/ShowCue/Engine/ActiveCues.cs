@@ -19,6 +19,8 @@ public abstract class ActiveCue : ObservableObject
     public double StartAt { get; set; }
     /// <summary>Start så mange sekunder inn i cuen (prøver: «spill fra her»).</summary>
     public double StartOffset { get; set; }
+    /// <summary>Hvordan cuen ble startet (for showloggen).</summary>
+    public StartSource How { get; internal set; }
     public bool Started { get; private set; }
     public bool Done { get; private set; }
     /// <summary>Stoppet manuelt eller av stopp-/fade-cue (utløser ikke auto-follow).</summary>

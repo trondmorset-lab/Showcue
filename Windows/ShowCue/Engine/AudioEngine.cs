@@ -43,7 +43,7 @@ public sealed class AudioEngine : IDisposable
         catch (Exception ex) when (!fallbackToDefault)
         {
             StopOutput();
-            SetStatus(Loc.T("Kunne ikke åpne lydenheten: ") + ex.Message);
+            SetStatus(Loc.T("Kunne ikke åpne lydenheten: ") + ex.Message, true);
         }
         catch (Exception ex)
         {
@@ -53,12 +53,12 @@ public sealed class AudioEngine : IDisposable
             try
             {
                 CreateOutput(new AppSettings { AudioDriver = AudioDriverType.Wasapi, LatencyMs = Math.Max(s.LatencyMs, 60), Buses = s.Buses });
-                SetStatus(Loc.F("Kunne ikke åpne valgt lydenhet ({0}). Bruker Windows standardenhet.", reason));
+                SetStatus(Loc.F("Kunne ikke åpne valgt lydenhet ({0}). Bruker Windows standardenhet.", reason), true);
             }
             catch (Exception ex2)
             {
                 StopOutput();
-                SetStatus(Loc.T("Ingen lydutgang: ") + ex2.Message);
+                SetStatus(Loc.T("Ingen lydutgang: ") + ex2.Message, true);
             }
         }
         Restarted?.Invoke();
@@ -152,13 +152,14 @@ public sealed class AudioEngine : IDisposable
         _mixer.SourceFinished += src => { if (src is TestToneSource t) lock (_testTones) _testTones.Remove(t.Bus); };
         _output.PlaybackStopped += (_, e) =>
         {
-            if (e.Exception != null) SetStatus(Loc.T("Lydutgangen stoppet: ") + e.Exception.Message);
+            if (e.Exception != null) SetStatus(Loc.T("Lydutgangen stoppet: ") + e.Exception.Message, true);
         };
         _output.Play();
     }
 
-    private void SetStatus(string s)
+    private void SetStatus(string s, bool problem = false)
     {
+        if (problem) ShowLog.Add(ShowLogKind.Error, text: s);
         Status = s;
         StatusChanged?.Invoke(s);
     }

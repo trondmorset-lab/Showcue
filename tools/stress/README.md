@@ -22,5 +22,6 @@ enn 3 minutter, avbrytes kjøringen og saken står i `hang.txt`. Minnebruken skr
 | Show roundtrip / mutation / save-load files | Tilfeldige show lagres og åpnes (skal bli identiske), og ødelagte showfiler åpnes |
 | Playback edge cases | Avspilling med ekstreme verdier (NaN, uendelig, tomme filer, ett sample, loop), fades, pause, spoling |
 | Mixer concurrency | 8 s lydtråd og kontrolltråd samtidig: start/stopp, routing, patch, fades, spoling |
+| Show log flood | Seks tråder fyller showloggens begrensede kø med tilfeldig tekst: ingen feil, filen under taket, gamle filer slettet, filen kan leses inn igjen, CSV-felt med formeltegn får apostrof |
 | Loudness extremes, Waveform, LTC source, OSC feedback, Dmx fader, Undo history, Safety/Media tools paths | Grensetilfeller |
 | Network sender | UDP/TCP/HTTP mot lokale mottakere og ugyldige adresser – skal aldri henge eller kaste |

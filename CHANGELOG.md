@@ -6,6 +6,17 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.27.0 – 2026-11-25
+
+### New
+- **Show log** (Windows and Mac, same behaviour): a log of what happened during the show, for reports and troubleshooting. Each line has the time of day (ISO 8601), the time since the program started, and what happened:
+  cue started (number, name, type and how: GO, auto-follow, auto-continue, hotkey, OSC, MIDI, timecode, clock, group, button panel or manual), cue finished or stopped, pause and resume, stop all (panic), the GO cursor moved by the user,
+  errors and warnings (missing file, audio device lost, the error shown on the cue), show opened and saved, and program start and exit.
+- **File → Show log** (on the Mac also *Tools → Show log*) shows the events of the current run live, newest at the bottom, with a filter (all, errors and warnings only, cues, control, show and program).
+  *Open an older log* shows a previous run. *Export CSV* and *Export text* save what is shown; the CSV is safe to open in a spreadsheet (cells starting with `=`, `+`, `-` or `@` are neutralised).
+- One log file per run in the `Logs` folder next to `Autolagring` and `Sikkerhetskopier` (Windows `%AppData%\ShowCue\Logs`, Mac `~/Library/Application Support/ShowCue/Logs`). The 30 newest files are kept, and a file stops growing at 5 MB.
+- **Write show log** (*Settings → Safety*) is **on** by default. Logging never slows down or stops the show: events are queued and written by a background thread, and a full queue drops the oldest events (counted and shown in the log window). Disk errors are reported once and never interrupt the show.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

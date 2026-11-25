@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.27.0 | (åpen) | Showlogg: hendelser (cue start/stopp/ferdig med hvordan, pause, stopp alt, markør, feil, show åpnet/lagret, programstart/avslutning) i begrenset kø og bakgrunnsskriver, en fil per kjøring i `Logs` (30 beholdes, 5 MB tak), loggvindu med filter og eksport til CSV/tekst, innstillingen «Skriv showlogg» (på). Ren logikk (`ShowLog*`) med tester og stresstest på Windows, tester på Mac |
 | 0.21.0 | (åpen) | Klokkeslett-trigger per cue (`ClockTrigger`, «tt:mm:ss», lokal tid) med innstillingen «Klokke-triggere aktive» (av som standard), felt i Tidsstyring og advarsel i Sjekk showet. Ren logikk (`ClockTriggers`) med tester på begge plattformer |
 | 0.20.0 | #28 (åpen) | Ny hovedvindu: tydelig «spilles nå»/«neste» i cuelista med kolonnen Gjenstår, faner i inspektøren, større GO og neste cue, bedre aktive cuer. Ren visningslogikk (`CueDisplay`, `InspectorLayout`) med tester på begge plattformer |
 | 0.19.1 | (åpen) | Robusthet 2: unntak i `CueEngine.Tick` fanges per cue (Windows); Mac begrenser verdier ved lasting som Windows; «Sjekk showet» kjenner gruppe-cuer; innstillinger begrenses ved lasting |

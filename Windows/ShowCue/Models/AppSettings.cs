@@ -86,6 +86,8 @@ public sealed class AppSettings
     public bool MtcInEnabled { get; set; }
     /// <summary>Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.</summary>
     public bool ClockTriggersEnabled { get; set; }
+    /// <summary>Skriv showloggen til fil (en fil per kjøring i Logs-mappa). På som standard: den er begrenset og ufarlig.</summary>
+    public bool WriteShowLog { get; set; } = true;
     /// <summary>Lydenhet for live-inngang-cuer (WASAPI-opptaksenhet, tom = Windows standard).</summary>
     public string InputDeviceId { get; set; } = "";
     public int LatencyMs { get; set; } = 60;

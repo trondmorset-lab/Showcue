@@ -148,6 +148,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.engine.stopAll(fade: 0)
         model.audio.stop()
         model.settings.save()
+        ShowLog.add(.appExit)
+        ShowLog.current?.close()
         return .terminateNow
     }
 }
@@ -254,6 +256,7 @@ struct ShowCommands: Commands {
         CommandMenu(L("Verktøy")) {
             Button(L("Finn manglende mediefiler")) { model.relinkMenu() }
             Button(L("Sjekk showet")) { model.showPreflight() }
+            Button(L("Showlogg")) { model.showShowLog() }
             Button(L("Samle show og mediefiler i én mappe")) { model.collectShow() }
             Divider()
             Button(L("Normaliser lydstyrke for valgte lyd-cuer")) { model.normalizeSelected() }

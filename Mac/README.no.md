@@ -50,6 +50,10 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
 - **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
 - **Klokkeslett-trigger:** skriv et klokkeslett (tt:mm:ss, lokal tid, f.eks. 19:00:00) i fanen *Tidsstyring*, og slå på *Klokke-triggere aktive* under *Innstillinger → Sikkerhet* (av som standard).
   Cuen starter én gang når klokka på maskinen passerer klokkeslettet. Etter dvale, store hopp i klokka og omstilling til sommer-/vintertid starter ingen cuer. *Sjekk showet* advarer hvis innstillingen er av.
+- **Showlogg:** *Fil → Showlogg* viser hva som skjer i denne kjøringen, fortløpende (cue startet med nummer, navn, type og hvordan den ble startet, ferdig eller stoppet, pause, stopp alt, GO-markør flyttet, feil og advarsler, show åpnet og lagret, programstart og avslutning).
+  Bruk filteret for bare feil og advarsler, *Åpne eldre logg* for en tidligere kjøring, og *Eksporter CSV* / *Eksporter tekst* for å lagre det som vises (UTF-8; CSV bruker komma og har byte order mark så regneark leser æøå riktig).
+  Én fil per kjøring skrives til mappa `Logs` ved siden av `Autolagring` og `Sikkerhetskopier` (`~/Library/Application Support/ShowCue/Logs`); de 30 nyeste beholdes, og en fil stopper ved 5 MB. Slå av under *Innstillinger → Sikkerhet → Skriv showlogg* (på som standard).
+  Hver linje er ren tekst med tabulator mellom feltene: ISO-tid, tid siden start, hendelse, cuenummer, type, hvordan, navn og tekst (skråstrek, tabulator og linjeskift i tekster skrives som `\\`, `\t` og `\n`).
 
 ## Flerkanals lydkort og nettverkslyd
 

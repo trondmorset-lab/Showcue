@@ -26,6 +26,7 @@ Begge har:
 - **Pause/fortsett alt**, **spoling i sanntid** i lyd og video som spiller, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
+- **Showlogg** over cue-starter og -stopp, pauser, feil og mer (*Fil → Showlogg*), skrevet til en fil per kjøring og kan eksporteres som CSV
 - Hurtigtaster, MIDI-triggere, tidskode-triggere og klokkeslett-triggere per cue
 - **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet, og **valgfri skjerm per cue**

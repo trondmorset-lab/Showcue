@@ -106,6 +106,7 @@ public sealed class CueEngine : IDisposable
     {
         if (IsPaused) ResumeAll(); // GO etter pause fortsetter alt
         var a = Create(cue);
+        a.How = ShowLog.CurrentSource;
         a.StartOffset = Math.Max(0, offset);
         a.StartAt = Now + (offset > 0 ? 0 : cue.PreWait);
         a.Completed += OnCompleted;
@@ -137,6 +138,7 @@ public sealed class CueEngine : IDisposable
         try
         {
             a.Begin();
+            ShowLog.AddCue(ShowLogKind.Start, a.Cue, a.How);
         }
         catch (Exception ex)
         {
@@ -145,16 +147,17 @@ public sealed class CueEngine : IDisposable
             if (!a.Done) a.Stop(0);
             if (!a.Done) ForceRemove(a);
         }
-        if (a.Cue.ContinueMode == ContinueMode.AutoContinue) FireNextAfter(a.Cue);
+        if (a.Cue.ContinueMode == ContinueMode.AutoContinue) FireNextAfter(a.Cue, StartSource.AutoContinue);
     }
 
     private void OnCompleted(ActiveCue a)
     {
         Active.Remove(a);
         a.Cue.ActiveCount--;
+        ShowLog.AddCue(a.WasStopped ? ShowLogKind.Stop : ShowLogKind.Finish, a.Cue, a.How);
         if (!a.Cue.IsRunning) { a.Cue.Progress = 0; a.Cue.IsPreWaiting = false; a.Cue.RemainingText = ""; }
         if (a.Started && !a.WasStopped && a.Cue.ContinueMode == ContinueMode.AutoFollow)
-            FireNextAfter(a.Cue);
+            FireNextAfter(a.Cue, StartSource.AutoFollow);
     }
 
     private void ForceRemove(ActiveCue a)
@@ -163,7 +166,7 @@ public sealed class CueEngine : IDisposable
         if (Active.Remove(a)) a.Cue.ActiveCount--;
     }
 
-    private void FireNextAfter(Cue cue)
+    private void FireNextAfter(Cue cue, StartSource how)
     {
         var list = _cueList();
         var idx = list.IndexOf(cue);
@@ -171,7 +174,7 @@ public sealed class CueEngine : IDisposable
         for (int i = idx + 1; i < list.Count; i++)
         {
             if (list[i].Disabled) continue;
-            Fire(list[i]);
+            using (ShowLog.Via(how)) Fire(list[i]);
             return;
         }
     }
@@ -219,8 +222,9 @@ public sealed class CueEngine : IDisposable
         _groupDepth++;
         try
         {
-            foreach (var t in targets)
-                if (!t.Disabled) Fire(t);
+            using (ShowLog.Via(StartSource.Group))
+                foreach (var t in targets)
+                    if (!t.Disabled) Fire(t);
         }
         finally { _groupDepth--; }
     }
@@ -231,6 +235,7 @@ public sealed class CueEngine : IDisposable
     {
         if (IsPaused) return;
         IsPaused = true;
+        ShowLog.Add(ShowLogKind.Pause);
         _clock.Stop();
         foreach (var a in Active.Where(a => a.Started && !a.Done).ToList()) a.Pause();
         PauseChanged?.Invoke();
@@ -240,6 +245,7 @@ public sealed class CueEngine : IDisposable
     {
         if (!IsPaused) return;
         IsPaused = false;
+        ShowLog.Add(ShowLogKind.Resume);
         _clock.Start();
         foreach (var a in Active.Where(a => a.Started && !a.Done).ToList()) a.Resume();
         PauseChanged?.Invoke();
@@ -313,6 +319,7 @@ public sealed class CueEngine : IDisposable
         if (!SafeTick.Run(() => Ticked?.Invoke(), out var tickedError) && !_tickedFaultLogged)
         {
             _tickedFaultLogged = true; // meldes én gang
+            ShowLog.Add(ShowLogKind.Error, text: tickedError);
             SafeTick.Run(() => Log?.Invoke(Loc.F("Feil i oppdatering av visningen: {0}", tickedError)), out _);
         }
     }

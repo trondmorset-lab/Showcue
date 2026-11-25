@@ -142,7 +142,7 @@ struct HotButton: View {
     @ObservedObject var cue: Cue
 
     var body: some View {
-        Button { model.toggleHot(cue) } label: {
+        Button { model.toggleFromPanel(cue) } label: {
             VStack(alignment: .leading, spacing: 3) {
                 RoundedRectangle(cornerRadius: 1.5).fill(theme.stripe(cue.color) ?? .clear).frame(height: 3)
                 Text(cue.hotkey).uiFont(13, weight: .bold, design: .monospaced).foregroundColor(theme.wait)

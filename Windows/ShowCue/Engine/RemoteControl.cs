@@ -125,6 +125,7 @@ public sealed class RemoteControl : IDisposable
             return;
         }
         var s = _settings;
+        using var via = ShowLog.Via(StartSource.Midi);
         string what;
         if (trigger == s.MidiGo) { _show.Go(); what = "GO"; }
         else if (trigger == s.MidiStopAll) { _show.Panic(); what = Loc.T("stopp alt"); }
@@ -159,6 +160,7 @@ public sealed class RemoteControl : IDisposable
     {
         if (!_settings.MscInEnabled) return;
         if (_settings.MscInDeviceId != 127 && m.DeviceId != 127 && m.DeviceId != _settings.MscInDeviceId) return;
+        using var via = ShowLog.Via(StartSource.Midi);
         bool ok = true;
         switch (m.Command)
         {
@@ -186,7 +188,8 @@ public sealed class RemoteControl : IDisposable
     /// <summary>Utfører én OSC-melding. Public for testing.</summary>
     public void HandleOsc(OscMessage m, string from)
     {
-        bool ok = Execute(m);
+        bool ok;
+        using (ShowLog.Via(StartSource.Osc)) ok = Execute(m);
         _show.RemoteLog(Loc.F("OSC fra {0}: {1}", from, m) + (ok ? "" : Loc.T("  – ukjent kommando eller cue")));
     }
 

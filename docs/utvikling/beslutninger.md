@@ -2,6 +2,16 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.27.0 – showlogg
+- Loggen skal aldri påvirke showet: `Record` gjør bare kutting, en lås rundt to små køer og et signal; all disk-I/O går på en egen tråd med lav prioritet. Køen er begrenset (4096) og kaster den eldste ved overløp, med teller og en `dropped`-linje i loggen. Alle feil svelges; første skrivefeil meldes én gang (statuslinja) og gir opp filskriving for kjøringen (minnet og vinduet virker fortsatt).
+- «Kjøringen» = programmets kjøring (tid siden start regnes fra programstart), ikke fra første GO. Enkelt og entydig; operatøren kan lese av klokkeslettet i tillegg.
+- Hvordan en cue ble startet løses med en tråd-lokal «kilde» (`ShowLog.Via`) rundt startkallet i stedet for en ny parameter i `Fire`/`IShowControl`. Det holder endringen i motoren til noen få linjer og lar OSC/MIDI/hurtigtast/GO nøstes (`keepExisting`).
+  «Web» fra ønskelisten er ikke med: ShowCue har ingen webfjernstyring ennå. Kildene er de som finnes.
+- Feil logges der de oppstår for brukeren: endringen av `Cue.Error` (dekker fil mangler, start som feiler, grupper, feil i tidsløkka) i stedet for å fange hvert sted. Lydenhetfeil logges i `AudioEngine`.
+- Filformat: tabulatorskilte felt, `\`, `\t`, `\n`, `\r`, `\xHH`, `\uHHHH` for escape (reversibelt, så en valgt loggfil kan åpnes igjen og eksporteres). CSV: komma, CRLF, byte order mark, apostrof foran felt som begynner med `= + - @` (tabulator/linjeskift også), andre kontrolltegn blir mellomrom.
+- Filtak 5 MB per fil og 30 filer: en kjøring på mange timer med mange hendelser tar ca. 90 byte per linje, så taket er langt unna i vanlig bruk. «Skriv showlogg» er på som standard fordi den er begrenset og ufarlig; maskininnstilling, ikke i showfila.
+- Eksport tar det som vises (etter filteret), ikke alltid hele loggen: «bare feil» gir en feilrapport direkte.
+
 ## 0.21.0 – klokkeslett-trigger
 - Ny trigger per cue, `ClockTrigger` («tt:mm:ss», lokal tid, tom = av), ugyldig tekst blir tom (som `TimecodeTrigger`). Samme nøkkel og oppførsel på begge plattformer.
 - Logikken er ren og tar tidspunktene som argument (`ClockTriggers.Crossed`/`Due` på Windows, `ClockTriggers.crossed`/`due` på Mac): «passert» betyr forrige < klokkeslett ≤ nå, så hver cue starter høyst én gang per passering.

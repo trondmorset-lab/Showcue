@@ -44,6 +44,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private Cue? _selected;
     private string _statusText = "";
     private DateTime _lastGo = DateTime.MinValue;
+    /// <summary>True mens programmet selv flytter GO-markøren (GO, «gå til», nytt show), så det ikke logges som brukerens flytting.</summary>
+    private bool _playheadLogMuted;
+    private ShowLogWindow? _logWindow;
     private DateTime _lastPanic = DateTime.MinValue;
     private double _meterL, _meterR;
     private string _lastClock = "";
@@ -89,6 +92,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             if (_selected != null) { _selected.PropertyChanged -= Selected_PropertyChanged; _selected.IsNext = false; }
             _selected = value;
             if (_selected != null) { _selected.PropertyChanged += Selected_PropertyChanged; _selected.IsNext = true; }
+            if (_selected != null && !_playheadLogMuted) ShowLog.AddCue(ShowLogKind.Playhead, _selected);
             Raise();
             Raise(nameof(HasSelection));
             Raise(nameof(NoSelection));
@@ -173,6 +177,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public MainWindow()
     {
         _settings = AppSettings.Load();
+        StartShowLog();
         ThemeManager.Apply(_settings.Theme);
         ThemeManager.Register(this);
         Engine = new CueEngine(_settings, () => Cues);
@@ -207,7 +212,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         {
             var c = FindCue(target);
             if (c == null) { StatusText = Loc.F("Gå til: fant ikke cue {0}.", target); return; }
-            SelectedCue = c;
+            _playheadLogMuted = true;
+            try { SelectedCue = c; }
+            finally { _playheadLogMuted = false; }
             if (fire) { _lastGo = DateTime.MinValue; Go(); }
         });
         Engine.MemoShown += m => Dispatcher.BeginInvoke(() => MemoText = m.Text.Trim().Length > 0 ? m.Text.Trim() : m.DisplayName);
@@ -270,7 +277,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _panelWindow?.SetCues(_show.Cues);
         MemoText = "";
         Raise(nameof(IsEmpty));
-        SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled);
+        _playheadLogMuted = true;
+        try { SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled); }
+        finally { _playheadLogMuted = false; }
+        ShowLog.Add(ShowLogKind.ShowOpened, text: path ?? "");
         RaiseTitle();
 
         var missing = _show.Cues.Where(c => c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath)).ToList();
@@ -291,6 +301,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Cue_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not Cue c) return;
+        if (e.PropertyName == nameof(Cue.Error) && !string.IsNullOrEmpty(c.Error)) ShowLog.AddCue(ShowLogKind.Error, c, text: c.Error);
         // Kjøretidsstatus endrer ikke showet.
         if (e.PropertyName is nameof(Cue.Progress) or nameof(Cue.ActiveCount) or nameof(Cue.IsRunning)
             or nameof(Cue.IsPreWaiting) or nameof(Cue.Error) or nameof(Cue.HasError)) return;
@@ -342,6 +353,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             ShowSafety.DeleteAutosave(_showPath);
             ShowSafety.DeleteAutosave(path);
             _showPath = path;
+            ShowLog.Add(ShowLogKind.ShowSaved, text: path);
             _savedJson = _show.ToJson();
             _settings.LastShowPath = path;
             _settings.Save();
@@ -394,6 +406,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Try(() => _loudnessCancel?.Cancel());
         Try(Remote.Dispose);
         Try(Engine.Dispose);
+        Try(() => { ShowLog.Add(ShowLogKind.AppExit); ShowLog.Current?.Dispose(); });
     }
 
     // ==================================================================
@@ -403,6 +416,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         if ((DateTime.Now - _lastGo).TotalMilliseconds < _settings.DoubleGoProtectionMs) return;
         _lastGo = DateTime.Now;
+        using var via = ShowLog.Via(StartSource.Go, keepExisting: true);
 
         var cue = SelectedCue;
         if (cue == null) return;
@@ -417,13 +431,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         }
         Engine.Fire(cue);
         int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx);
-        SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null;
+        _playheadLogMuted = true;
+        try { SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null; }
+        finally { _playheadLogMuted = false; }
     }
 
     private void Panic()
     {
         var hard = (DateTime.Now - _lastPanic).TotalSeconds < 1.0;
         _lastPanic = DateTime.Now;
+        ShowLog.Add(ShowLogKind.StopAll, text: hard ? "hard" : "fade");
         Engine.StopAll(hard ? 0 : _settings.PanicFadeTime);
         StatusText = hard ? Loc.T("Alt stoppet umiddelbart.") : Loc.F("Stopper alt (fade {0:0.#} s). Trykk Esc igjen for umiddelbar stopp.", _settings.PanicFadeTime);
     }
@@ -551,6 +568,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         var cue = Cues.FirstOrDefault(c => c.Hotkey == name && !c.Disabled);
         if (cue == null) return false;
+        using var via = ShowLog.Via(StartSource.Hotkey, keepExisting: true);
         ToggleHotCue(cue);
         return true;
     }
@@ -562,9 +580,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         Cues.FirstOrDefault(c => string.Equals(c.Number, number.Trim(), StringComparison.OrdinalIgnoreCase));
 
     void IShowControl.Go() => Go();
-    void IShowControl.StopAll() => Engine.StopAll(_settings.PanicFadeTime);
+    void IShowControl.StopAll() { ShowLog.Add(ShowLogKind.StopAll, text: "fade"); Engine.StopAll(_settings.PanicFadeTime); }
     void IShowControl.Panic() => Panic();
-    void IShowControl.HardStop() => Engine.StopAll(0);
+    void IShowControl.HardStop() { ShowLog.Add(ShowLogKind.StopAll, text: "hard"); Engine.StopAll(0); }
     void IShowControl.MovePlayhead(int delta) => MovePlayhead(delta);
 
     bool IShowControl.SelectCue(string number)
@@ -631,6 +649,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         var due = Cues.Where(c => !c.Disabled && Timecode.TryParse(c.TimecodeTrigger, out var t)
                                   && Timecode.Crossed(previousFrame, frame, t.ToFrame(rate), rate)).ToList();
+        using var via = ShowLog.Via(StartSource.Timecode);
         foreach (var c in due) Engine.Fire(c);
         return due.Count;
     }
@@ -642,7 +661,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _lastClockCheck = now;
         if (!_settings.ClockTriggersEnabled || previous == DateTime.MinValue) return;
         var due = ClockTriggers.Due(Cues, previous, now);
-        foreach (var c in due) Engine.Fire(c);
+        using (ShowLog.Via(StartSource.Clock))
+            foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
     }
 
@@ -894,7 +914,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void CueGrid_DoubleClick(object sender, MouseButtonEventArgs e)
     {
         // Dobbeltklikk på en rad kjører den (som test) uten å flytte markøren.
-        if (FindParent<DataGridRow>(e.OriginalSource as DependencyObject)?.Item is Cue c) Engine.Fire(c);
+        if (FindParent<DataGridRow>(e.OriginalSource as DependencyObject)?.Item is Cue c) { using var via = ShowLog.Via(StartSource.Manual); Engine.Fire(c); }
     }
 
     // ==================================================================
@@ -949,7 +969,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         box.SelectedIndex = j;
     }
     private void Panic_Click(object sender, RoutedEventArgs e) => Panic();
-    private void TestCue_Click(object sender, RoutedEventArgs e) { CommitFocusedTextBox(); if (SelectedCue != null) Engine.Fire(SelectedCue); }
+    private void TestCue_Click(object sender, RoutedEventArgs e) { CommitFocusedTextBox(); if (SelectedCue != null) { using var via = ShowLog.Via(StartSource.Manual); Engine.Fire(SelectedCue); } }
     private void StopSelected_Click(object sender, RoutedEventArgs e) { if (SelectedCue != null) Engine.Stop(SelectedCue, FadeOutOf(SelectedCue)); }
 
     private void StepActive_Click(object sender, RoutedEventArgs e)
@@ -1013,7 +1033,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void ButtonPanel_Click(object sender, RoutedEventArgs e)
     {
         if (_panelWindow != null) { _panelWindow.Activate(); return; }
-        _panelWindow = new ButtonPanelWindow(_settings.ButtonPanelColumns, ToggleHotCue, () => Engine.TogglePause(), Panic,
+        _panelWindow = new ButtonPanelWindow(_settings.ButtonPanelColumns, c => { using var via = ShowLog.Via(StartSource.ButtonPanel); ToggleHotCue(c); },
+            () => { using var via = ShowLog.Via(StartSource.ButtonPanel); Engine.TogglePause(); }, () => { using var via = ShowLog.Via(StartSource.ButtonPanel); Panic(); },
             cols => { _settings.ButtonPanelColumns = cols; _settings.Save(); }) { Owner = this };
         _panelWindow.SetCues(_show.Cues);
         _panelWindow.Closed += (_, _) => _panelWindow = null;
@@ -1068,6 +1089,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         CommitFocusedTextBox();
         var env = new SystemPreflightEnvironment();
         new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env)) { Owner = this }.ShowDialog();
+    }
+
+    /// <summary>Starter loggen for denne kjøringen (ingen fil i skjermbildemodus).</summary>
+    private void StartShowLog()
+    {
+        var log = new ShowLog(ShowSafety.DefaultRoot, _settings.WriteShowLog && ScreenshotDir == null);
+        log.FaultReported += msg => Dispatcher.BeginInvoke(() => StatusText = Loc.F("Showloggen kunne ikke skrives: {0}", msg));
+        ShowLog.Install(log);
+        ShowLog.Add(ShowLogKind.AppStart, text: "ShowCue " + AppVersion);
+    }
+
+    /// <summary>Åpner vinduet med showloggen (ett om gangen).</summary>
+    private void ShowLog_Click(object sender, RoutedEventArgs e)
+    {
+        if (ShowLog.Current is not { } log) return;
+        if (_logWindow != null) { _logWindow.Activate(); return; }
+        _logWindow = new ShowLogWindow(log, ShowSafety.DefaultRoot) { Owner = this };
+        _logWindow.Closed += (_, _) => _logWindow = null;
+        _logWindow.Show();
     }
 
     private void Collect_Click(object sender, RoutedEventArgs e)
@@ -1171,6 +1211,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         _settings.Save();
         if (languageChanged)
             MessageBox.Show(this, Loc.T("Det nye språket brukes neste gang ShowCue startes."), "ShowCue", MessageBoxButton.OK, MessageBoxImage.Information);
+        if (ShowLog.Current != null) ShowLog.Current.WriteFile = _settings.WriteShowLog;
         Engine.ApplySettings(_settings, restartAudio);
         Remote.Apply(_settings);
         ApplyFeedbackSettings();

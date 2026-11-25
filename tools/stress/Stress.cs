@@ -80,6 +80,7 @@ public static class Program
             Run("OSC feedback", FeedbackValues);
             Run("Undo history", UndoFuzz);
             Run("Show save/load files", SaveLoadFiles);
+            Run("Show log flood", ShowLogFlood);
             var text = new StringBuilder($"Runder: {round}, feiltyper: {Bugs.Count}\n\n");
             foreach (var (k, v) in Bugs.OrderBy(b => b.Key)) text.Append($"[{v.Count}x] {k}\n      eksempel: {v.Example}\n");
             File.WriteAllText(report, text.ToString());
@@ -663,6 +664,78 @@ public static class Program
             }
             catch (Exception e) { Bug("Undo history", e, i.ToString()); }
         }
+    }
+
+    /// <summary>Flere tråder fyller showloggens begrensede kø med tilfeldig og ødelagt tekst: ingenting skal kaste, henge eller vokse,
+    /// filen holder seg under taket, gamle filer slettes, og det som er skrevet kan leses inn igjen og eksporteres trygt.</summary>
+    static void ShowLogFlood()
+    {
+        var root = Path.Combine(Dir, "showlog-" + Guid.NewGuid().ToString("N"));
+        var errors = new ConcurrentBag<Exception>();
+        const int threads = 6, perThread = 3000, keep = 3;
+        try
+        {
+            var logs = Path.Combine(root, "Logs");
+            Directory.CreateDirectory(logs);
+            for (int d = 1; d <= 6; d++) File.WriteAllText(Path.Combine(logs, $"showlog 2020-01-0{d} 10.00.00.log"), "x");
+            var seeds = Enumerable.Range(0, threads).Select(_ => Rng.Next()).ToArray();
+            string? path;
+            using (var log = new ShowLog(root, queueCapacity: 32, memoryLimit: 200, maxFileBytes: 64 * 1024, filesToKeep: keep))
+            {
+                var workers = Enumerable.Range(0, threads).Select(t => new Thread(() =>
+                {
+                    var rng = new Random(seeds[t]);
+                    string T() => Pieces[rng.Next(Pieces.Length)] + (rng.Next(3) == 0 ? ((char)rng.Next(1, 0xD7FF)).ToString() : "");
+                    try
+                    {
+                        for (int i = 0; i < perThread; i++)
+                        {
+                            CurrentCase = $"tråd {t} hendelse {i}";
+                            using (ShowLog.Via((StartSource)rng.Next(0, 12)))
+                                log.Record((ShowLogKind)rng.Next(0, 14), T(), T(), T(), StartSource.Unknown, T() + new string('å', rng.Next(0, 400)));
+                            if (rng.Next(500) == 0) log.WriteFile = rng.Next(2) == 0;
+                        }
+                    }
+                    catch (Exception e) { errors.Add(e); }
+                })).ToList();
+                var reader = new Thread(() =>
+                {
+                    long seq = 0;
+                    try { for (int i = 0; i < 200; i++) { log.ReadSince(seq, out seq); Thread.Sleep(1); } }
+                    catch (Exception e) { errors.Add(e); }
+                });
+                workers.ForEach(w => w.Start());
+                reader.Start();
+                workers.ForEach(w => w.Join());
+                reader.Join();
+                log.WriteFile = true;
+                log.Record(ShowLogKind.AppExit);
+                if (!log.Flush(20000)) Bug("Show log flood", "køen ble ikke tømt", "");
+                if (log.Total != threads * perThread + 1) Bug("Show log flood", $"talt {log.Total} hendelser, ventet {threads * perThread + 1}", "");
+                if (log.Snapshot().Count > 200) Bug("Show log flood", "minnet vokste over grensen", "");
+                path = log.FilePath;
+            }
+            foreach (var e in errors) Bug("Show log flood", e, "flere tråder");
+            if (path != null)
+            {
+                if (new FileInfo(path).Length > 64 * 1024) Bug("Show log flood", "loggfila er over størrelsestaket", path);
+                var events = ShowLogExport.ReadFile(path, out var skipped);
+                if (skipped > 0) Bug("Show log flood", $"{skipped} linjer i loggfila kan ikke leses inn igjen", path);
+                var csv = ShowLogExport.ToCsv(events);
+                foreach (var ev in events)
+                    foreach (var f in new[] { ev.Name, ev.Text })
+                    {
+                        var c = ShowLogExport.CsvCell(f);
+                        if (f.Length > 0 && f[0] is '=' or '+' or '-' or '@' or '\t' or '\r' && !(c.StartsWith("'") || c.StartsWith("\"'")))
+                            Bug("Show log flood", "CSV-felt som begynner med formeltegn mangler apostrof", f);
+                    }
+                if (csv.Length == 0) Bug("Show log flood", "tom CSV", path);
+            }
+            var left = Directory.GetFiles(logs).Length;
+            if (left > keep) Bug("Show log flood", $"{left} loggfiler står igjen (skal være maks {keep})", "");
+        }
+        catch (Exception e) { Bug("Show log flood", e, "oppsett"); }
+        finally { try { Directory.Delete(root, true); } catch { } }
     }
 
     static void SaveLoadFiles()
