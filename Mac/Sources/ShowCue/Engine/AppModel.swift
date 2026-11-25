@@ -53,6 +53,10 @@ final class AppModel: ObservableObject, ShowControl {
     private(set) var engine: CueEngine!
     let router: RemoteRouter
     private let oscServer = OscServer()
+    private let webServer = WebServer()
+    private var webCore: WebRemoteCore?
+    private var webKey: String?
+    private var webStatus = ""
     private var feedback: OscFeedback?
     private var tickCount = 0
     private var lastGo = Date.distantPast
@@ -106,6 +110,14 @@ final class AppModel: ObservableObject, ShowControl {
         midi.onMsc = { [weak self] m in self?.router.handleMsc(m) }
         midi.onTimecode = { [weak self] tc, r in self?.router.handleTimecode(tc, rate: r) }
         router.onTimecodeStatus = { [weak self] _ in self?.applyStatusLine() }
+        webServer.onCommand = { [weak self] cmd, from in self?.router.handleWeb(cmd, from: from) }
+        webServer.onFailure = { [weak self] message in
+            guard let self else { return }
+            self.webCore = nil
+            self.webKey = nil
+            self.webStatus = L("Web: kunne ikke starte på port {0} – {1}", self.settings.webRemotePort, message)
+            self.applyStatusLine()
+        }
         engine.dmx.onError = { [weak self] e in DispatchQueue.main.async { self?.statusText = e } }
         newShow(confirm: false)
     }
@@ -877,6 +889,7 @@ final class AppModel: ObservableObject, ShowControl {
         var s = new
         s.buses = settings.buses // patchen redigeres i eget vindu
         s.lastShowPath = settings.lastShowPath
+        s.normalize()
         settings = s
         settings.save()
         if restartAudio {
@@ -931,13 +944,43 @@ final class AppModel: ObservableObject, ShowControl {
         } else {
             feedback = nil
         }
+        applyWeb()
         remoteParts = parts
         applyStatusLine()
     }
 
+    /// Starter, stopper eller omstarter nettsiden etter innstillingene. Uten godkjent PIN starter den aldri.
+    private func applyWeb() {
+        guard settings.webRemoteEnabled else {
+            webServer.stop()
+            webCore = nil
+            webKey = nil
+            webStatus = ""
+            return
+        }
+        let key = "\(settings.webRemotePort)|\(settings.webRemotePin)"
+        if webServer.isRunning, webKey == key { return }
+        webServer.stop()
+        webCore = nil
+        webKey = nil
+        do {
+            let texts = WebRemote.pageTexts(language: Loc.language)
+            let core = try WebRemoteCore(pin: settings.webRemotePin, loginPage: WebRemote.loginPage(texts),
+                                         controlPage: WebRemote.controlPage(texts),
+                                         now: { Int64(DispatchTime.now().uptimeNanoseconds / 1_000_000) })
+            try webServer.start(port: settings.webRemotePort, core: core)
+            webCore = core
+            webKey = key
+            webStatus = L("Web: {0}", WebRemote.url(UDP.localAddresses(), port: settings.webRemotePort))
+        } catch {
+            webStatus = L("Web: kunne ikke starte på port {0} – {1}", settings.webRemotePort, error.localizedDescription)
+        }
+    }
+
     private var remoteParts: [String] = []
     private func applyStatusLine() {
-        remoteStatus = (remoteParts + (router.timecodeStatus.isEmpty ? [] : [router.timecodeStatus])).joined(separator: "   ·   ")
+        remoteStatus = (remoteParts + (settings.webRemoteEnabled && !webStatus.isEmpty ? [webStatus] : [])
+                        + (router.timecodeStatus.isEmpty ? [] : [router.timecodeStatus])).joined(separator: "   ·   ")
     }
 
     func learnMidi(for c: Cue) {
@@ -973,6 +1016,10 @@ final class AppModel: ObservableObject, ShowControl {
         }
         if tickCount % 6 == 0, let f = feedback { f.update(buildStatus(), now: engine.now) }
         checkClockTriggers(now: Date())
+        if tickCount % 15 == 0, let core = webCore {
+            core.setState(WebRemote.buildStateJson(buildWebState()))
+            if tickCount % 60 == 0 { core.setCues(WebRemote.buildCuesJson(buildWebCues())) }
+        }
         if tickCount % 15 == 0 {
             let c = Self.clockFormatter.string(from: Date())
             if c != live.clockText { live.clockText = c }
@@ -982,6 +1029,24 @@ final class AppModel: ObservableObject, ShowControl {
     private static let clockFormatter: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss"; return f
     }()
+
+    /// Øyeblikksbilde til nettsiden: bare lesing, ingenting her kan endre showet.
+    func buildWebState() -> WebStateInput {
+        let next = playhead
+        let playing = engine.active.filter { !$0.done }.map {
+            WebPlaying(number: $0.cue.number, name: $0.cue.displayName, type: $0.cue.typeName, elapsed: $0.started ? $0.elapsed : 0,
+                       remaining: $0.duration > 0 ? max(0, $0.duration - $0.elapsed) : 0, hasDuration: $0.duration > 0,
+                       preWaiting: !$0.started)
+        }
+        return WebStateInput(showName: showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn"),
+                             paused: engine.isPaused, showMode: showMode,
+                             next: next.map { WebNext(number: $0.number, name: $0.displayName, type: $0.typeName, notes: $0.notes) },
+                             position: next.flatMap(index(of:)).map { $0 + 1 } ?? 0, count: cues.count, playing: playing)
+    }
+
+    func buildWebCues() -> [WebCueInfo] {
+        cues.map { WebCueInfo(number: $0.number, name: $0.displayName, type: $0.typeName, disabled: $0.disabled) }
+    }
 
     func buildStatus() -> ShowStatus {
         let next = playhead

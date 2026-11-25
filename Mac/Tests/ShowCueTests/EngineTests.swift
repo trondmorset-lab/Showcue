@@ -147,6 +147,20 @@ final class FakeShow: ShowControl {
 }
 
 final class RemoteTests: XCTestCase {
+    func testWebCommandsUseTheSameControls() {
+        let fake = FakeShow()
+        let r = RemoteRouter(settings: AppSettings())
+        r.show = fake
+        for c in [WebCommand.go, .stopAll, .pause, .resume, .next, .previous] { r.handleWeb(c, from: "10.0.0.5") }
+        XCTAssertEqual(fake.log, ["go", "stopall", "pause true", "pause false", "move 1", "move -1"])
+        XCTAssertEqual(fake.remote.count, 6)
+    }
+
+    func testWebIsOffByDefaultAndNeverStartsWithAWeakPin() {
+        XCTAssertFalse(AppSettings().webRemoteEnabled)
+        XCTAssertThrowsError(try WebRemoteCore(pin: "123456", loginPage: [], controlPage: [], now: { 0 }))
+    }
+
     func testOscCommands() {
         let fake = FakeShow()
         var s = AppSettings(); s.midiGo = "N:60"; s.midiStopAll = "CC:20"

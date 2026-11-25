@@ -155,6 +155,17 @@ pluss `/showcue/cue/{nr}/running 1|0` når en cue starter og stopper. Passer for
 - CC trigger når verdien går fra under 64 til 64 eller mer, så en fader ikke trigger hele tiden.
 - **MIDI Show Control:** GO og STOP med cuenummer fra lysbord o.l., med valgfri device ID.
 
+### Nettside for mobil og nettbrett
+
+*Innstillinger → Web*: slå på nettsiden, velg port (8088 som standard) og **PIN-kode**. Adressen vises i innstillingene og i statuslinja,
+f.eks. `http://192.168.1.20:8088`. Åpne den i nettleseren på en mobil eller et nettbrett på **samme Wi-Fi eller nettverk** og skriv inn PIN-koden.
+
+- Siden viser neste cue, hva som spiller med tid igjen, og knappene **GO**, **Stopp alt**, **Pause/Fortsett**, **Neste** og **Forrige**. Cuelista kan bare leses; ingenting kan redigeres fra siden.
+- Den bruker de samme styringene som OSC (sperren mot dobbel-GO gjelder). Showmodus stopper den ikke.
+- Den er **av** som standard. PIN-koden er 6–32 bokstaver eller siffer; ShowCue lager en tilfeldig hvis den er tom eller lett å gjette. Etter fem feil forsøk sperres klienten i ett minutt.
+- **Trafikken er vanlig HTTP (ikke kryptert).** PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på. Ikke bruk den på åpne eller delte nett, og ikke åpne porten mot internett.
+- Brannmuren spør første gang: tillat ShowCue på private nettverk. Siden bruker ingen eksterne ressurser, så den virker uten internett.
+
 OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 
 ## Betjening

@@ -75,6 +75,13 @@ struct AppSettings: Codable, Equatable {
     /// Standard port for OSC inn (8000, vanlig standard for OSC-kontrollere, f.eks. Companion).
     var oscInPort = 8000
 
+    // Nettside (fjernstyring fra mobil/nettbrett)
+    /// Av som standard. Når den er på, krever alt unntatt innloggingssiden PIN-koden.
+    var webRemoteEnabled = false
+    var webRemotePort = WebRemote.defaultPort
+    /// PIN-kode (6–32 bokstaver/siffer). Lages tilfeldig når den mangler eller er for lett å gjette.
+    var webRemotePin = ""
+
     // OSC ut (status)
     var oscFeedbackEnabled = false
     var oscFeedbackHost = "127.0.0.1"
@@ -119,6 +126,7 @@ struct AppSettings: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case audioDeviceUID, maxChannels, bufferFrames, buses, previewDeviceUID, previewBus, videoScreen, oscInEnabled, oscInPort
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
+        case webRemoteEnabled, webRemotePort, webRemotePin
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
         case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID
     }
@@ -141,6 +149,9 @@ struct AppSettings: Codable, Equatable {
         oscFeedbackHost = v(.oscFeedbackHost, d.oscFeedbackHost)
         oscFeedbackPort = v(.oscFeedbackPort, d.oscFeedbackPort)
         oscFeedbackFormat = v(.oscFeedbackFormat, d.oscFeedbackFormat)
+        webRemoteEnabled = v(.webRemoteEnabled, d.webRemoteEnabled)
+        webRemotePort = v(.webRemotePort, d.webRemotePort)
+        webRemotePin = v(.webRemotePin, d.webRemotePin)
         midiInDevice = v(.midiInDevice, d.midiInDevice)
         midiInChannel = v(.midiInChannel, d.midiInChannel)
         midiGo = v(.midiGo, d.midiGo)
@@ -179,6 +190,8 @@ struct AppSettings: Codable, Equatable {
         videoScreen = min(15, max(-1, videoScreen))
         oscInPort = min(65535, max(1, oscInPort))
         oscFeedbackPort = min(65535, max(1, oscFeedbackPort))
+        if webRemotePort < 1024 || webRemotePort > 65535 { webRemotePort = WebRemote.defaultPort }
+        webRemotePin = WebRemote.normalizePin(webRemotePin, enabled: webRemoteEnabled)
         midiInChannel = min(16, max(0, midiInChannel))
         mscInDeviceId = min(127, max(0, mscInDeviceId))
         panicFadeTime = clampD(panicFadeTime, 0, 30, 1)

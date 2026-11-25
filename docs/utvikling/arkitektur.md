@@ -99,6 +99,9 @@ og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i 
 - **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,
   `/hotkey/{tast}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
   Dekoderen leser aldri utenfor pakken, uansett hva lengdefeltene påstår.
+- **Nettside** (0.26.0, av som standard): `WebServer` (Windows `Engine/WebServer.cs` med `TcpListener`, Mac `Engine/WebServer.swift` med `NWListener`) leser én forespørsel per forbindelse og gir bytene til `WebRemoteCore.Handle`
+  (`Models/WebRemote.cs`, `Core/WebRemote.swift`: ren tolking, ruter, PIN, sperre, JSON og sider). Kommandoer (GO, stopp alt, pause/fortsett, neste, forrige) går via `RemoteControl.HandleWeb` / `RemoteRouter.handleWeb` til `IShowControl`/`ShowControl`.
+  Hovedvinduet gir tilstanden med `PublishWebState` / `setState` i den vanlige takten. Innstillinger: `WebRemoteEnabled`/`WebRemotePort`/`WebRemotePin` (Mac `webRemote…`). Se [beslutninger.md](beslutninger.md#0260--nettside-for-fjernstyring).
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
   hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.

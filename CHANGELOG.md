@@ -6,6 +6,18 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.26.0 – 2026-11-25
+
+### New
+- **Web remote** (Windows and Mac, same behaviour): a small built-in web server lets a phone or tablet on the same network control the show from a browser.
+  The page shows the next cue (number, name, type), what is playing with time left, and big buttons **GO**, **Stop all**, **Pause/Resume**, **Next** and **Previous**, plus a read-only cue list.
+  The page uses the same controls as OSC, so the double-GO protection applies. Show mode does not block it (as with OSC), but nothing can be edited remotely.
+- Settings: *Settings → Web* with an on/off switch, the port (default 8088) and the PIN. The address (e.g. `http://192.168.1.20:8088`) is shown there and in the status line while the server runs.
+- **Security:** the web remote is **off** by default and needs a **PIN** (6–32 letters or digits; a random one is made when it is empty or easy to guess, such as `123456`).
+  Everything except the login page needs the PIN (session cookie after login), failed attempts are rate-limited with a lockout, and the server has fixed routes only, no file access, no CORS,
+  size/time/connection limits and plain HTTP/1.1 with closed connections. **The traffic is plain HTTP (not encrypted), so the PIN only protects against casual use on a trusted network.**
+  The page has not been tried on real devices yet.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

@@ -53,6 +53,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private CancellationTokenSource? _loudnessCancel;
     private OscFeedback? _feedback;
     private int _feedbackTick;
+    private int _webTick;
     private DateTime _lastClockCheck = DateTime.MinValue;
 
     // Angre, autolagring og showmodus
@@ -71,6 +72,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public IReadOnlyList<PatchBus> Buses => _settings.Buses.ToList();
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
+        + (_settings.WebRemoteEnabled ? "   ·   " + Remote.WebStatus : "")
         + (_settings.OscFeedbackEnabled ? Loc.F("   ·   Status ut: {0}:{1}", _settings.OscFeedbackHost, _settings.OscFeedbackPort) : "");
     private string _learnText = "";
     /// <summary>Vises i inspector mens vi venter på en MIDI-melding.</summary>
@@ -1312,6 +1314,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
     }
 
+    /// <summary>Øyeblikksbilde til nettsiden: bare lesing, ingenting her kan endre showet.</summary>
+    private WebStateInput BuildWebState()
+    {
+        var next = SelectedCue;
+        var playing = Engine.Active
+            .Where(a => !a.Done)
+            .Select(a => new WebPlaying(a.Cue.Number, a.Cue.DisplayName, a.Cue.TypeName, a.Started ? a.Elapsed : 0,
+                a.Duration > 0 ? Math.Max(0, a.Duration - a.Elapsed) : 0, a.Duration > 0, !a.Started))
+            .ToList();
+        return new WebStateInput(
+            _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn"),
+            Engine.IsPaused, _showMode,
+            next != null ? new WebNext(next.Number, next.DisplayName, next.TypeName, next.Notes ?? "") : null,
+            next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
+    }
+
+    private IEnumerable<WebCueInfo> BuildWebCues() =>
+        Cues.Select(c => new WebCueInfo(c.Number, c.DisplayName, c.TypeName, c.Disabled)).ToList();
+
     void IShowControl.RefreshFeedback() => _feedback?.RequestRefresh();
 
     private void Patch_Click(object sender, RoutedEventArgs e)
@@ -1471,6 +1492,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         {
             try { _feedback.Update(BuildStatus(), Engine.Now); }
             catch { /* nettverksfeil skal aldri påvirke showet */ }
+        }
+
+        // Tilstand til nettsiden: ca. 4 ganger i sekundet, cuelista ca. én gang i sekundet.
+        if (Remote.WebRunning && ++_webTick % 15 == 0)
+        {
+            try { Remote.PublishWebState(WebRemote.BuildStateJson(BuildWebState()), _webTick % 60 == 0 ? WebRemote.BuildCuesJson(BuildWebCues()) : null); }
+            catch { /* nettsiden skal aldri påvirke showet */ }
         }
 
         CheckClockTriggers(DateTime.Now);

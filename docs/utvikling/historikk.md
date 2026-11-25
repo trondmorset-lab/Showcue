@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.26.0 | (åpen) | Nettside for fjernstyring fra mobil/nettbrett: liten innebygd webtjener (av som standard, PIN påkrevd, sperre mot gjetting, faste ruter), viser neste cue og hva som spiller, knapper for GO/stopp alt/pause/neste/forrige og skrivebeskyttet cueliste; ren logikk (`WebRemote`, `WebRemoteCore`) med tester på begge plattformer |
 | 0.21.0 | (åpen) | Klokkeslett-trigger per cue (`ClockTrigger`, «tt:mm:ss», lokal tid) med innstillingen «Klokke-triggere aktive» (av som standard), felt i Tidsstyring og advarsel i Sjekk showet. Ren logikk (`ClockTriggers`) med tester på begge plattformer |
 | 0.20.0 | #28 (åpen) | Ny hovedvindu: tydelig «spilles nå»/«neste» i cuelista med kolonnen Gjenstår, faner i inspektøren, større GO og neste cue, bedre aktive cuer. Ren visningslogikk (`CueDisplay`, `InspectorLayout`) med tester på begge plattformer |
 | 0.19.1 | (åpen) | Robusthet 2: unntak i `CueEngine.Tick` fanges per cue (Windows); Mac begrenser verdier ved lasting som Windows; «Sjekk showet» kjenner gruppe-cuer; innstillinger begrenses ved lasting |

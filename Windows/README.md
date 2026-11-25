@@ -155,6 +155,17 @@ plus `/showcue/cue/{no}/running 1|0` when a cue starts and stops. Suits other pr
 - CC triggers when the value goes from below 64 to 64 or more, so a fader does not trigger all the time.
 - **MIDI Show Control:** GO and STOP with a cue number from lighting desks etc., with an optional device ID.
 
+### Web page for phone and tablet
+
+*Settings → Web*: switch on the web remote, choose the port (8088 by default) and the **PIN**. The address is shown in the settings and in the status line,
+e.g. `http://192.168.1.20:8088`. Open it in the browser on a phone or tablet on **the same Wi-Fi or network** and enter the PIN.
+
+- The page shows the next cue, what is playing with time left, and the buttons **GO**, **Stop all**, **Pause/Resume**, **Next** and **Previous**. The cue list is read-only; nothing can be edited from the page.
+- It uses the same controls as OSC (double-GO protection applies). Show mode does not block it.
+- It is **off** by default. The PIN is 6–32 letters or digits; ShowCue makes a random one if it is empty or easy to guess. After five wrong attempts the client is locked out for a minute.
+- **The traffic is plain HTTP (not encrypted).** The PIN only protects against casual use on a network you trust. Do not use it on open or shared networks and do not open the port to the internet.
+- The firewall asks the first time: allow ShowCue on private networks. The page uses no external resources, so it works without internet.
+
 OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 
 ## Operation
