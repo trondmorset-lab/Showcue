@@ -1,6 +1,7 @@
 using System.IO;
 using NAudio.Wave;
 using ShowCue.Models;
+using Cue = ShowCue.Models.Cue;
 
 namespace ShowCue.Engine;
 
