@@ -30,6 +30,8 @@ public interface IShowControl
     bool StepCue(string number, int delta);
     /// <summary>Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.</summary>
     int FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate);
+    /// <summary>Bytt aktiv scene (navn, store/små bokstaver likegyldig). False hvis scenen ikke finnes.</summary>
+    bool SelectScene(string name) => false;
 }
 
 /// <summary>
@@ -47,6 +49,7 @@ public interface IShowControl
 ///   /pause  /resume  /pause/toggle   pause / fortsett alt
 ///   /cue/{nr}/devamp            slipp loopen i cuen (spill ferdig og fortsett til slutten)
 ///   /cue/{nr}/next  /cue/{nr}/previous   neste / forrige lysbilde i en lysbildeserie
+///   /scene/{navn}               bytt aktiv scene (navnet kan også sendes som argument: /scene "Akt 2")
 ///   /refresh                    send all status tilbake på nytt
 ///   Cuenummer kan også sendes som argument: /cue/start "12"
 /// </summary>
@@ -225,6 +228,9 @@ public sealed class RemoteControl : IDisposable
                 if (parts.Length == 2 && parts[1] is "previous" or "prev") { _show.MovePlayhead(-1); return true; }
                 var n = parts.Length >= 2 ? parts[1] : argNumber;
                 return n != null && _show.SelectCue(n);
+            case "scene":
+                var sceneName = parts.Length >= 2 ? parts[1] : argNumber;
+                return sceneName != null && _show.SelectScene(sceneName);
             case "hotkey":
                 var k = parts.Length >= 2 ? parts[1] : argNumber;
                 return k != null && _show.FireHotkey(k.ToUpperInvariant());

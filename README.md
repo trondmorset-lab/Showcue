@@ -22,6 +22,7 @@ Both have:
 - Cues for audio, video, image, PDF, web page, fade, stop, OSC, MIDI, playlist, slideshow, “go to”, group, message and network (UDP/TCP/HTTP)
 - **Timecode** (MTC/LTC out, MTC triggers in), **lighting over Art-Net** and **live input** through the audio patch
 - **Button panel** with large buttons (jingles, effects, touch screens), **loudness normalisation** (LUFS) **find/collect media files** and a **pre-show check** (*File → Check the show*)
+- **Scenes (cue lists):** split a long show into scenes such as “Act 1” and “Act 2”, each with its own numbering and GO playhead; switch scene from the picker, a hotkey, a *go to* cue or OSC
 - **Slideshow** that moves between images, PDF pages and videos automatically (or by hand), with crossfades and loop
 - **Pause/resume all**, **real-time scrubbing** in audio and video while playing, release loop (devamp), start from the cursor and fade curves
 - **Start and end with waveform**, zoom and preview through the audio patch

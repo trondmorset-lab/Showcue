@@ -6,6 +6,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.22.0 – 2026-11-25
+
+### Nytt
+- **Scener (cuelister)** (Windows og Mac, samme oppførsel): et langt show trenger ikke lenger være én lang liste. Cuer hører til en *scene* (f.eks. «Akt 1», «Akt 2»), og hver scene har egen nummerering, egen GO-markør og egen GO-rekkefølge.
+  Velg aktiv scene i velgeren over cuelista (◀ ▶ går mellom scener; **Ctrl+Page Up/Down** på Windows, **⌘⌥←/→** på Mac). Menyen *Scener* lager, gir nytt navn, sletter og flytter scener, og flytter valgte cuer til en annen scene.
+- **GO hopper aldri til en annen scene av seg selv.** Ved slutten av en scene stopper markøren på «slutt på lista»; auto-fortsett/auto-følg holder seg også innen scenen. Hver scene husker hvor markøren sto.
+- **Nummer per scene:** samme cuenummer kan brukes i flere scener. *Nummerer på nytt* gjelder den aktive scenen og oppdaterer mål i fade-, stopp-, gå til- og gruppe-cuer. Mål i fade-, stopp-, gå til- og gruppe-cuer søkes først i cuens egen scene og deretter i alle scener; skriv `Akt 2:5` for å peke på cue 5 i en bestemt scene.
+- **Gå til scene:** en «gå til»-cue har et nytt felt *Scene*. Med bare scene byttes scenen (markøren står der den sist var); med nummer hoppes det til den cuen i den scenen. OSC: `/scene/{navn}` (eller `/scene "Akt 2"`) bytter scene. De eksisterende OSC-kommandoene søker først i aktiv scene.
+- **Sjekk showet** godtar samme nummer i ulike scener, melder duplikater innen én scene og sjekker at scenene «gå til»-cuer bruker finnes.
+- Showfil: nytt valgfritt felt `Scene` per cue og en liste `Scenes`. Show uten scener åpnes som én scene, og eldre versjoner åpner nye filer som én liste.
+
 ## 0.21.0 – 2026-11-24
 
 ### Nytt

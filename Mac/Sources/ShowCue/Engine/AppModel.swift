@@ -14,7 +14,14 @@ final class AppModel: ObservableObject, ShowControl {
 
     // Show
     @Published var cues: [Cue] = [] { didSet { observeCues() } }
-    @Published var selection: Set<UUID> = []
+    @Published var selection: Set<UUID> = [] { didSet { recordPlayhead() } }
+    /// Scenenavnene i rekkefølge. Tom = én scene uten navn (`SceneLogic`).
+    @Published var scenes: [String] = []
+    /// Aktiv scene (kanonisk navn; tom i et show uten scener). Cuelista viser bare cuene i den.
+    @Published private(set) var activeScene = ""
+    /// GO-markøren per scene (`endMarker` = slutten av scenen).
+    private var playheads: [String: UUID] = [:]
+    private static let endMarker = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
     /// Fanen som vises i inspektøren.
     @Published var inspectorTab: InspectorTab = .basic
     @Published private(set) var showURL: URL?
@@ -88,8 +95,10 @@ final class AppModel: ObservableObject, ShowControl {
         engine.onGoto = { [weak self] target, fire in
             DispatchQueue.main.async {
                 guard let self else { return }
-                guard let c = self.find(target) else { self.statusText = L("Gå til: fant ikke cue {0}.", target); return }
-                self.select(c)
+                guard let t = SceneLogic.resolveGoto(self.cues, scenes: self.scenes, spec: target, home: self.activeScene) else {
+                    self.statusText = L("Gå til: fant ikke cue {0}.", target); return
+                }
+                if let c = t.cue { self.select(c) } else { self.switchScene(t.scene) }
                 if fire { self.lastGo = .distantPast; self.go() }
             }
         }
@@ -132,22 +141,153 @@ final class AppModel: ObservableObject, ShowControl {
     var selectedCues: [Cue] { cues.filter { selection.contains($0.id) } }
     func index(of c: Cue) -> Int? { cues.firstIndex { $0 === c } }
 
+    /// Velger cuen (GO-markøren). Står cuen i en annen scene, byttes det til den scenen først.
     func select(_ c: Cue?) {
+        if let c, !SceneLogic.sameScene(c.scene, activeScene) { activeScene = c.scene }
         selection = c.map { [$0.id] } ?? []
     }
 
+    // MARK: - Scener
+
+    /// Cuene i aktiv scene (det cuelista viser).
+    var visibleCues: [Cue] { SceneLogic.cues(in: activeScene, of: cues) }
+    /// Navnene i scenevelgeren. Et show uten scener har én scene.
+    var sceneItems: [String] { scenes.isEmpty ? [SceneLogic.defaultName] : scenes }
+    var activeSceneLabel: String { activeScene.isEmpty ? SceneLogic.defaultName : activeScene }
+
+    private func recordPlayhead() { playheads[activeScene] = playhead?.id ?? AppModel.endMarker }
+
+    /// GO-markøren scenen hadde sist (første aktive cue hvis den ikke har vært brukt).
+    private func playhead(for scene: String) -> Cue? {
+        guard let id = playheads[scene] else { return SceneLogic.firstEnabled(cues, scene) }
+        if id == AppModel.endMarker { return nil }
+        if let c = cues.first(where: { $0.id == id }), SceneLogic.inScene(c, scene) { return c }
+        return SceneLogic.firstEnabled(cues, scene)
+    }
+
+    /// Bytter scene og flytter GO-markøren til den sist brukte i den scenen. GO bytter aldri scene av seg selv.
+    func switchScene(_ scene: String) {
+        guard !SceneLogic.sameScene(scene, activeScene) else { return }
+        activeScene = scene
+        select(playhead(for: scene))
+        statusText = L("Scene: {0}", activeSceneLabel)
+    }
+
+    /// Valg i scenevelgeren (visningsnavn).
+    func selectSceneLabel(_ label: String) {
+        guard !scenes.isEmpty, let scene = SceneLogic.canonical(scenes, cues, label) else { return }
+        switchScene(scene)
+    }
+
+    func stepScene(_ delta: Int) {
+        if let next = SceneLogic.neighbour(scenes, activeScene, delta) { switchScene(next) }
+    }
+
+    @discardableResult
+    func selectScene(_ name: String) -> Bool {
+        if scenes.isEmpty { return SceneLogic.sameScene(name, SceneLogic.defaultName) }
+        guard let scene = SceneLogic.canonical(scenes, cues, name) else { return false }
+        switchScene(scene)
+        return true
+    }
+
+    /// Endrer scenelista og velger aktiv scene etterpå (GO-markøren i scenen beholdes hvis cuen er der fortsatt).
+    private func editScenes(_ edit: () -> Void, activeAfter: () -> String) {
+        guard isEditable else { return }
+        let keep = playhead
+        edit()
+        activeScene = activeAfter()
+        playheads = playheads.filter { key, _ in scenes.contains { SceneLogic.sameScene($0, key) } || (scenes.isEmpty && key.isEmpty) }
+        if let keep, cues.contains(where: { $0 === keep }), SceneLogic.inScene(keep, activeScene) { select(keep) }
+        else { select(playhead(for: activeScene)) }
+        objectWillChange.send()
+        updateDirty()
+    }
+
+    /// Ber om en tekst (navn på scene) i en liten dialog. nil hvis brukeren avbryter.
+    private func askName(_ title: String, _ message: String, initial: String = "") -> String? {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        let a = NSAlert()
+        a.messageText = title
+        a.informativeText = message
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        field.stringValue = initial
+        a.accessoryView = field
+        a.addButton(withTitle: L("OK"))
+        a.addButton(withTitle: L("Avbryt"))
+        a.window.initialFirstResponder = field
+        return a.runModal() == .alertFirstButtonReturn ? field.stringValue : nil
+    }
+
+    func addSceneDialog() {
+        guard isEditable, let name = askName(L("Ny scene"), L("Navn på scenen (f.eks. Akt 2):")) else { return }
+        var added: String?
+        editScenes({
+            let oldKey = activeScene, oldPlayhead = playhead
+            added = SceneLogic.addScene(&scenes, cues, name)
+            // Den første scenen får navn: GO-markøren den hadde følger med.
+            if oldKey.isEmpty, let first = scenes.first { playheads[""] = nil; playheads[first] = oldPlayhead?.id ?? AppModel.endMarker }
+        }, activeAfter: { added ?? (!scenes.isEmpty && activeScene.isEmpty ? scenes[0] : activeScene) })
+        statusText = added.map { L("Scene «{0}» er laget.", $0) } ?? L("Kunne ikke lage scenen (tomt navn eller navnet er i bruk).")
+    }
+
+    func renameSceneDialog() {
+        guard isEditable, let name = askName(L("Gi scenen nytt navn"), L("Nytt navn på scenen:"), initial: activeSceneLabel) else { return }
+        let old = activeScene
+        var ok = false
+        var now = old
+        editScenes({
+            ok = SceneLogic.renameScene(&scenes, cues, old, name)
+            guard ok else { return }
+            now = SceneLogic.cleanName(name)
+            if let p = playheads.removeValue(forKey: old) { playheads[now] = p }
+        }, activeAfter: { now })
+        if !ok { statusText = L("Kunne ikke endre navnet (tomt navn eller navnet er i bruk).") }
+    }
+
+    func deleteSceneDialog() {
+        guard isEditable else { return }
+        guard scenes.count >= 2 else { statusText = L("Showet må ha minst én scene."); return }
+        let a = NSAlert()
+        a.messageText = L("Slette scenen «{0}»?", activeSceneLabel)
+        a.informativeText = L("Cuene i den flyttes til scenen foran.")
+        a.addButton(withTitle: L("Slett"))
+        a.addButton(withTitle: L("Avbryt"))
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        let gone = activeScene
+        var heir: String?
+        editScenes({ heir = SceneLogic.deleteScene(&scenes, cues, gone); playheads[gone] = nil }, activeAfter: { heir ?? gone })
+    }
+
+    func moveActiveScene(_ delta: Int) {
+        let name = activeScene
+        editScenes({ _ = SceneLogic.moveScene(&scenes, name, delta) }, activeAfter: { name })
+    }
+
+    /// Flytter de valgte cuene til slutten av en annen scene.
+    func moveSelectedToScene(_ scene: String) {
+        let sel = selectedCues
+        guard isEditable, !sel.isEmpty else { return }
+        editScenes({
+            var list = cues
+            SceneLogic.moveToScene(&list, sel, scene)
+            cues = list
+        }, activeAfter: { activeScene })
+        statusText = L("Flyttet {0} cue(r) til scenen «{1}».", sel.count, scene)
+    }
+
     func movePlayhead(_ delta: Int) {
-        guard !cues.isEmpty else { return }
-        let i = playhead.flatMap(index(of:)) ?? (delta > 0 ? -1 : cues.count)
-        select(cues[max(0, min(cues.count - 1, i + delta))])
+        let list = visibleCues
+        guard !list.isEmpty else { return }
+        select(SceneLogic.step(list, from: playhead, delta))
     }
 
     /// Klikk i lista (med ⌘ for flere, ⇧ for område).
     func click(_ c: Cue, command: Bool, shift: Bool) {
         if command {
             if selection.contains(c.id) { selection.remove(c.id) } else { selection.insert(c.id) }
-        } else if shift, let anchor = playhead.flatMap(index(of:)), let i = index(of: c) {
-            selection = Set(cues[min(anchor, i)...max(anchor, i)].map(\.id))
+        } else if shift, let anchor = playhead.flatMap({ p in visibleCues.firstIndex { $0 === p } }), let i = visibleCues.firstIndex(where: { $0 === c }) {
+            selection = Set(visibleCues[min(anchor, i)...max(anchor, i)].map(\.id))
         } else {
             select(c)
         }
@@ -158,14 +298,15 @@ final class AppModel: ObservableObject, ShowControl {
     func go() {
         guard Date().timeIntervalSince(lastGo) * 1000 >= Double(settings.doubleGoProtectionMs) else { return }
         lastGo = Date()
-        guard var cue = playhead, var idx = index(of: cue) else { return }
+        guard var cue = playhead else { return }
         if cue.disabled {
-            guard let next = cues[(idx + 1)...].first(where: { !$0.disabled }), let ni = index(of: next) else { return }
-            cue = next; idx = ni
+            // Hopp til neste aktive cue i scenen og kjør den.
+            guard let next = SceneLogic.nextEnabled(cues, after: cue) else { return }
+            cue = next
         }
         engine.fire(cue)
-        let n = CueEngine.nextPlayheadIndex(cues, fired: idx)
-        select(n < cues.count ? cues[n] : nil)
+        // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
+        select(SceneLogic.nextPlayhead(cues, after: cue))
     }
 
     func panic() {
@@ -224,10 +365,8 @@ final class AppModel: ObservableObject, ShowControl {
 
     // MARK: - ShowControl (fjernstyring)
 
-    private func find(_ number: String) -> Cue? {
-        let n = number.trimmingCharacters(in: .whitespaces)
-        return cues.first { $0.number.caseInsensitiveCompare(n) == .orderedSame }
-    }
+    /// Cuen et nummer peker på: aktiv scene først, deretter alle scener; «Scene:nummer» bare i den scenen.
+    private func find(_ number: String) -> Cue? { SceneLogic.find(cues, number, home: activeScene) }
 
     func selectCue(_ number: String) -> Bool { guard let c = find(number) else { return false }; select(c); return true }
     func startCue(_ number: String) -> Bool { guard let c = find(number) else { return false }; engine.fire(c); return true }
@@ -294,6 +433,7 @@ final class AppModel: ObservableObject, ShowControl {
     private func cueData() -> Data {
         var doc = ShowDocument()
         doc.cues = cues
+        doc.scenes = scenes
         return (try? doc.jsonData()) ?? Data()
     }
 
@@ -301,6 +441,7 @@ final class AppModel: ObservableObject, ShowControl {
         var doc = ShowDocument()
         doc.title = showURL?.deletingPathExtension().lastPathComponent ?? L("Show")
         doc.cues = cues
+        doc.scenes = scenes
         return (try? doc.jsonData()) ?? Data()
     }
 
@@ -339,9 +480,14 @@ final class AppModel: ObservableObject, ShowControl {
     /// Bytt ut cuene med en lagret tilstand. Showfil, innstillinger og det som spiller røres ikke.
     private func replaceCues(_ data: Data) {
         guard let doc = try? JSONDecoder().decode(ShowDocument.self, from: data) else { return }
-        let idx = playhead.flatMap(index(of:)) ?? 0
+        let idx = playhead.flatMap { p in visibleCues.firstIndex { $0 === p } } ?? 0
         cues = doc.cues
-        select(cues.isEmpty ? nil : cues[min(max(0, idx), cues.count - 1)])
+        scenes = doc.scenes
+        if scenes.isEmpty { activeScene = "" }
+        else if !scenes.contains(where: { SceneLogic.sameScene($0, activeScene) }) { activeScene = scenes[0] }
+        playheads = [:]
+        let inScene = visibleCues
+        select(inScene.isEmpty ? nil : inScene[min(max(0, idx), inScene.count - 1)])
         updateDirty()
         refreshUndo()
     }
@@ -444,6 +590,7 @@ final class AppModel: ObservableObject, ShowControl {
             var doc = ShowDocument()
             doc.title = target.deletingPathExtension().lastPathComponent
             doc.cues = cues
+            doc.scenes = scenes
             ShowSafety.backup(target) // forrige versjon, før den lagres over
             try doc.save(to: target)
             ShowSafety.deleteAutosave(for: showURL)
@@ -463,7 +610,12 @@ final class AppModel: ObservableObject, ShowControl {
 
     func setShow(_ doc: ShowDocument, url: URL?) {
         engine.stopAll(fade: 0)
+        var doc = doc
+        doc.normalizeScenes()
         cues = doc.cues
+        scenes = doc.scenes
+        activeScene = scenes.first ?? ""
+        playheads = [:]
         showURL = url
         for c in cues where c.type == .audio && (c.fileDuration <= 0 || c.fileChannels <= 0) && FileManager.default.fileExists(atPath: c.filePath) {
             let p = AudioEngine.probeAudio(c.filePath)
@@ -476,7 +628,7 @@ final class AppModel: ObservableObject, ShowControl {
         isDirty = false
         history.reset(cueData())
         refreshUndo()
-        select(cues.first { !$0.disabled })
+        select(SceneLogic.firstEnabled(cues, activeScene))
         memoText = ""
         let missing = cues.filter { $0.isFileCue && !$0.filePath.isEmpty && !FileManager.default.fileExists(atPath: $0.filePath) }
         missing.forEach { $0.error = L("Fila finnes ikke: {0}", $0.filePath) }
@@ -493,7 +645,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     private var insertIndex: Int {
         let idx = selectedCues.compactMap(index(of:))
-        return (idx.max() ?? (cues.count - 1)) + 1
+        return idx.max().map { $0 + 1 } ?? SceneLogic.endOfScene(cues, activeScene)
     }
 
     func insert(_ new: [Cue], at: Int? = nil) {
@@ -501,17 +653,13 @@ final class AppModel: ObservableObject, ShowControl {
         var i = min(at ?? insertIndex, cues.count)
         var list = cues
         for c in new {
-            if c.number.isEmpty { c.number = nextNumber(in: list) }
+            c.scene = activeScene // nye cuer havner alltid i aktiv scene
+            if c.number.isEmpty { c.number = SceneLogic.nextNumber(list, activeScene) }
             list.insert(c, at: i); i += 1
         }
         cues = list
         if let last = new.last { select(last) }
         updateDirty()
-    }
-
-    private func nextNumber(in list: [Cue]) -> String {
-        let maxN = list.compactMap { Double($0.number.replacingOccurrences(of: ",", with: ".")) }.max() ?? 0
-        return String(Int(maxN.rounded(.down)) + 1)
     }
 
     func cue(forFile url: URL) -> Cue? {
@@ -644,18 +792,19 @@ final class AppModel: ObservableObject, ShowControl {
         a.addButton(withTitle: L("Slett"))
         a.addButton(withTitle: L("Avbryt"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
-        let first = sel.compactMap(index(of:)).min() ?? 0
+        let first = visibleCues.firstIndex { c in sel.contains { $0 === c } } ?? 0
         sel.forEach { engine.stop($0, fade: 0) }
         cues.removeAll { c in sel.contains { $0 === c } }
-        select(cues.isEmpty ? nil : cues[min(first, cues.count - 1)])
+        let left = visibleCues
+        select(left.isEmpty ? nil : left[min(first, left.count - 1)])
         updateDirty()
     }
 
     func moveSelected(_ delta: Int) {
         guard isEditable else { return }
         guard let c = playhead, let i = index(of: c) else { return }
-        let j = i + delta
-        guard j >= 0 && j < cues.count else { return }
+        let j = SceneLogic.neighbourIndex(cues, i, delta) // nærmeste cue i samme scene
+        guard j >= 0 else { return }
         cues.swapAt(i, j)
         updateDirty()
     }
@@ -663,21 +812,12 @@ final class AppModel: ObservableObject, ShowControl {
     func renumber() {
         guard isEditable else { return }
         let a = NSAlert()
-        a.messageText = L("Gi alle cuer nye nummer (1, 2, 3)?")
+        a.messageText = scenes.isEmpty ? L("Gi alle cuer nye nummer (1, 2, 3)?") : L("Gi alle cuer i scenen «{0}» nye nummer (1, 2, 3)?", activeSceneLabel)
         a.informativeText = L("Fade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk.")
         a.addButton(withTitle: L("Nummerer"))
         a.addButton(withTitle: L("Avbryt"))
         guard a.runModal() == .alertFirstButtonReturn else { return }
-        var map: [String: String] = [:]
-        for (i, c) in cues.enumerated() {
-            let n = String(i + 1)
-            if !c.number.isEmpty, map[c.number.lowercased()] == nil { map[c.number.lowercased()] = n }
-            c.number = n
-        }
-        for c in cues where c.type == .fade || c.type == .stop || c.type == .goto {
-            if let n = map[c.target.lowercased()] { c.target = n }
-        }
-        for c in cues where c.type == .group { c.targets = CueTargets.renumber(c.targets, map) }
+        SceneLogic.renumber(cues, activeScene)
     }
 
     func setColor(_ color: CueColor) {
@@ -766,7 +906,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Kjører forhåndssjekken mot gjeldende show og maskininnstillinger.
     func runPreflight() -> [PreflightFinding] {
         NSApp.keyWindow?.makeFirstResponder(nil)
-        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment())
+        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), scenes: scenes)
     }
 
     /// «Sjekk showet»: åpner vinduet med funnene (sjekken kjøres hver gang vinduet vises).

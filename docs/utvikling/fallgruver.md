@@ -63,5 +63,10 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - En PR med en annen PR-gren som base blir lukket/merget sammen med den; sett base til `main`.
 - Byggesjekken på `main` kan feile selv om PR-en var grønn (ustabil test). Utgivelsen stopper da; rett testen i en ny PR.
 
+## Scener
+- **Filtrert liste og valgt cue:** i WPF setter `DataGrid` `SelectedItem` til null når valgt rad skjules av filteret. Bytte av scene og redigering av scenelista må skje med `_switchingScene` satt, ellers nullstilles GO-markøren til scenen (og «slutt på lista» vises). Sett valgt cue eksplisitt etterpå.
+- **Scenenavn i mållister:** `:`, `,`, `;`, `/` og `\` er skilletegn i mål og OSC-adresser og fjernes fra navn (`SceneLogic.CleanName`). Et cuenummer som selv inneholder «:» finnes fortsatt som vanlig nummer hvis scenen før kolonet ikke har cuer.
+- Nye cuer, innlimte og flyttede cuer må alltid få `Scene` = aktiv scene (`InsertCues`/`insert`), ellers havner de i en scene som ikke vises.
+
 ## Klokke og tid
 - `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.
