@@ -2,6 +2,15 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.23.0 – routingforhåndsvalg
+- Routingmatrisen per cue fantes fra før (filkanal → utgang med dB). Det som manglet for en tekniker som vil sende en cue til hovedhøyttalere eller monitor raskt, var navngitte valg, å sette dem på flere cuer, kopiere/lime inn og en oppsummering. Det er det som er bygd; matrisen er uendret.
+- Et forhåndsvalg er en liste med **stereopar** (`Bus` = utgang for venstre kanal, høyre går til neste) med valgfritt nivå per par, ikke en ferdig matrise. Dermed passer det filer med mono, stereo eller flere kanaler, og regelen for kanalene er den samme som i `AudioRoute.Downmix` (mono til begge, flerkanal annenhver venstre/høyre med −3 dB). Enkeltutganger (f.eks. en mono sub) dekkes ikke ennå; de kan stilles inn i matrisen.
+- Forhåndsvalg lagres **i showet** (valgfritt felt `RoutingPresets`, PascalCase, alltid skrevet), ikke i maskininnstillingene: de beskriver hva showet vil, og følger med når showet flyttes. Utgangsnumrene er patch-utganger, og patchen er per maskin, så «3-4» betyr samme utgangspar på alle maskiner.
+- «Sett på valgte cuer» hopper over cuer uten lyd og par som ikke får plass i patchen (`busCount`), og en cue blir aldri stum ved et uhell: gir forhåndsvalget/innlimingen ingen ruter igjen, røres cuen ikke og telles som «hoppet over».
+- Lesing av `RoutingPresets` er tolerant på begge plattformer: feil type gir tom liste, en skadet oppføring hoppes over, navn/par/nivå begrenses (NaN → 0, ±uendelig → grensene). Et valgfritt felt skal aldri hindre at et show åpnes.
+- Ingen innstilling som må slås på: funksjonen endrer bare `Routes` på cuene, på hovedtråden, og avspillingen følger med slik den alltid har gjort ved redigering av matrisen. Ingenting i lydtråden er rørt.
+- Ikke gjort (bevisst smalt): forhåndsvalg i angre-historikken (setting på cuer angres, endring av selve lista gjør ikke), egen kolonne i cuelista (oppsummeringen står i inspektøren), forhåndsvalg i autolagringen på Mac (den lagrer bare cuene), OSC-kommando for å velge forhåndsvalg.
+
 ## 0.21.0 – klokkeslett-trigger
 - Ny trigger per cue, `ClockTrigger` («tt:mm:ss», lokal tid, tom = av), ugyldig tekst blir tom (som `TimecodeTrigger`). Samme nøkkel og oppførsel på begge plattformer.
 - Logikken er ren og tar tidspunktene som argument (`ClockTriggers.Crossed`/`Due` på Windows, `ClockTriggers.crossed`/`due` på Mac): «passert» betyr forrige < klokkeslett ≤ nå, så hver cue starter høyst én gang per passering.

@@ -6,6 +6,18 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.23.0 – 2026-11-25
+
+### New
+- **Routing presets** (Windows and Mac, same behaviour): the routing matrix per cue already existed; now you can send a cue to e.g. the main speakers or the monitors in one click, without editing the matrix by hand.
+  The **Presets** button under the matrix has:
+  - **Named presets saved in the show** (e.g. “Main” = outputs 1-2, “Monitor” = 3-4, “Main + Monitor” = 1-2, 3-4). A preset is a list of output pairs, optionally with a level in dB per pair (“3-4:-6”), so it fits files with any number of channels: mono goes to both outputs of each pair, stereo goes left/right, and multichannel files are summed alternately to left/right at −3 dB. Create, edit (including renaming) and delete from the menu.
+  - **Apply to all selected cues:** choosing a preset sets it on every selected cue that has audio, and the status line says how many were changed and how many were skipped (no audio, or no output in the patch that the preset fits).
+  - **Copy routing / Paste routing** between cues, and **Use this routing on all selected cues**. Channels and outputs a target cue does not have are left out.
+  - **A routing summary above the matrix:** the name of the matching preset, “Default”, “Off”, or “Output 1-2, 5”.
+- Showfile: the new optional field `RoutingPresets` (list of `Name` and `Pairs` with `Bus` and `GainDb`). Older files open as before; older versions ignore the field. A damaged field never stops a show from opening.
+- Nothing in this feature runs in the audio thread: presets only change the routing of the cue (on the main thread), which playing cues pick up exactly as when the matrix is edited by hand. It does not change playback and has no setting to turn on.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

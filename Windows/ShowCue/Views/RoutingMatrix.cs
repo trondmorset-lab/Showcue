@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using ShowCue.Models;
+using ShowCue.Views;
 
 namespace ShowCue;
 
@@ -23,6 +25,7 @@ public sealed class RoutingMatrix : UserControl
 
     private const int MaxRows = 16;
     private readonly Grid _grid = new();
+    private readonly TextBlock _summary = new() { FontSize = 11.5, Margin = new Thickness(0, 0, 0, 4) };
     private bool _updating;
 
     public RoutingMatrix()
@@ -36,7 +39,13 @@ public sealed class RoutingMatrix : UserControl
             SetRoutes(Enumerable.Range(1, ch).SelectMany(c => new[] { new AudioRoute(c, 1, ch > 1 ? -6 : 0), new AudioRoute(c, 2, ch > 1 ? -6 : 0) }).ToList());
         }));
 
+        Button? presetButton = null;
+        presetButton = MakeButton(Loc.T("Forhåndsvalg ▾"), Loc.T("Lagrede routinger for showet, og kopier/lim inn routing mellom cuer"), () => ShowPresetMenu(presetButton!));
+        buttons.Children.Add(presetButton);
+        _summary.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+
         var root = new StackPanel();
+        root.Children.Add(_summary);
         root.Children.Add(new ScrollViewer
         {
             Content = _grid,
@@ -46,7 +55,7 @@ public sealed class RoutingMatrix : UserControl
         root.Children.Add(buttons);
         Content = root;
         // Tegn på nytt ved temabytte (rutene får farger fra temaet).
-        Loaded += (_, _) => ThemeManager.Changed += Rebuild;
+        Loaded += (_, _) => { ThemeManager.Changed += Rebuild; UpdateSummary(); };
         Unloaded += (_, _) => ThemeManager.Changed -= Rebuild;
     }
 
@@ -79,6 +88,7 @@ public sealed class RoutingMatrix : UserControl
         _grid.ColumnDefinitions.Clear();
         var cue = Cue;
         var buses = Buses;
+        UpdateSummary();
         if (cue == null || buses == null) return;
 
         int rows = Math.Clamp(cue.FileChannels > 0 ? cue.FileChannels : 2, 1, MaxRows);
@@ -146,6 +156,90 @@ public sealed class RoutingMatrix : UserControl
                 _grid.Children.Add(tb);
             }
         }
+    }
+
+    /// <summary>Teksten over matrisen: navnet på forhåndsvalget routingen svarer til, «Standard», «Av» eller hvilke utganger det går til.</summary>
+    private void UpdateSummary()
+    {
+        var cue = Cue;
+        var buses = Buses;
+        _summary.Text = cue == null || buses == null ? ""
+            : Loc.F("Routing: {0}", RoutingPresets.Describe(cue.Routes, cue.FileChannels, Host?.RoutingPresets, buses.Count));
+    }
+
+    private IRoutingHost? Host => Window.GetWindow(this) as IRoutingHost;
+
+    private ShowCue.Models.Cue? CueModel => Cue as ShowCue.Models.Cue;
+
+    /// <summary>Menyen under «Forhåndsvalg»: sett et forhåndsvalg på cuen (og de andre valgte cuene), lag, endre og slett forhåndsvalg,
+    /// og kopier/lim inn routing. Alt skjer på hovedtråden; ingenting her rører lydtråden (routingen byttes av den vanlige lyttingen på endringer).</summary>
+    private void ShowPresetMenu(Button anchor)
+    {
+        var host = Host;
+        var cue = CueModel;
+        if (host == null || cue == null) return;
+        bool edit = host.CanEditRouting;
+        int busCount = host.BusCount;
+        var menu = new ContextMenu { PlacementTarget = anchor, Placement = PlacementMode.Bottom };
+
+        MenuItem Item(string header, Action act, bool enabled = true)
+        {
+            var mi = new MenuItem { Header = header, IsEnabled = enabled };
+            mi.Click += (_, _) => { act(); UpdateSummary(); };
+            return mi;
+        }
+
+        var presets = host.RoutingPresets;
+        if (presets.Count == 0) menu.Items.Add(new MenuItem { Header = Loc.T("Ingen forhåndsvalg ennå"), IsEnabled = false });
+        foreach (var p in presets.ToList())
+            menu.Items.Add(Item($"{p.Name}   ({RoutingPresets.FormatPairs(p)})", () =>
+                Report(host, RoutingPresets.Apply(host.RoutingTargets(cue), p, busCount), p.Name), edit));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Loc.T("Nytt forhåndsvalg"), () => OpenEditor(host, null, -1), edit && presets.Count < RoutingPresets.MaxPresets));
+
+        var editMenu = new MenuItem { Header = Loc.T("Endre forhåndsvalg"), IsEnabled = edit && presets.Count > 0 };
+        var deleteMenu = new MenuItem { Header = Loc.T("Slett forhåndsvalg"), IsEnabled = edit && presets.Count > 0 };
+        for (int i = 0; i < presets.Count; i++)
+        {
+            int index = i;
+            var p = presets[i];
+            editMenu.Items.Add(Item(p.Name, () => OpenEditor(host, p, index)));
+            deleteMenu.Items.Add(Item(p.Name, () =>
+            {
+                if (RoutingPresets.Remove(presets, index)) host.RoutingChanged(Loc.F("Slettet forhåndsvalget «{0}».", p.Name));
+            }));
+        }
+        menu.Items.Add(editMenu);
+        menu.Items.Add(deleteMenu);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Loc.T("Kopier routing"), () =>
+        {
+            if (host.RouteClipboard.Copy(cue)) host.RoutingChanged(Loc.T("Routingen er kopiert."));
+        }));
+        menu.Items.Add(Item(Loc.T("Lim inn routing"), () =>
+            Report(host, RoutingPresets.Paste(host.RoutingTargets(cue), host.RouteClipboard, busCount), null), edit && host.RouteClipboard.HasContent));
+        menu.Items.Add(Item(Loc.T("Bruk denne routingen på alle valgte cuer"), () =>
+            Report(host, RoutingPresets.ApplyRoutes(host.RoutingTargets(cue).Where(c => !ReferenceEquals(c, cue)), cue.Routes, busCount), null),
+            edit && host.RoutingTargets(cue).Count > 1));
+        anchor.ContextMenu = menu;
+        menu.IsOpen = true;
+    }
+
+    private static void Report(IRoutingHost host, RoutingApplyResult r, string? presetName)
+    {
+        var text = presetName != null ? Loc.F("Routing «{0}» satt på {1} cue(r).", presetName, r.Changed) : Loc.F("Routing satt på {0} cue(r).", r.Changed);
+        if (r.Unchanged > 0) text += Loc.F(" {0} hadde den fra før.", r.Unchanged);
+        if (r.Skipped > 0) text += Loc.F(" {0} hoppet over (ingen lyd eller ingen gyldig utgang).", r.Skipped);
+        host.RoutingChanged(text);
+    }
+
+    private void OpenEditor(IRoutingHost host, RoutingPreset? existing, int index)
+    {
+        var presets = host.RoutingPresets;
+        var win = new RoutingPresetWindow(existing, (name, pairs) =>
+            existing == null ? RoutingPresets.Add(presets, name, pairs) : RoutingPresets.Update(presets, index, name, pairs))
+        { Owner = Window.GetWindow(this) };
+        if (win.ShowDialog() == true) host.RoutingChanged(Loc.T("Forhåndsvalget er lagret."));
     }
 
     private static string FormatDb(double db) => db.ToString("0.#", CultureInfo.CurrentCulture);

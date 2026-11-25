@@ -16,7 +16,7 @@ using ShowCue.Views;
 
 namespace ShowCue;
 
-public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
+public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, IRoutingHost
 {
     // ---------- Filtyper ----------
     private static readonly string[] AudioExt = MediaTools.AudioExtensions;
@@ -69,6 +69,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public RemoteControl Remote { get; }
     /// <summary>Lydpatchens utganger (ny liste ved hver endring, så routingmatrisen tegnes på nytt).</summary>
     public IReadOnlyList<PatchBus> Buses => _settings.Buses.ToList();
+
+    // ---------- Routingforhåndsvalg (IRoutingHost) ----------
+    public List<RoutingPreset> RoutingPresets => _show.RoutingPresets;
+    public RouteClipboard RouteClipboard { get; } = new();
+    public int BusCount => _settings.Buses.Count;
+    public bool CanEditRouting => IsEditable;
+
+    public IReadOnlyList<Cue> RoutingTargets(Cue current)
+    {
+        var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
+        return selected.Contains(current) ? selected : new List<Cue> { current };
+    }
+
+    public void RoutingChanged(string status)
+    {
+        StatusText = status;
+        RaiseTitle();
+    }
+
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
         + (_settings.OscFeedbackEnabled ? Loc.F("   ·   Status ut: {0}:{1}", _settings.OscFeedbackHost, _settings.OscFeedbackPort) : "");

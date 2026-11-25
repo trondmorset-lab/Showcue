@@ -27,7 +27,7 @@ Both have:
 - **Start and end with waveform**, zoom and preview through the audio patch
 - Pre-wait, auto-continue and auto-follow
 - Hotkeys, MIDI triggers, timecode triggers and clock-time triggers per cue
-- **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
+- **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue (and saved routing presets such as “Main” or “Monitor”), test tone and level meters
 - **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
 - **Remote control** with OSC in, MIDI in and MSC
 - **Status out over OSC** (e.g. to Companion): next cue, what is playing and time remaining

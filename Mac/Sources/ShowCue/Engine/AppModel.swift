@@ -20,6 +20,10 @@ final class AppModel: ObservableObject, ShowControl {
     @Published private(set) var showURL: URL?
     @Published private(set) var isDirty = false
     private var savedData = Data()
+    /// Navngitte routingforhåndsvalg i showet (lagres i showfila, ikke i angre-historikken).
+    @Published var routingPresets: [RoutingPreset] = []
+    /// Routing som er kopiert fra en cue.
+    @Published var routeClipboard = RouteClipboard()
 
     // Status
     @Published var statusText = ""
@@ -301,6 +305,7 @@ final class AppModel: ObservableObject, ShowControl {
         var doc = ShowDocument()
         doc.title = showURL?.deletingPathExtension().lastPathComponent ?? L("Show")
         doc.cues = cues
+        doc.routingPresets = routingPresets
         return (try? doc.jsonData()) ?? Data()
     }
 
@@ -444,6 +449,7 @@ final class AppModel: ObservableObject, ShowControl {
             var doc = ShowDocument()
             doc.title = target.deletingPathExtension().lastPathComponent
             doc.cues = cues
+            doc.routingPresets = routingPresets
             ShowSafety.backup(target) // forrige versjon, før den lagres over
             try doc.save(to: target)
             ShowSafety.deleteAutosave(for: showURL)
@@ -464,6 +470,7 @@ final class AppModel: ObservableObject, ShowControl {
     func setShow(_ doc: ShowDocument, url: URL?) {
         engine.stopAll(fade: 0)
         cues = doc.cues
+        routingPresets = doc.routingPresets
         showURL = url
         for c in cues where c.type == .audio && (c.fileDuration <= 0 || c.fileChannels <= 0) && FileManager.default.fileExists(atPath: c.filePath) {
             let p = AudioEngine.probeAudio(c.filePath)
@@ -745,6 +752,7 @@ final class AppModel: ObservableObject, ShowControl {
         guard let folder = pickFolder(L("Velg (eller lag) en mappe for showet og mediefilene")) else { return }
         var doc = ShowDocument()
         doc.cues = cues
+        doc.routingPresets = routingPresets
         let name = showURL?.deletingPathExtension().lastPathComponent ?? L("Show")
         do {
             let r = try MediaTools.collect(doc, to: folder, name: name)
@@ -758,6 +766,67 @@ final class AppModel: ObservableObject, ShowControl {
             if a.runModal() == .alertFirstButtonReturn { open(r.showURL) }
         } catch {
             alert(L("Kunne ikke samle showet: {0}", error.localizedDescription))
+        }
+    }
+
+    // MARK: - Routingforhåndsvalg
+
+    /// Cuene routingen skal settes på: de valgte cuene hvis `cue` er blant dem, ellers bare den.
+    func routingTargets(for cue: Cue) -> [Cue] {
+        let sel = selectedCues
+        return sel.contains { $0 === cue } ? sel : [cue]
+    }
+
+    private func reportRouting(_ r: RoutingApplyResult, preset: String?) {
+        var text = preset.map { L("Routing «{0}» satt på {1} cue(r).", $0, r.changed) } ?? L("Routing satt på {0} cue(r).", r.changed)
+        if r.unchanged > 0 { text += L(" {0} hadde den fra før.", r.unchanged) }
+        if r.skipped > 0 { text += L(" {0} hoppet over (ingen lyd eller ingen gyldig utgang).", r.skipped) }
+        statusText = text
+        updateDirty()
+    }
+
+    func applyRoutingPreset(_ preset: RoutingPreset, to cue: Cue) {
+        guard isEditable else { return }
+        reportRouting(RoutingPresets.apply(routingTargets(for: cue), preset: preset, busCount: settings.buses.count), preset: preset.name)
+    }
+
+    func copyRouting(of cue: Cue) {
+        if routeClipboard.copy(cue) { statusText = L("Routingen er kopiert.") }
+    }
+
+    func pasteRouting(to cue: Cue) {
+        guard isEditable else { return }
+        reportRouting(RoutingPresets.paste(routingTargets(for: cue), clipboard: routeClipboard, busCount: settings.buses.count), preset: nil)
+    }
+
+    /// Setter cuens routing på alle de andre valgte cuene.
+    func applyRouting(of cue: Cue) {
+        guard isEditable else { return }
+        let others = routingTargets(for: cue).filter { $0 !== cue }
+        reportRouting(RoutingPresets.applyRoutes(others, routes: cue.routes, busCount: settings.buses.count), preset: nil)
+    }
+
+    /// Lagrer et nytt forhåndsvalg (`index` nil) eller endrer et som finnes. Gir feilen hvis det ikke lot seg gjøre.
+    func saveRoutingPreset(index: Int?, name: String, pairs: [RoutingPair]) -> RoutingPresetError {
+        guard isEditable else { return .notFound }
+        var list = routingPresets
+        let err = index.map { RoutingPresets.update(&list, index: $0, name: name, pairs: pairs) } ?? RoutingPresets.add(&list, name: name, pairs: pairs)
+        if err == .ok {
+            routingPresets = list
+            statusText = L("Forhåndsvalget er lagret.")
+            updateDirty()
+        }
+        return err
+    }
+
+    func deleteRoutingPreset(at index: Int) {
+        guard isEditable else { return }
+        var list = routingPresets
+        let name = index >= 0 && index < list.count ? list[index].name : ""
+        if RoutingPresets.remove(&list, index: index) {
+            routingPresets = list
+            statusText = L("Slettet forhåndsvalget «{0}».", name)
+            updateDirty()
         }
     }
 

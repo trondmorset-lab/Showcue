@@ -28,6 +28,16 @@ public sealed class ShowDocument
         }
     }
 
+    private List<RoutingPreset> _routingPresets = new();
+
+    /// <summary>Navngitte routingforhåndsvalg for showet (valgfritt felt; eldre filer har det ikke). Ugyldige oppføringer fjernes ved lesing.</summary>
+    [JsonConverter(typeof(RoutingPresetListConverter))]
+    public List<RoutingPreset> RoutingPresets
+    {
+        get => _routingPresets;
+        set => _routingPresets = ShowCue.Models.RoutingPresets.CleanList(value);
+    }
+
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,

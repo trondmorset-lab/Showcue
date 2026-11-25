@@ -6,6 +6,18 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.23.0 – 2026-11-25
+
+### Nytt
+- **Routingforhåndsvalg** (Windows og Mac, samme oppførsel): routingmatrisen per cue fantes fra før; nå kan du sende en cue til f.eks. hovedhøyttalerne eller monitorene med ett klikk, uten å redigere matrisen for hånd.
+  Knappen **Forhåndsvalg** under matrisen har:
+  - **Navngitte forhåndsvalg som lagres i showet** (f.eks. «Hoved» = utgang 1-2, «Monitor» = 3-4, «Hoved + monitor» = 1-2, 3-4). Et forhåndsvalg er en liste med utgangspar, eventuelt med nivå i dB per par («3-4:-6»), så det passer filer med hvilket som helst antall kanaler: mono går til begge utgangene i hvert par, stereo går venstre/høyre, og flerkanalsfiler summeres annenhver til venstre/høyre med −3 dB. Lag, endre (også nytt navn) og slett fra menyen.
+  - **Bruk på alle valgte cuer:** et valgt forhåndsvalg settes på alle valgte cuer som har lyd, og statuslinja sier hvor mange som ble endret og hvor mange som ble hoppet over (ingen lyd, eller ingen utgang i patchen som forhåndsvalget passer til).
+  - **Kopier routing / Lim inn routing** mellom cuer, og **Bruk denne routingen på alle valgte cuer**. Kanaler og utganger som mottakeren ikke har, blir utelatt.
+  - **Oppsummering av routingen over matrisen:** navnet på forhåndsvalget som passer, «Standard», «Av» eller «Utgang 1-2, 5».
+- Showfil: det nye valgfrie feltet `RoutingPresets` (liste med `Name` og `Pairs` med `Bus` og `GainDb`). Eldre filer åpnes som før; eldre versjoner ignorerer feltet. Et skadet felt hindrer aldri at showet åpnes.
+- Ingenting av dette kjører i lydtråden: forhåndsvalgene endrer bare routingen til cuen (på hovedtråden), og cuer som spiller følger med nøyaktig som når matrisen redigeres for hånd. Det endrer ikke avspillingen og har ingen innstilling som må slås på.
+
 ## 0.21.0 – 2026-11-24
 
 ### Nytt
