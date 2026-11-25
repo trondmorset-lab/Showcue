@@ -34,7 +34,7 @@ public class ShowLogTests
     [Fact]
     public void EscapeRemovesControlCharactersAndRoundTrips()
     {
-        var raw = "a\tb\nc\rd\\e\u0001\u007f é";
+        var raw = "a\tb\nc\rd\\e\u0001\u007f\u2028é";
         var esc = ShowLogFormat.Escape(raw);
         Assert.Equal("a\\tb\\nc\\rd\\\\e\\x01\\x7F\\u2028é", esc);
         Assert.DoesNotContain(esc, ch => ch < 0x20);

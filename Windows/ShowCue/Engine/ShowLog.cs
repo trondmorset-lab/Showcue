@@ -42,7 +42,7 @@ public static class ShowLogFormat
         return s[..cut] + "…";
     }
 
-    private static bool IsControl(char ch) => ch < 0x20 || (ch >= 0x7F && ch <= 0x9F) || ch == ' ' || ch == ' ';
+    private static bool IsControl(char ch) => ch < 0x20 || (ch >= 0x7F && ch <= 0x9F) || ch == (char)0x2028 || ch == (char)0x2029;
 
     /// <summary>Gjør teksten til én trygg linjedel: skråstrek og tabulator, linjeskift og andre kontrolltegn skrives som tegnfølger.</summary>
     public static string Escape(string? s)
@@ -215,7 +215,7 @@ public static class ShowLogExport
         foreach (var ch in s)
         {
             // Linjeskift beholdes (gyldig i et felt med anførselstegn); andre kontrolltegn blir mellomrom.
-            if (ch is '\n' or '\r' || !(ch < 0x20 || (ch >= 0x7F && ch <= 0x9F) || ch is ' ' or ' ')) sb.Append(ch);
+            if (ch is '\n' or '\r' || !(ch < 0x20 || (ch >= 0x7F && ch <= 0x9F) || ch == (char)0x2028 || ch == (char)0x2029)) sb.Append(ch);
             else sb.Append(' ');
         }
         s = sb.ToString();
