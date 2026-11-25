@@ -6,6 +6,17 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.25.0 – 2026-11-25
+
+### New
+- **Rehearsal mode** (Windows and Mac, same behaviour): skip chosen cues during rehearsals without deleting or disabling them.
+  - New cue field **Skip in rehearsal** (*Timing* tab; saved as `SkipInRehearsal`, off by default, so old shows open unchanged). Marked cues show a small *REH* marker in the cue list.
+  - **Turn the mode on and off** with Ctrl+R (⌘R on Mac), *Setup → Rehearsal mode* or the *Rehearsal* button. While it is on, a bright bar at the top of the window and the window title say so.
+    The mode is **never saved**: the program always starts with it off.
+  - While the mode is on, **GO, auto-continue and auto-follow** move past marked cues and never start them. Clock and timecode triggers do not start them either.
+    Starting a marked cue directly still works: by cue number (OSC, MIDI show control), hotkey, MIDI trigger, button panel, double-click and as a target of a group cue.
+  - **Check the show** warns while rehearsal mode is on and notes how many cues are marked.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

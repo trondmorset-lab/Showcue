@@ -550,7 +550,16 @@
         </Grid.RowDefinitions>
 
         <!-- ===================== Toppfelt: GO ===================== -->
-        <Border Grid.Row="0" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="14,12">
+        <StackPanel Grid.Row="0">
+        <!-- Øvelsesmodus: tydelig felt som står så lenge modusen er på -->
+        <Border Background="{DynamicResource Wait}" Padding="14,5" Visibility="{Binding IsRehearsal, Converter={StaticResource BoolVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{local:T 'Slå av'}" Padding="12,2" Click="Rehearsal_Click" />
+                <TextBlock Text="{local:T 'ØVELSESMODUS PÅ – cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett. Slå av før forestillingen (Ctrl+R).'}"
+                           FontWeight="Bold" Foreground="#101010" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+        <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="14,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200" />
@@ -631,6 +640,7 @@
                 </StackPanel>
             </Grid>
         </Border>
+        </StackPanel>
 
         <!-- ===================== Verktøylinje ===================== -->
         <!-- Nedtrekksmenyer: knappen åpner menyen (Menu_Click). Snarveiene vises i menyene. -->
@@ -710,11 +720,14 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button Style="{StaticResource ToolButton}" Content="{local:T '▦ Knappepanel'}" Click="ButtonPanel_Click" ToolTip="{local:T 'Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (Ctrl+K)'}" />
+                    <Button Style="{StaticResource ToolButton}" Content="{Binding RehearsalLabel}" Click="Rehearsal_Click"
+                            ToolTip="{local:T 'Øvelsesmodus: cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett (Ctrl+R). Slås alltid av når programmet startes.'}" />
                     <Button Style="{StaticResource ToolButton}" Content="{Binding ShowModeLabel}" Click="ShowMode_Click"
                             ToolTip="{local:T 'Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (Ctrl+L)'}" />
                     <Button Style="{StaticResource ToolButton}" Content="{local:T 'Oppsett ▾'}" Click="Menu_Click">
                         <Button.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="{local:T 'Øvelsesmodus (hopp over merkede cuer)'}" InputGestureText="Ctrl+R" Click="Rehearsal_Click" />
                                 <MenuItem Header="{local:T 'Lydpatch'}" Click="Patch_Click" />
                                 <MenuItem Header="{local:T 'Vis/skjul utgangsvinduet'}" Click="ToggleOutput_Click" />
                                 <MenuItem Header="{local:T 'Innstillinger'}" Click="Settings_Click" />
@@ -842,7 +855,11 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
-                                        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" Margin="0,0,34,0" />
+                                        <Border HorizontalAlignment="Right" VerticalAlignment="Center" BorderBrush="{DynamicResource Wait}" BorderThickness="1" CornerRadius="3" Padding="3,0"
+                                                Visibility="{Binding SkipInRehearsal, Converter={StaticResource BoolVis}}" ToolTip="{local:T 'Hoppes over i øvelsesmodus'}">
+                                            <TextBlock Text="{local:T 'ØV'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Wait}" />
+                                        </Border>
                                         <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="1" Height="4" VerticalAlignment="Bottom" Margin="0,0,0,-9"
                                                      Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}" />
                                     </Grid>
@@ -1060,6 +1077,8 @@
                             <StackPanel Visibility="{Binding ActiveInspectorTab, Converter={StaticResource EqVis}, ConverterParameter=Timing}">
                                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Pre-wait (s)'}" />
                                 <TextBox Text="{Binding SelectedCue.PreWait}" />
+                                <CheckBox IsChecked="{Binding SelectedCue.SkipInRehearsal}" Content="{local:T 'Hopp over i øvelse'}" Margin="0,10,0,0"
+                                          ToolTip="{local:T 'Når øvelsesmodus er på, hoppes cuen over av GO og auto-fortsett/-følg. Den kan fortsatt startes direkte (nummer, hurtigtast, knappepanel).'}" />
                                 <TextBlock Style="{StaticResource Label}" Text="{local:T 'Etterpå'}" />
                                 <ComboBox ItemsSource="{x:Static local:EnumValues.ContinueModes}" SelectedItem="{Binding SelectedCue.ContinueMode}"
                                           ItemTemplate="{StaticResource EnumItem}" />

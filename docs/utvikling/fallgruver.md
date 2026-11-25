@@ -48,6 +48,8 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - macOS husker app-ikoner: etter nytt ikon, `touch /Applications/ShowCue.app && killall Dock`. Appen setter også ikonet selv ved oppstart.
 - Kjøring fra Xcode gir ingen app-pakke (ikonet hentes da fra ressurspakken ved siden av programfila).
 - ⌘0 er brukt («gå til»-cue); Option-tastene gir spesialtegn på norsk tastatur.
+- En metode med standardargument (`go(explicitStart: Bool = false)`) oppfyller ikke en protokollkrav `go()` og kan ikke brukes som `() -> Void` (`Button(action: model.go)`). Lag en egen overload uten argument og bruk lukning i knappen.
+- ⌘R er brukt av øvelsesmodus (Windows: Ctrl+R).
 
 - SwiftUI: en `ViewBuilder`-blokk tar høyst 10 elementer. En `switch` med mange felt per `case` (inspektørfanene) må gruppere i `VStack`.
 

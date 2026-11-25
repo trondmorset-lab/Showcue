@@ -102,6 +102,9 @@ og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i 
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
   hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.
+- **Øvelsesmodus**: `SkipInRehearsal` per cue (nøkkel `SkipInRehearsal`, standard av) og en kjøretidsbryter som aldri lagres (`CueEngine.RehearsalMode` / `rehearsalMode`, `MainWindow.IsRehearsal` / `AppModel.rehearsalMode`).
+  Den rene logikken ligger i `Rehearsal` (`Models/Rehearsal.cs`, `Core/Rehearsal.swift`): `IsSkipped`, `IsPlayable`, `NextPlayableIndex`, `GoIndex`, `CountFlagged`.
+  Motoren endres bare i `FireNextAfter` og `NextPlayheadIndex` (som nå bruker `NextPlayableIndex`); GO (`Go`/`go`) bruker `GoIndex`. Banneret øverst, knappen, menyvalget og Ctrl+R/⌘R ligger i hovedvinduet.
 - **Status ut over OSC** (`OscFeedback`): format «Companion» (egendefinerte variabler `sc_*`, port 12321) eller generisk `/showcue/...`.
 
 ## Showfil

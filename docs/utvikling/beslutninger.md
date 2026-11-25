@@ -2,6 +2,20 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.25.0 – øvelsesmodus
+- **Merking per cue, bryter i kjøretid.** `SkipInRehearsal` lagres i showfila (valgfri, standard av, gamle show åpnes uendret), men selve modusen er bare i minnet og er **alltid av ved oppstart**, også etter at et show er åpnet med merkede cuer.
+  Den lagres hverken i showfila eller innstillingene, så den kan ikke «henge igjen» til forestillingen. Den ligger på motoren (`RehearsalMode`), ikke i showet.
+- **Umulig å glemme:** et oransje felt øverst i hovedvinduet (med «Slå av»-knapp) står så lenge modusen er på, knappen i verktøylinjen viser «Øvelse PÅ», vindustittelen sier ØVELSESMODUS, og «Sjekk showet» gir en advarsel.
+  Modusen følger programmet, ikke showet: åpnes et annet show, står den på til brukeren slår den av (banneret er synlig hele tiden).
+- **Hva hoppes over:** alt som «kjører videre av seg selv» – GO (også «gå til» med GO), auto-fortsett, auto-følg, og klokkeslett- og tidskode-triggere (ingen trykker noe, så merkede cuer skal ikke starte). Markøren flyttes forbi merkede cuer på samme måte som forbi deaktiverte.
+  En merket cue som står under markøren når modusen slås på, flyttes ikke: neste GO hopper forbi den (som for deaktiverte), så valget i inspektøren forsvinner ikke uventet.
+- **Hva som fortsatt starter en merket cue (eksplisitt valg):** cuenummer (OSC `/cue/{nr}/start|go`, MIDI show control med cuenummer), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk/«Test» og mål i en gruppe-cue.
+  Begrunnelse: operatøren har da pekt på akkurat denne cuen, og målet med modusen er å slippe å fjerne cuer, ikke å stenge for dem. Ikke vurdert som farlig, men det er en bevisst avgrensning: skal en gruppe aldri trekke inn en merket cue, merk gruppen også.
+  Deaktiverte cuer startes fortsatt aldri av GO, og `GoCue` på en deaktivert cue hopper videre som før.
+- **Alle cuer merket / slutten av lista:** GO gjør ingenting (som for deaktiverte i dag), og markøren settes til slutten (ingen valgt) når ingenting spillbart er igjen etter en cue.
+- **Preflight:** advarsel (`rehearsalOn`) når modusen er på, og en merknad med antall (`rehearsalFlagged`, alvorlighet ok, også når modusen er av). Deaktiverte cuer telles ikke. `PreflightCheck.Run/run` fikk en valgfri parameter, så eksisterende kall og tester er uendret.
+- Ekstra tastatursnarvei: Ctrl+R (Windows) / ⌘R (Mac); ledig fra før på begge.
+
 ## 0.21.0 – klokkeslett-trigger
 - Ny trigger per cue, `ClockTrigger` («tt:mm:ss», lokal tid, tom = av), ugyldig tekst blir tom (som `TimecodeTrigger`). Samme nøkkel og oppførsel på begge plattformer.
 - Logikken er ren og tar tidspunktene som argument (`ClockTriggers.Crossed`/`Due` på Windows, `ClockTriggers.crossed`/`due` på Mac): «passert» betyr forrige < klokkeslett ≤ nå, så hver cue starter høyst én gang per passering.

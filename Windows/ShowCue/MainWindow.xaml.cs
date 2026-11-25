@@ -132,7 +132,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public string ActiveCountText => Engine.Active.Count == 0 ? "" : Loc.F("{0} aktive", Engine.Active.Count);
     public string StatusText { get => _statusText; set { _statusText = value; Raise(); } }
     public string WindowTitle =>
-        Loc.F("{0}{1}{2} — ShowCue {3}", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), (IsDirty ? " •" : ""), (_showMode ? Loc.T("  🔒 SHOWMODUS") : ""), AppVersion);
+        Loc.F("{0}{1}{2} — ShowCue {3}", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), (IsDirty ? " •" : ""), (_showMode ? Loc.T("  🔒 SHOWMODUS") : "") + (Engine.RehearsalMode ? Loc.T("  🎭 ØVELSESMODUS") : ""), AppVersion);
 
     /// <summary>Programversjonen (fra VERSION-fila ved bygging), f.eks. «0.5.0».</summary>
     public static string AppVersion
@@ -161,6 +161,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         }
     }
     public bool IsEditable => !_showMode;
+
+    /// <summary>Øvelsesmodus: cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett/-følg. Lagres ikke; programmet starter alltid med den av.</summary>
+    public bool IsRehearsal
+    {
+        get => Engine.RehearsalMode;
+        set
+        {
+            if (Engine.RehearsalMode == value) return;
+            CommitFocusedTextBox();
+            Engine.RehearsalMode = value;
+            Raise(); Raise(nameof(RehearsalLabel)); RaiseTitle();
+            var n = Rehearsal.CountFlagged(Cues);
+            StatusText = value ? Loc.F("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO (Ctrl+R for å slå av).", n) : Loc.T("Øvelsesmodus er av: alle cuer spilles.");
+        }
+    }
+    public string RehearsalLabel => Engine.RehearsalMode ? Loc.T("🎭 Øvelse PÅ") : Loc.T("🎭 Øvelse");
     public string PauseGlyph => Engine.IsPaused ? "▶" : "⏸";
     /// <summary>Teksten fra siste memo-cue (tom = ingen beskjed vises).</summary>
     public string MemoText { get => _memoText; set { _memoText = value ?? ""; Raise(); } }
@@ -399,24 +415,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ==================================================================
     //  GO / stopp
     // ==================================================================
-    private void Go()
+    /// <param name="explicitStart">Cuen er valgt med nummer: en cue merket «Hopp over i øvelse» startes likevel.</param>
+    private void Go(bool explicitStart = false)
     {
         if ((DateTime.Now - _lastGo).TotalMilliseconds < _settings.DoubleGoProtectionMs) return;
         _lastGo = DateTime.Now;
 
         var cue = SelectedCue;
         if (cue == null) return;
-        int idx = Cues.IndexOf(cue);
-        if (cue.Disabled)
-        {
-            // Hopp til neste aktive cue og kjør den.
-            var next = Cues.Skip(idx + 1).FirstOrDefault(c => !c.Disabled);
-            if (next == null) return;
-            cue = next;
-            idx = Cues.IndexOf(cue);
-        }
+        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue som kan spilles.
+        int idx = Rehearsal.GoIndex(Cues, Cues.IndexOf(cue), Engine.RehearsalMode, explicitStart);
+        if (idx < 0) return;
+        cue = Cues[idx];
         Engine.Fire(cue);
-        int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx);
+        int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx, Engine.RehearsalMode);
         SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null;
     }
 
@@ -473,6 +485,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.O: Open_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
+                case Key.R: IsRehearsal = !IsRehearsal; e.Handled = true; return;
                 case Key.P: Engine.TogglePause(); e.Handled = true; return;
                 case Key.K: ButtonPanel_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.OemPlus or Key.Add: SetZoom(1); e.Handled = true; return;
@@ -597,7 +610,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (c == null) return false;
         SelectedCue = c;
         _lastGo = DateTime.MinValue; // eksplisitt cue: ingen dobbel-GO-sperre
-        Go();
+        Go(explicitStart: true);
         return true;
     }
 
@@ -629,7 +642,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     int IShowControl.FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate)
     {
-        var due = Cues.Where(c => !c.Disabled && Timecode.TryParse(c.TimecodeTrigger, out var t)
+        // Triggere starter av seg selv, så merkede cuer hoppes over i øvelsesmodus.
+        var due = Cues.Where(c => Rehearsal.IsPlayable(c, Engine.RehearsalMode) && Timecode.TryParse(c.TimecodeTrigger, out var t)
                                   && Timecode.Crossed(previousFrame, frame, t.ToFrame(rate), rate)).ToList();
         foreach (var c in due) Engine.Fire(c);
         return due.Count;
@@ -641,7 +655,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var previous = _lastClockCheck;
         _lastClockCheck = now;
         if (!_settings.ClockTriggersEnabled || previous == DateTime.MinValue) return;
-        var due = ClockTriggers.Due(Cues, previous, now);
+        var due = ClockTriggers.Due(Cues, previous, now).Where(c => !Rehearsal.IsSkipped(c, Engine.RehearsalMode)).ToList();
         foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
     }
@@ -1067,7 +1081,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         CommitFocusedTextBox();
         var env = new SystemPreflightEnvironment();
-        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env)) { Owner = this }.ShowDialog();
+        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env, Engine.RehearsalMode)) { Owner = this }.ShowDialog();
     }
 
     private void Collect_Click(object sender, RoutedEventArgs e)
@@ -1445,6 +1459,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
 
     private void ShowMode_Click(object sender, RoutedEventArgs e) => IsShowMode = !IsShowMode;
+    private void Rehearsal_Click(object sender, RoutedEventArgs e) => IsRehearsal = !IsRehearsal;
 
     // ==================================================================
     //  Utgang, måler og klokke

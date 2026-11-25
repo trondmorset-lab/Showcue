@@ -27,6 +27,7 @@ Begge har:
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
 - Hurtigtaster, MIDI-triggere, tidskode-triggere og klokkeslett-triggere per cue
+- Øvelsesmodus: hopp over valgte cuer under øvelser uten å slette dem (lagres aldri som på)
 - **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet, og **valgfri skjerm per cue**
 - **Fjernstyring** med OSC inn, MIDI inn og MSC

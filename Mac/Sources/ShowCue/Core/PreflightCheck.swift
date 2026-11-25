@@ -46,6 +46,8 @@ enum PreflightCheck {
     static let targetDisabled = "targetDisabled"
     static let groupNoMatch = "groupNoMatch"
     static let clockTriggerOff = "clockTriggerOff"
+    static let rehearsalOn = "rehearsalOn"
+    static let rehearsalFlagged = "rehearsalFlagged"
     static let valuesOk = "valuesOk"
     static let audioDeviceMissing = "audioDeviceMissing"
     static let previewDeviceMissing = "previewDeviceMissing"
@@ -56,7 +58,8 @@ enum PreflightCheck {
     static let numbersOk = "numbersOk"
 
     /// Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.
-    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment) -> [PreflightFinding] {
+    /// `rehearsalMode`: øvelsesmodus er på akkurat nå (kjøretid, lagres ikke) og gir en advarsel.
+    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment, rehearsalMode: Bool = false) -> [PreflightFinding] {
         var media: [PreflightFinding] = [], values: [PreflightFinding] = [], devices: [PreflightFinding] = [], numbers: [PreflightFinding] = []
         var fileCount = 0
         for (i, c) in cues.enumerated() where !c.disabled {
@@ -78,6 +81,7 @@ enum PreflightCheck {
         if devices.isEmpty { all.append(PreflightFinding(severity: .ok, code: devicesOk, message: L("Lydutgang og skjermer finnes."))) }
         all += numbers
         if numbers.isEmpty { all.append(PreflightFinding(severity: .ok, code: numbersOk, message: L("Ingen duplikate cue-numre."))) }
+        checkRehearsal(cues, rehearsalMode, &all)
         return all
     }
 
@@ -281,6 +285,19 @@ enum PreflightCheck {
         guard let first = withTrigger.first else { return }
         add(&list, .warning, clockTriggerOff,
             L("{0} cue(r) har klokketrigger, men «Klokke-triggere aktive» er av i innstillingene. Cuene starter ikke av seg selv.", withTrigger.count), first.offset)
+    }
+
+    /// Øvelsesmodus på: advarsel (cuene spilles ikke i showet). Merkede cuer telles som en merknad, også når modusen er av.
+    private static func checkRehearsal(_ cues: [Cue], _ rehearsalMode: Bool, _ list: inout [PreflightFinding]) {
+        let flagged = cues.enumerated().filter { !$0.element.disabled && $0.element.skipInRehearsal }
+        if rehearsalMode {
+            add(&list, .warning, rehearsalOn,
+                L("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO. Slå den av før forestillingen (⌘R).", flagged.count), flagged.first?.offset ?? -1)
+        }
+        if let first = flagged.first {
+            add(&list, .ok, rehearsalFlagged,
+                L("{0} cue(r) er merket «Hopp over i øvelse» (gjelder bare i øvelsesmodus).", flagged.count), first.offset)
+        }
     }
 
     private static func checkDevices(_ cues: [Cue], _ s: AppSettings, _ env: PreflightEnvironment, _ list: inout [PreflightFinding]) {

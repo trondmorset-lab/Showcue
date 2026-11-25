@@ -38,6 +38,8 @@ final class CueEngine: ObservableObject {
 
     /// Alt står stille: lyd, video og tiden for pre-wait og fader.
     @Published private(set) var isPaused = false
+    /// Øvelsesmodus: auto-fortsett og auto-følg hopper over cuer merket «Hopp over i øvelse». Lagres aldri; starter alltid av.
+    var rehearsalMode = false
     private var pausedTotal = 0.0
     private var pausedAt = 0.0
 
@@ -170,18 +172,17 @@ final class CueEngine: ObservableObject {
     private func fireNext(after cue: Cue) {
         let list = cueList()
         guard let i = list.firstIndex(where: { $0 === cue }) else { return }
-        if let next = list[(i + 1)...].first(where: { !$0.disabled }) { fire(next) }
+        let next = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsalMode)
+        if next < list.count { fire(list[next]) }
     }
 
-    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
-    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int {
+    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte, og merkede cuer i øvelsesmodus).
+    static func nextPlayheadIndex(_ list: [Cue], fired: Int, rehearsal: Bool = false) -> Int {
         var i = fired
         while i < list.count && list[i].continueMode != .none {
-            i += 1
-            while i < list.count && list[i].disabled { i += 1 }
+            i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
         }
-        i += 1
-        while i < list.count && list[i].disabled { i += 1 }
+        i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
         return min(i, list.count)
     }
 

@@ -50,6 +50,10 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
 - **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
 - **Klokkeslett-trigger:** skriv et klokkeslett (tt:mm:ss, lokal tid, f.eks. 19:00:00) i fanen *Tidsstyring*, og slå på *Klokke-triggere aktive* under *Innstillinger → Sikkerhet* (av som standard).
   Cuen starter én gang når klokka på maskinen passerer klokkeslettet. Etter dvale, store hopp i klokka og omstilling til sommer-/vintertid starter ingen cuer. *Sjekk showet* advarer hvis innstillingen er av.
+- **Øvelsesmodus** (*⌘R*, eller *Oppsett → Øvelsesmodus* / knappen *Øvelse*): hopp over valgte cuer under øvelser uten å slette eller deaktivere dem.
+  Kryss av for *Hopp over i øvelse* i fanen *Tidsstyring* (en liten *ØV*-merking vises i cuelista). Mens modusen er på, flytter GO, auto-fortsett og auto-følg seg forbi merkede cuer og starter dem aldri,
+  og klokkeslett- og tidskode-triggere starter dem heller ikke. Å starte en merket cue direkte virker fortsatt: med nummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
+  Et tydelig felt øverst i vinduet står der så lenge modusen er på, og vindustittelen viser det også. Modusen **lagres aldri**: programmet starter alltid med den av. *Sjekk showet* advarer mens den er på og teller de merkede cuene.
 
 ## Flerkanals lydkort og nettverkslyd
 
@@ -105,6 +109,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |
 | ⌘L | Showmodus (lås redigering) av/på |
+| ⌘R | Øvelsesmodus av/på |
 | ⇧⌘T | Bytt tema |
 | ⇧⌘U | Vis/skjul utgangsvinduet |
 | ⌘, | Innstillinger |

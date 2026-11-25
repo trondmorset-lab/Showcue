@@ -72,6 +72,9 @@ public abstract class Cue : ObservableObject
     public string Hotkey { get => _hotkey; set { if (SetCue(ref _hotkey, (value ?? "").Trim().ToUpperInvariant())) OnPropertyChanged(nameof(TriggerText)); } }
     /// <summary>Deaktiverte cues hoppes over av GO.</summary>
     public bool Disabled { get => _disabled; set { if (SetCue(ref _disabled, value)) OnPropertyChanged(nameof(RowState)); } }
+    private bool _skipInRehearsal;
+    /// <summary>Hoppes over av GO, auto-fortsett og auto-følg mens øvelsesmodus er på. Har ingen virkning ellers.</summary>
+    public bool SkipInRehearsal { get => _skipInRehearsal; set => SetCue(ref _skipInRehearsal, value); }
     private CueColor _color;
     /// <summary>Fargemerking i lista.</summary>
     public CueColor Color { get => _color; set => SetCue(ref _color, value); }
