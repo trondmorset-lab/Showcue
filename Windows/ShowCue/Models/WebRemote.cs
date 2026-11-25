@@ -251,7 +251,7 @@ public static class WebRemote
             {
                 case '"': sb.Append("\\\""); break;
                 case '\\': sb.Append("\\\\"); break;
-                case '<': case '>': case '&': case ' ': case ' ':
+                case '<': case '>': case '&': case '\u2028': case '\u2029':
                     sb.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture)); break;
                 default:
                     if (c < 0x20) sb.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));

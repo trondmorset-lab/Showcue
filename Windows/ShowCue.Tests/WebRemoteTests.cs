@@ -462,7 +462,7 @@ public class WebRemoteContentTests
         Assert.Equal("a\\\"b\\\\c", WebRemote.JsonEscape("a\"b\\c"));
         Assert.Equal("\\u000a\\u0009\\u0000", WebRemote.JsonEscape("\n\t\0"));
         Assert.Equal("\\u003cscript\\u003e\\u0026", WebRemote.JsonEscape("<script>&"));
-        Assert.Equal("\\u2028", WebRemote.JsonEscape(" "));
+        Assert.Equal("\\u2028", WebRemote.JsonEscape("\u2028"));
         Assert.Equal("Æøå", WebRemote.JsonEscape("Æøå"));
     }
 
