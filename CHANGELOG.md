@@ -6,6 +6,16 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.24.0 – 2026-11-25
+
+### New
+- **Preload next cue** (Windows and Mac, same behaviour; *Settings → Safety*, **off** by default until it has been tried on real equipment).
+  When on, ShowCue prepares the cue the GO playhead is on, and the cues it starts automatically after it (at most three files at a time), in a background thread as soon as the playhead moves:
+  audio files are opened and the first seconds are read ahead (Mac: decoded into the ring buffer), the audio track of a video is opened the same way (Mac also loads the video file's properties), and pictures are decoded.
+  “Go to” cues are followed to their target and group cues prepare their enabled targets. Disabled cues are skipped, like GO does.
+  Preparation never runs on the audio thread. The files are released when the playhead moves, on stop, when a show is opened and on exit. If preparation fails, or the file has changed, the cue starts exactly as before.
+  Note: the gain in start latency has not been measured; please try it on real equipment before relying on it.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

@@ -210,7 +210,7 @@ public sealed class AudioActive : PlaybackActive
     {
         if (string.IsNullOrEmpty(AudioCue.FilePath)) throw new InvalidOperationException(Loc.T("Ingen fil valgt"));
         if (!File.Exists(AudioCue.FilePath)) throw new FileNotFoundException(Loc.T("Lydfila finnes ikke: ") + AudioCue.FilePath);
-        var pb = Engine.Audio.Play(AudioCue, StartOffset);
+        var pb = Engine.Audio.Play(AudioCue, StartOffset, Engine.Preloader.TakeAudio(AudioCue.FilePath));
         Duration = AudioCue.Loop ? 0 : pb.PassLength;
         if (AudioCue.FileDuration <= 0 && pb.PassLength > 0 && AudioCue.EndTime <= 0)
             AudioCue.FileDuration = AudioCue.StartTime + pb.PassLength;
@@ -483,7 +483,7 @@ public sealed class VideoActive : VisualActive
         if (VidCue.Routes is { Count: 0 }) return; // lyd slått av for denne cuen
         var mixer = Engine.Audio.Mixer;
         if (mixer == null) return;
-        var reader = VideoAudio.Open(VidCue.FilePath);
+        var reader = Engine.Preloader.TakeVideoAudio(VidCue.FilePath) ?? VideoAudio.Open(VidCue.FilePath);
         if (reader == null)
         {
             if (VidCue.FileChannels != 0) VidCue.FileChannels = 0;

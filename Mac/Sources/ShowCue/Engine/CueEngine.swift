@@ -5,6 +5,10 @@ import QuartzCore
 /// bare selve lydmiksingen og dekodingen går på egne tråder.
 final class CueEngine: ObservableObject {
     let audio: AudioEngine
+    /// Forbereder cuene GO snart starter (se `Preloader`). Gjør ingenting før innstillingen er slått på.
+    let preloader = Preloader()
+    /// Forberedelsen er sluppet (stopp, nye innstillinger): modellen bør be om ny forberedelse for markøren.
+    var onPreloadRefresh: (() -> Void)?
     /// Standard utgang for video, bilde og PDF (skjermen i innstillingene). Vises også som forhåndsvisning.
     let output: OutputCompositor
     /// Skjermen standardutgangen står på (−1 = eget vindu).
@@ -49,6 +53,7 @@ final class CueEngine: ObservableObject {
         self.output = output
         self.midi = midi
         self.cueList = cueList
+        audio.preloader = preloader
         let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.tick() }
         RunLoop.main.add(t, forMode: .common) // går også mens menyer er åpne
         timer = t
@@ -240,6 +245,8 @@ final class CueEngine: ObservableObject {
         if isPaused { resumeAll() } // stoppfader skal kunne høres
         preview.stop()
         active.forEach { $0.stop(fade: fade) }
+        preloader.clear() // filene slippes ved stopp; modellen forbereder markøren på nytt
+        onPreloadRefresh?()
     }
 
     // MARK: Takt

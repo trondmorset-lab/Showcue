@@ -50,6 +50,7 @@ The first time you start the app, macOS asks for access to the **local network**
 - **Bottom:** active cues with a progress bar and time left, hotkeys and output.
 - **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
   The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
+- **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 
 ## Multichannel audio interfaces and network audio
 

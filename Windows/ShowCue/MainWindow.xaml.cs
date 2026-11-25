@@ -99,6 +99,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             Raise(nameof(ShowMediaTab));
             Raise(nameof(MediaCue));
             if (_selected != null) CueGrid.ScrollIntoView(_selected);
+            UpdatePreload();
         }
     }
 
@@ -210,6 +211,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             SelectedCue = c;
             if (fire) { _lastGo = DateTime.MinValue; Go(); }
         });
+        Engine.PreloadRefreshRequested += () => Dispatcher.BeginInvoke(UpdatePreload);
         Engine.MemoShown += m => Dispatcher.BeginInvoke(() => MemoText = m.Text.Trim().Length > 0 ? m.Text.Trim() : m.DisplayName);
         Engine.Active.CollectionChanged += (_, _) => { Raise(nameof(NothingActive)); Raise(nameof(ActiveCountText)); };
 
@@ -258,6 +260,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         foreach (var a in _show.Cues.OfType<AudioCue>().Where(a => (a.FileDuration <= 0 || a.FileChannels <= 0) && File.Exists(a.FilePath)))
             (a.FileDuration, a.FileChannels) = AudioEngine.Probe(a.FilePath);
         MediaCache.Clear();
+        Engine?.Preloader.Clear(); // nytt show: slipp alt som var forberedt
         MediaCache.Preload(_show.Cues);
         foreach (var v in _show.Cues.OfType<VideoCue>().Where(v => v.FileChannels < 0)) ProbeVideoAudio(v);
 
@@ -278,11 +281,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (missing.Count > 0) StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. De er merket med ! i lista.", missing.Count);
     }
 
+    /// <summary>Be om at cuen GO-markøren står på (og cuene den starter automatisk) forberedes i bakgrunnen.</summary>
+    private void UpdatePreload()
+    {
+        try
+        {
+            if (Engine is null) return;
+            Engine.Preloader.Update(Cues, _selected == null ? -1 : Cues.IndexOf(_selected));
+        }
+        catch { /* forberedelse er aldri påkrevd */ }
+    }
+
     private void Cues_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems != null) foreach (Cue c in e.NewItems) c.PropertyChanged += Cue_PropertyChanged;
         if (e.OldItems != null) foreach (Cue c in e.OldItems) c.PropertyChanged -= Cue_PropertyChanged;
         ScheduleUndo();
+        UpdatePreload();
         Raise(nameof(IsEmpty));
         Raise(nameof(NextCueTitle));
         RaiseTitle();
@@ -295,6 +310,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (e.PropertyName is nameof(Cue.Progress) or nameof(Cue.ActiveCount) or nameof(Cue.IsRunning)
             or nameof(Cue.IsPreWaiting) or nameof(Cue.Error) or nameof(Cue.HasError)) return;
         ScheduleUndo();
+        if (e.PropertyName is nameof(IFileCue.FilePath) or nameof(Cue.Disabled) or nameof(Cue.ContinueMode) or nameof(Cue.Number)
+            or nameof(GotoCue.Target) or nameof(GroupCue.Targets) or nameof(AudioCue.StartTime))
+            UpdatePreload();
 
         if (e.PropertyName == nameof(IFileCue.FilePath))
         {
@@ -1057,7 +1075,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             (a.FileDuration, a.FileChannels) = AudioEngine.Probe(a.FilePath);
         foreach (var c in Cues.Where(c => c is IFileCue f && File.Exists(f.FilePath))) c.Error = null;
         MediaCache.Clear();
+        Engine.Preloader.Clear();
         MediaCache.Preload(Cues);
+        UpdatePreload();
         var left = MediaTools.Missing(Cues).Count;
         StatusText = Loc.F("Fant {0} fil(er).", found) + (left > 0 ? Loc.F(" {0} mangler fortsatt.", left) : Loc.T(" Alle mediefiler er på plass."));
     }

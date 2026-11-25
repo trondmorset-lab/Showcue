@@ -25,7 +25,8 @@ final class Playback {
         guard !started, let e = engine, let m = e.mixer else { return }
         started = true
         if let s = stream {
-            s.fill(minimumFrames: Int(0.3 * s.sampleRate))
+            // Er ringbufferen allerede fylt (forberedt i bakgrunnen), trengs ikke dekoding her.
+            if s.ring.availableFrames < Int(0.3 * s.sampleRate) { s.fill(minimumFrames: Int(0.3 * s.sampleRate)) }
             AudioFeeder.shared.add(s)
         }
         m.add(voice)
@@ -65,6 +66,8 @@ final class Playback {
 /// Lydmotoren: én CoreAudio-utgang med PatchMixer, testtoner og avspillinger.
 final class AudioEngine: ObservableObject {
     private let output = AudioOutput()
+    /// Filer som er forberedt i bakgrunnen (satt av `CueEngine`). nil = alt åpnes først ved start.
+    var preloader: Preloader?
     @Published private(set) var status = L("Lyd ikke startet")
     @Published private(set) var deviceChannels = 0
     @Published private(set) var sampleRate: Double = 0
@@ -127,10 +130,17 @@ final class AudioEngine: ObservableObject {
     func makePlayback(audio cue: Cue, offset: Double = 0) throws -> Playback {
         guard let m = mixer else { throw NSError(domain: "ShowCue.Audio", code: -20, userInfo: [NSLocalizedDescriptionKey: L("Lydutgangen er ikke startet. Sjekk innstillinger.")]) }
         let url = URL(fileURLWithPath: cue.filePath)
+        let start = cue.startTime + max(0, offset)
         let decoder: FrameDecoder
-        do { decoder = try AudioFileDecoder(url: url, outputRate: m.sampleRate) }
-        catch { decoder = try AssetDecoder(url: url, outputRate: m.sampleRate) } // reserve for formater AVAudioFile ikke åpner
-        let stream = StreamingSource(decoder: decoder, sampleRate: m.sampleRate, startTime: cue.startTime + max(0, offset), endTime: cue.endTime, loop: cue.loop)
+        let stream: StreamingSource
+        if let ready = preloader?.takeStream(kind: .audio, path: cue.filePath, sampleRate: m.sampleRate, startTime: start, endTime: cue.endTime, loop: cue.loop) {
+            decoder = ready.decoder // forberedt i bakgrunnen
+            stream = ready
+        } else {
+            do { decoder = try AudioFileDecoder(url: url, outputRate: m.sampleRate) }
+            catch { decoder = try AssetDecoder(url: url, outputRate: m.sampleRate) } // reserve for formater AVAudioFile ikke åpner
+            stream = StreamingSource(decoder: decoder, sampleRate: m.sampleRate, startTime: start, endTime: cue.endTime, loop: cue.loop)
+        }
         let voice = Voice(source: stream, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: offset > 0 ? 0.02 : cue.fadeIn, fadeOut: cue.fadeOut,
                           loop: stream.loop, routes: cue.effectiveRoutes(fileChannels: decoder.channels))
         return wire(voice, stream)
@@ -151,8 +161,18 @@ final class AudioEngine: ObservableObject {
 
     /// Lydsporet i en video. nil hvis videoen ikke har lyd. `start` = hvor i fila lyden starter.
     func makePlayback(videoAudio cue: Cue, start: Double? = nil) -> Playback? {
-        guard let m = mixer, let decoder = try? AssetDecoder(url: URL(fileURLWithPath: cue.filePath), outputRate: m.sampleRate) else { return nil }
-        let stream = StreamingSource(decoder: decoder, sampleRate: m.sampleRate, startTime: start ?? cue.startTime, endTime: cue.endTime, loop: cue.loop)
+        guard let m = mixer else { return nil }
+        let from = start ?? cue.startTime
+        let decoder: FrameDecoder
+        let stream: StreamingSource
+        if let ready = preloader?.takeStream(kind: .video, path: cue.filePath, sampleRate: m.sampleRate, startTime: from, endTime: cue.endTime, loop: cue.loop) {
+            decoder = ready.decoder // forberedt i bakgrunnen
+            stream = ready
+        } else {
+            guard let d = try? AssetDecoder(url: URL(fileURLWithPath: cue.filePath), outputRate: m.sampleRate) else { return nil }
+            decoder = d
+            stream = StreamingSource(decoder: d, sampleRate: m.sampleRate, startTime: from, endTime: cue.endTime, loop: cue.loop)
+        }
         // Fade ut styres av video-cuen (samme tid for bilde og lyd).
         let voice = Voice(source: stream, sampleRate: m.sampleRate, volumeDb: cue.volumeDb, fadeIn: cue.fadeIn, fadeOut: 0,
                           loop: stream.loop, routes: cue.effectiveRoutes(fileChannels: decoder.channels))

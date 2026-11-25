@@ -59,6 +59,10 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 - Alle tider/nivåer som kommer inn i lydmotoren saneres (NaN, uendelig, negative → gyldige verdier).
   En loop må være minst 10 ms, og to tilbakespolinger uten lyd imellom avslutter i stedet for å henge.
 
+## Forhåndslasting
+
+`PreloadPlanner`/`PreloadBook` (Windows `Models/Preload.cs`, Mac `Core/Preload.swift`) er ren logikk: hvilke filer (høyst 3) som forberedes for en markør, og regnskap med eviction. `Preloader` (Windows `Engine/Preloader.cs`, Mac `Engine/Preloader.swift`) gjør jobben i bakgrunnen og eies av `CueEngine`. Hovedvinduet/`AppModel` kaller `Update`/`updatePreload` når markøren, cuelista eller innstillingen endres, og `CueEngine` slipper alt ved `StopAll`. Lyd-cuer og videolyd henter forberedt leser/dekoder via `TakeAudio`/`TakeVideoAudio` (`takeStream`/`takeVideoAsset`). Innstilling: `PreloadNextCue`/`preloadNextCue` (av).
+
 ## Aktive cuer
 
 `CueEngine` lager én `ActiveCue` per avfyrt cue (pre-wait → spiller → ferdig) og kaller `Tick` ca. 60 ganger i sekundet.

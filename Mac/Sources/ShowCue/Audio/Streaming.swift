@@ -118,6 +118,8 @@ final class AssetDecoder: FrameDecoder {
     let channels: Int
     let duration: Double
 
+    deinit { reader?.cancelReading() }
+
     init(url: URL, outputRate: Double) throws {
         asset = AVURLAsset(url: url)
         guard let t = asset.tracks(withMediaType: .audio).first else { throw DecoderError.noAudio }

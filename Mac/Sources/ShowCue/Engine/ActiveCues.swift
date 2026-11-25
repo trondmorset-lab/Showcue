@@ -328,7 +328,9 @@ final class VideoActive: VisualActive {
     static let maxDrift = 0.12
 
     override func makeLayers() throws -> VisualLayers {
-        let item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath))
+        let item: AVPlayerItem
+        if let ready = engine.preloader.takeVideoAsset(path: cue.filePath) { item = AVPlayerItem(asset: ready) } // egenskapene er lastet i bakgrunnen
+        else { item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath)) }
         startTime = max(0, cue.startTime) + startOffset
         endTime = cue.endTime > startTime ? cue.endTime : 0
         if endTime > 0 { item.forwardPlaybackEndTime = CMTime(seconds: endTime, preferredTimescale: 600) }

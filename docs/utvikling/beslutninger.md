@@ -2,6 +2,14 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.24.0 – forhåndslasting av neste cue
+- **Hvor starttiden kommer fra (resonnert, ikke målt):** Windows åpner `AudioFileReader`/`MediaFoundationReader` først i `AudioActive.Start` (åpning, header, `CurrentTime`-søk, resampler) og første lesing av fila skjer i lydtråden (kald filbuffer). Mac lager `AVAudioFile`/`AVAssetReader`, ringbuffer (2 s) og dekoder 0,3 s på hovedtråden ved GO. Video: `MediaElement`/`AVPlayerItem` opprettes først ved GO og må åpne fila før bilde og lyd starter sammen; det er sannsynligvis den største delen for video. Bilder og PDF var allerede forhåndslastet for hele showet (`MediaCache`), så der gjør forhåndslasting lite.
+- Planleggeren er ren (`PreloadPlanner.Plan`/`plan`): cuen GO starter (første ikke-deaktiverte fra markøren), så kjeden av cuer med fortsett automatisk/følg automatisk, «gå til» følges til målet (løkker og manglende mål stopper), gruppe gir sine aktive mål. Høyst 3 filer, ingen doble, bare lyd/video/bilde (PDF, nett, spilleliste, lysbildeserie forberedes ikke).
+- Regnskapet (`PreloadBook`) fjerner det som ikke lenger ønskes (eldste først) og holder aldri flere enn grensen. Selve filene håndteres av `Preloader` (Windows `Engine/Preloader.cs`, Mac `Engine/Preloader.swift`), alltid utenfor lydtråden og UI-tråden; ingen endringer i selve lydløkkene (`Render`/mikseren).
+- En forberedt fil er aldri påkrevd: `Take…` gir null når noe ikke stemmer (feilet, ikke ferdig, fila endret – størrelse/tid, annen samplingsfrekvens, start/slutt/loop), og da åpner cuen fila som før. Windows: leseren overleveres til `CuePlayback` (eierskap), og kaster konstruktøren, lukkes den og fila åpnes på vanlig måte. Mac: `StreamingSource` med 0,5 s i ringen overleveres; `Playback.start` hopper over egen fylling når ringen allerede har 0,3 s.
+- **Ikke gjort:** forvarming av selve videospilleren (Windows `MediaElement` må ligge i utgangsvinduets visuelle tre; Mac `AVPlayer`). Mac laster bare `AVURLAsset`-egenskapene på forhånd, Windows leser filbufferen og åpner lydsporet. Det er første kandidat hvis målingen på ekte maskin viser at video fortsatt er treg.
+- Innstillingen `PreloadNextCue`/`preloadNextCue` er **av** som standard (maskininnstilling) til eieren har prøvd den på ekte utstyr. Slippes ved stopp (også ved lydomstart), nytt show, relink, avslått innstilling og avslutning, fordi åpne filer ellers ikke kan byttes eller slettes.
+
 ## 0.21.0 – klokkeslett-trigger
 - Ny trigger per cue, `ClockTrigger` («tt:mm:ss», lokal tid, tom = av), ugyldig tekst blir tom (som `TimecodeTrigger`). Samme nøkkel og oppførsel på begge plattformer.
 - Logikken er ren og tar tidspunktene som argument (`ClockTriggers.Crossed`/`Due` på Windows, `ClockTriggers.crossed`/`due` på Mac): «passert» betyr forrige < klokkeslett ≤ nå, så hver cue starter høyst én gang per passering.

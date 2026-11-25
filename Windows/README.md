@@ -248,6 +248,7 @@ Audio from the page goes to the system audio output, not through the audio patch
   The cue starts when incoming MIDI Time Code passes the time (not when skipping past it).
 - **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
   The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
+- **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 - **Light cue** (✺ Light): sends DMX over Art-Net (UDP 6454) to a node or as a broadcast. Levels are written
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,
