@@ -1,6 +1,6 @@
 # Agenter og felles utviklingsdatabase
 
-Fire agenter ligger i `.claude/agents/`. De bruker de samme kildene, slik at ingen starter uten historikk.
+Fem agenter ligger i `.claude/agents/`. De bruker de samme kildene, slik at ingen starter uten historikk.
 
 | Agent | Brukes til |
 |---|---|
@@ -8,6 +8,7 @@ Fire agenter ligger i `.claude/agents/`. De bruker de samme kildene, slik at ing
 | `showcue-lyd` | Lydmotor, lydenheter, ASIO, tidskode, latens |
 | `showcue-robusthet` | Show-sikkerhet: krasj, ugyldige data, avslutning, regresjonstester |
 | `showcue-ux` | Brukervennlighet og GUI. Viser forslag som bilde før noe endres |
+| `showcue-stresstest` | Stress-tests and reviews the code for crashes, hangs, leaks and races; extends `tools/stress` and runs it through CI |
 
 ## Felles utviklingsdatabase
 Databasen er repoet selv, slik at alt følger koden og kan slås opp med referanser:
