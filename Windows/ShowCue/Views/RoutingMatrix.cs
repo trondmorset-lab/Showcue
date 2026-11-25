@@ -219,7 +219,7 @@ public sealed class RoutingMatrix : UserControl
         menu.Items.Add(Item(Loc.T("Lim inn routing"), () =>
             Report(host, RoutingPresets.Paste(host.RoutingTargets(cue), host.RouteClipboard, busCount), null), edit && host.RouteClipboard.HasContent));
         menu.Items.Add(Item(Loc.T("Bruk denne routingen på alle valgte cuer"), () =>
-            Report(host, RoutingPresets.ApplyRoutes(host.RoutingTargets(cue).Where(c => !ReferenceEquals(c, cue)), cue.Routes, busCount), null),
+            Report(host, RoutingPresets.ApplyRoutes(host.RoutingTargets(cue).Where(c => !ReferenceEquals(c, cue)), Cue?.Routes, busCount), null),
             edit && host.RoutingTargets(cue).Count > 1));
         anchor.ContextMenu = menu;
         menu.IsOpen = true;
