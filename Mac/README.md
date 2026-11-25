@@ -1,139 +1,137 @@
 # ShowCue for Mac
 
-*[English](README.en.md)*
+*[Norsk](README.no.md)*
 
-Egen Mac-app skrevet i Swift. Den bruker Apples egne rammeverk (CoreAudio, AVFoundation, PDFKit og CoreMIDI) og trenger ingen tilleggsprogrammer.
-Den har de samme funksjonene som Windows-versjonen, og **showfilene (`.showcue`) kan åpnes på begge plattformene**.
+A native Mac app written in Swift. It uses Apple's own frameworks (CoreAudio, AVFoundation, PDFKit and CoreMIDI) and needs no add-ons.
+It has the same features as the Windows version, and **the show files (`.showcue`) can be opened on both platforms**.
 
-Krever macOS 13 (Ventura) eller nyere. Kjører både på Apple Silicon og Intel.
+Requires macOS 13 (Ventura) or newer. Runs on both Apple Silicon and Intel.
 
-## Skjermbilder
+## Screenshots
 
-![ShowCue på Mac med demoshow: lysbildeserien og innslippsmusikken spiller](../docs/skjermbilder/mac/nb/hovedvindu.png)
+![ShowCue on Mac with a demo show: the slideshow and the walk-in music are playing](../docs/skjermbilder/mac/en/hovedvindu.png)
 
-| Lysbildeserie valgt | Lyst tema |
+| Slideshow selected | Light theme |
 |---|---|
-| ![Lysbildeserie](../docs/skjermbilder/mac/nb/lysbildeserie.png) | ![Lyst tema](../docs/skjermbilder/mac/nb/hovedvindu-lyst.png) |
+| ![Slideshow](../docs/skjermbilder/mac/en/lysbildeserie.png) | ![Light theme](../docs/skjermbilder/mac/en/hovedvindu-lyst.png) |
 
-## Bygge og starte
+## Building and starting
 
-**Enklest, med Xcode** (gratis fra App Store):
-1. Dobbeltklikk `Package.swift`. Xcode åpner prosjektet.
-2. Velg «My Mac» øverst og trykk ▶ (⌘R).
+**Easiest, with Xcode** (free from the App Store):
+1. Double-click `Package.swift`. Xcode opens the project.
+2. Choose “My Mac” at the top and press ▶ (⌘R).
 
-**Lage ShowCue.app** (Xcode eller Command Line Tools, `xcode-select --install`):
+**Making ShowCue.app** (Xcode or Command Line Tools, `xcode-select --install`):
 ```
 cd Mac
 ./build-app.sh
 open build/ShowCue.app
 ```
-Dra `build/ShowCue.app` til Programmer-mappa.
+Drag `build/ShowCue.app` to the Applications folder.
 
-`./make-dmg.sh` lager i tillegg `build/ShowCue-Mac.dmg` (diskbilde med appen og en snarvei til Programmer).
+`./make-dmg.sh` also creates `build/ShowCue-Mac.dmg` (a disk image with the app and a shortcut to Applications).
 
-**Ferdig app fra GitHub:** GitHub Actions bygger appen, kjører testene og legger `ShowCue-Mac.dmg` og `ShowCue-Mac.zip`
-under *Releases*. Åpne dmg-fila og dra ShowCue til *Programmer*.
+**Ready-built app from GitHub:** GitHub Actions builds the app, runs the tests and puts `ShowCue-Mac.dmg` and `ShowCue-Mac.zip`
+under *Releases*. Open the dmg file and drag ShowCue to *Applications*.
 
-Appen er ikke notarisert av Apple ennå, så macOS stopper den første gang. Fra macOS 15 virker ikke lenger
-«høyreklikk → Åpne»: åpne *Systeminnstillinger → Personvern og sikkerhet*, bla ned og trykk **Åpne likevel**.
-Alternativt i Terminal: `xattr -dr com.apple.quarantine /Applications/ShowCue.app`.
+The app is not notarised by Apple yet, so macOS stops it the first time. From macOS 15, “right-click → Open”
+no longer works: open *System Settings → Privacy & Security*, scroll down and press **Open Anyway**.
+Alternatively in Terminal: `xattr -dr com.apple.quarantine /Applications/ShowCue.app`.
 
-Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. Si ja, ellers virker ikke OSC.
+The first time you start the app, macOS asks for access to the **local network**. Say yes, otherwise OSC does not work.
 
-## Hovedvinduet
+## The main window
 
-- **Øverst:** en stor **GO**-knapp, **NESTE CUE** med nummer, navn og type i stor skrift (blå kant), klokke, nivåmålere, **Pause** og **STOPP ALT**.
-- **Cuelista** har kolonneoverskrifter. Raden for cuen som **spilles nå** er grønn med fremdriftslinje og tid igjen i kolonnen *Gjenstår*
-  («∞» for loop og cuer som står til stoppet). Cuen **GO starter** har blå kant og ▶. Deaktiverte cuer er dempet (og hoppes over av GO).
-- **Panelet for valgt cue** er delt i faner: *Grunnleggende* (cuens egne felt), *Lyd/media* (nivå, fade, utganger, skalering og skjerm – bare for typer med lyd, bilde eller video),
-  *Tidsstyring* (pre-wait, etterpå, tidskode-trigger, klokkeslett-trigger) og *Avansert* (hurtigtast, MIDI-trigger, knappepanel, farge, notater). Nummer og navn står alltid over fanene.
-- **Nederst:** aktive cuer med fremdriftslinje og tid igjen, hurtigtaster og utgang.
-- **Klokkeslett-trigger:** skriv et klokkeslett (tt:mm:ss, lokal tid, f.eks. 19:00:00) i fanen *Tidsstyring*, og slå på *Klokke-triggere aktive* under *Innstillinger → Sikkerhet* (av som standard).
-  Cuen starter én gang når klokka på maskinen passerer klokkeslettet. Etter dvale, store hopp i klokka og omstilling til sommer-/vintertid starter ingen cuer. *Sjekk showet* advarer hvis innstillingen er av.
+- **Top:** a large **GO** button, **NEXT CUE** with number, name and type in large text (blue edge), clock, level meters, **Pause** and **STOP ALL**.
+- **The cue list** has column headings. The row of the cue that is **playing now** is green with a progress bar and the time left in the *Remaining* column
+  (“∞” for loops and cues that run until stopped). The cue **GO will start** has a blue edge and ▶. Disabled cues are dimmed (and skipped by GO).
+- **The panel for the selected cue** is split into tabs: *Basic* (the cue's own fields), *Audio/media* (level, fades, outputs, scaling and screen – only for types with audio, pictures or video),
+  *Timing* (pre-wait, afterwards, timecode trigger, clock-time trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
+- **Bottom:** active cues with a progress bar and time left, hotkeys and output.
+- **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
+  The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
 
-## Flerkanals lydkort og nettverkslyd
+## Multichannel audio interfaces and network audio
 
-DVS på Mac er en vanlig CoreAudio-enhet:
-Eksempel med Dante Virtual Soundcard:
+DVS on a Mac is an ordinary CoreAudio device.
+Example with Dante Virtual Soundcard:
 
-1. Start Dante Virtual Soundcard. Velg antall kanaler i DVS og samplingsfrekvens i Dante Controller.
-2. ShowCue → **Innstillinger → Lyd**: velg «Dante Virtual Soundcard». Alle kanalene åpnes, opptil 64 som standard.
-3. **Lydpatch** (*Oppsett → Lydpatch*): kryss av hvilke Dante-kanaler hver utgang skal på. Du kan linjesjekke med **Test** (rosa støy på −18 dBFS).
-   Rut kanalene videre i Dante Controller.
+1. Start Dante Virtual Soundcard. Choose the number of channels in DVS and the sample rate in Dante Controller.
+2. ShowCue → **Settings → Audio**: choose “Dante Virtual Soundcard”. All channels are opened, up to 64 by default.
+3. **Audio patch** (*Setup → Audio patch*): tick which Dante channels each output goes to. You can line-check with **Test** (pink noise at −18 dBFS).
+   Route the channels onwards in Dante Controller.
 
-Det samme gjelder andre flerkanals lydkort og aggregerte enheter laget i Lyd- og MIDI-oppsett.
-Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres automatisk av høy kvalitet.
+The same applies to other multichannel audio interfaces and aggregate devices created in Audio MIDI Setup.
+The sample rate follows the device, and files with a different rate are converted automatically in high quality.
 
-| Lydpatch | Innstillinger |
-|---|---|
-| ![Lydpatch: utganger (rader) til kanaler på lydkortet](../docs/skjermbilder/mac/nb/lydpatch.png) | <img src="../docs/skjermbilder/mac/nb/innstillinger.png" width="360" alt="Innstillinger → Lyd"> |
+![Audio patch: outputs (rows) to channels on the audio interface](../docs/skjermbilder/mac/en/lydpatch.png)
 
-## Forskjeller fra Windows-versjonen
+## Differences from the Windows version
 
 | | Mac | Windows |
 |---|---|---|
-| Lyddriver | CoreAudio (alle enheter, også nettverkslydkort) | WASAPI eller ASIO |
-| Lydformater | WAV, AIFF, MP3, M4A/AAC, ALAC, FLAC, CAF | WAV, AIFF, MP3, M4A/AAC, FLAC, WMA |
-| Videoformater | MP4, MOV, M4V (H.264, HEVC, ProRes) | MP4, MOV, WMV, AVI, MKV (H.264 tryggest) |
-| Innstillinger | `~/Library/Application Support/ShowCue/` | `%AppData%\ShowCue\` |
-| Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
-| Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
+| Audio driver | CoreAudio (all devices, including network audio interfaces) | WASAPI or ASIO |
+| Audio formats | WAV, AIFF, MP3, M4A/AAC, ALAC, FLAC, CAF | WAV, AIFF, MP3, M4A/AAC, FLAC, WMA |
+| Video formats | MP4, MOV, M4V (H.264, HEVC, ProRes) | MP4, MOV, WMV, AVI, MKV (H.264 safest) |
+| Settings | `~/Library/Application Support/ShowCue/` | `%AppData%\ShowCue\` |
+| Zoom in the waveform | Pinch on the trackpad or −/+ | Mouse wheel |
+| Hotkeys | The F keys require `fn`, unless “Use F1, F2, etc. keys as standard function keys” is turned on | |
 
-Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
-Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
+Everything else is the same: language (Norwegian/English), cue types, start/end editing with waveform and preview, routing matrix, audio patch, video audio through the patch, OSC/MIDI in and out, MSC, status out over OSC, themes and cue colours.
+See the README in the Windows folder for a full description of OSC commands and status variables.
 
-**Showfiler mellom Mac og Windows:** stiene til mediefilene er forskjellige på de to plattformene. ShowCue leter derfor etter mediefiler
-ved siden av showfila og i en undermappe `Media`, så legg showfil og media i samme mappe når du flytter mellom maskiner.
-Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
+**Show files between Mac and Windows:** the paths to the media files differ on the two platforms. ShowCue therefore looks for media files
+next to the show file and in a subfolder `Media`, so put the show file and the media in the same folder when moving between computers.
+Shows saved on a Mac require Windows version 0.4 or newer.
 
-## Tastatur
+## Keyboard
 
-| Tast | Funksjon |
+| Key | Function |
 |---|---|
-| Mellomrom | GO |
-| Esc | Stopp alt (to ganger = umiddelbart) |
-| ↑ / ↓ | Flytt GO-markøren |
-| ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
-| ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
-| ⌘P | Pause / fortsett alt |
-| ⇧⌘M, ⇧⌘N | Legg til beskjed-, nettverks-cue |
-| ⌘K | Knappepanel |
-| ⌘+ / ⌘− | Zoom inn / ut (vanlig størrelse i *Oppsett*-menyen) |
-| ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Legg til tidskode-, lys-, inngang-, nettside-cue |
-| ⇧⌘B | Legg til lysbildeserie |
-| ⌘D, ⌘⌫, ⌘↑/⌘↓ | Dupliser, slett, flytt |
-| ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
-| ⌘Z, ⇧⌘Z | Angre, gjør om |
-| ⌘L | Showmodus (lås redigering) av/på |
-| ⇧⌘T | Bytt tema |
-| ⇧⌘U | Vis/skjul utgangsvinduet |
-| ⌘, | Innstillinger |
+| Space | GO |
+| Esc | Stop all (twice = immediately) |
+| ↑ / ↓ | Move the GO playhead |
+| ⌘1 … ⌘8 | Add audio, video, image, PDF, fade, stop, OSC, MIDI |
+| ⌘9, ⌘0 | Add playlist, go to cue |
+| ⌘P | Pause / resume all |
+| ⇧⌘M, ⇧⌘N | Add message, network cue |
+| ⌘K | Button panel |
+| ⌘+ / ⌘− | Zoom in / out (normal size in the *Setup* menu) |
+| ⌥⌘T, ⇧⌘L, ⇧⌘I, ⇧⌘W | Add timecode, light, input, web page cue |
+| ⇧⌘B | Add slideshow |
+| ⌘D, ⌘⌫, ⌘↑/⌘↓ | Duplicate, delete, move |
+| ⌘S, ⇧⌘S, ⌘O, ⌘N | Save, save as, open, new |
+| ⌘Z, ⇧⌘Z | Undo, redo |
+| ⌘L | Show mode (lock editing) on/off |
+| ⇧⌘T | Switch theme |
+| ⇧⌘U | Show/hide the output window |
+| ⌘, | Settings |
 
-Lyd- og video-cuer som spiller kan spoles under *Aktive cuer* (dra i linja, eller ⏪ / ⏩ for 5 sekunder).
-*＋ Media* lager en tom cue; velg fila med *Bla*, eller slipp en fil på cuen.
+Audio and video cues that are playing can be scrubbed under *Active cues* (drag the bar, or ⏪ / ⏩ for 5 seconds).
+*＋ Media* creates an empty cue; choose the file with *Browse*, or drop a file on the cue.
 
-Klikk velger, ⌘-klikk velger flere og ⇧-klikk velger et område. Dobbeltklikk tester cuen. Høyreklikk åpner en meny med farge, aktiver/deaktiver og dupliser.
-Du kan dra filer fra Finder rett inn i lista.
+Click selects, ⌘-click selects several and ⇧-click selects a range. Double-click tests the cue. Right-click opens a menu with colour, enable/disable and duplicate.
+You can drag files from the Finder straight into the list.
 
-Showmodus, angre, autolagring (`~/Library/Application Support/ShowCue/Autolagring`), sikkerhetskopier
-(`…/ShowCue/Sikkerhetskopier`) og forhåndslytting til hodetelefoner virker som på Windows – se *Trygt under forestillingen*
-i README i Windows-mappa. Det samme gjelder pause, spillelister, gå til, slipp loop, kjør herfra og fadekurver
-(*Pause, spillelister og loop*), og knappepanelet, nettverks- og beskjed-cuer, lydstyrke-normalisering og finn/samle
-mediefiler (menyene *Fil*, *Rediger* og *Verktøy* i menylinja) – se *Knappepanel, nettverk, beskjed og lydstyrke* og *Mediefiler: finn og samle*. *Sjekk showet* (under *Fil* og *Verktøy*) kontrollerer mediefiler, verdier, enheter og cue-numre før forestillingen – se *Sjekk showet før forestillingen*. Tidskode, lys over Art-Net og
-live-inngang er beskrevet under *Tidskode, lys og live-inngang* (på Mac velges inngangen blant CoreAudio-enhetene,
-og macOS spør om tilgang til mikrofonen første gang).
+Show mode, undo, autosave (`~/Library/Application Support/ShowCue/Autolagring`), backups
+(`…/ShowCue/Sikkerhetskopier`) and preview to headphones work as on Windows – see *Safe during the show*
+in the README in the Windows folder. The same applies to pause, playlists, go to, release loop, run from here and fade curves
+(*Pause, playlists and loop*), and the button panel, network and message cues, loudness normalisation and find/collect
+media files (the *File*, *Edit* and *Tools* menus in the menu bar) – see *Button panel, network, message and loudness* and *Media files: find and collect*. *Check the show* (under *File* and *Tools*) checks media files, values, devices and cue numbers before the performance – see *Check the show before the performance*. Timecode, lighting over Art-Net and
+live input are described under *Timecode, lighting and live input* (on a Mac the input is chosen among the CoreAudio devices,
+and macOS asks for access to the microphone the first time).
 
-## Oppbygning
+## Structure
 
 ```
 Sources/ShowCue/
-  Core/    Modeller (samme JSON som Windows), OSC, status ut, fjernstyring, språk (Loc),
-           MIDI-tolking, mikser (PatchMixer, Voice, ringbuffer). Testes automatisk.
-  Audio/   CoreAudio-utgang (AUHAL), enheter, dekoding i egen tråd (AVAudioFile / AVAssetReader)
-  Engine/  Cue-motor, aktive cuer, video/bilde/PDF-utgang, CoreMIDI, app-modell
-  UI/      SwiftUI: hovedvindu, cueliste, inspektør, routingmatrise, lydpatch, innstillinger, temaer
-Tests/     XCTest (kjøres med «swift test» eller ⌘U i Xcode)
+  Core/    Models (same JSON as Windows), OSC, status out, remote control, language (Loc),
+           MIDI parsing, mixer (PatchMixer, Voice, ring buffer). Tested automatically.
+  Audio/   CoreAudio output (AUHAL), devices, decoding on a separate thread (AVAudioFile / AVAssetReader)
+  Engine/  Cue engine, active cues, video/image/PDF output, CoreMIDI, app model
+  UI/      SwiftUI: main window, cue list, inspector, routing matrix, audio patch, settings, themes
+Tests/     XCTest (run with “swift test” or ⌘U in Xcode)
 ```
 
-Lydtråden leser bare ferdig dekodet lyd fra ringbuffere. En egen tråd dekoder, og hovedtråden styrer cuene.
-Lyden venter derfor aldri på disk eller brukergrensesnitt.
+The audio thread only reads already decoded audio from ring buffers. A separate thread decodes, and the main thread controls the cues.
+The audio therefore never waits for the disk or the user interface.

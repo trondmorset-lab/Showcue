@@ -62,7 +62,7 @@ Programmene er ikke kodesignert ennå:
 
 ## Versjoner og endringslogg
 
-Versjonsnummeret står i `VERSION` og brukes av både Windows- og Mac-bygget. Endringer føres i `CHANGELOG.md`.
+Versjonsnummeret står i `VERSION` og brukes av både Windows- og Mac-bygget. Endringer føres i `CHANGELOG.md` (engelsk) og `CHANGELOG.no.md` (norsk).
 
 Slik bygges og gis programmet ut (`.github/workflows/build.yml`):
 1. Endringer gjøres på en egen gren og sendes inn som en *pull request*. GitHub bygger og tester både Windows- og Mac-versjonen.
@@ -74,7 +74,7 @@ Slik bygges og gis programmet ut (`.github/workflows/build.yml`):
 
 GitHub Actions-trinnene er låst til faste versjoner (commit-SHA), og Dependabot foreslår oppdateringer hver uke.
 
-Se `Windows/README.md` og `Mac/README.md` for detaljer.
+Se `Windows/README.no.md` og `Mac/README.no.md` for detaljer.
 
 ## Lisens
 

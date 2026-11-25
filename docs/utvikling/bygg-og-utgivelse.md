@@ -31,7 +31,7 @@ Kjøres manuelt under Actions (eller ved push til grenen `manual-skjermbilder`) 
 ## Versjoner
 - `VERSION` i roten brukes av begge bygg (Windows via csproj, Mac via `build-app.sh`). Hold `Mac/Resources/Info.plist` lik.
 - Små rettelser: 0.x.**y**. Ny funksjonalitet: 0.**x**.0.
-- `CHANGELOG.md` (norsk, full historikk) og `CHANGELOG.en.md` (engelsk, fra 0.11.0).
+- `CHANGELOG.md` (engelsk, brukes i utgivelsestekstene) og `CHANGELOG.no.md` (norsk).
 
 ## Arbeid mot GitHub fra utviklingsmiljøet
 - Repoet heter nå `trondmorset-lab/showcue` (tidligere `showcue-`). Bruk REST (`gh api repos/trondmorset-lab/showcue/...`); GraphQL er sperret, så `gh pr`/`gh release download` virker ikke.

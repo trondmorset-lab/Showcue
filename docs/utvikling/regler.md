@@ -23,7 +23,7 @@ Faste regler fra eieren av prosjektet. Følg dem i all kode, tekst og dokumentas
 ## Arbeidsflyt
 - Alt går via egen gren og pull request mot `main`. CI må være grønn (Windows og Mac) før merge.
 - **Merge bare når eieren uttrykkelig ber om det.** Aldri force-push eller omskriv `main` uten eieren.
-- Øk `VERSION` (og `Mac/Resources/Info.plist`) og skriv i begge endringslogger i samme PR som endringen; utgivelsen lages
+- Øk `VERSION` (og `Mac/Resources/Info.plist`) og skriv i begge endringslogger (`CHANGELOG.md` engelsk, `CHANGELOG.no.md` norsk) i samme PR som endringen; utgivelsen lages
   automatisk når `main` får en ny versjon.
-- Commit-meldinger og PR-tekster på norsk, med attribusjonslinjene som gjelder for økta.
+- Commit-meldinger og PR-tekster på **engelsk**, med attribusjonslinjene som gjelder for økta. Alt som vises på GitHub er engelsk; norsk finnes bare i `*.no.md`-filene (`README.no.md`, `CHANGELOG.no.md`, `Windows/README.no.md`, `Mac/README.no.md`).
 - Kjør aldri skript som kan pushe til GitHub som en «test»: git-proxyen i utviklingsmiljøet er autentisert, så de *vil* pushe.

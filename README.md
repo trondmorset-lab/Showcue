@@ -72,7 +72,7 @@ All texts in the program are written in Norwegian in the source code and transla
 ## Versions and changelog
 
 The version number is in `VERSION` and is used by both the Windows and the Mac build. Changes are recorded in
-`CHANGELOG.md` (Norwegian) and `CHANGELOG.en.md` (English).
+`CHANGELOG.md` (English) and `CHANGELOG.no.md` (Norwegian).
 
 How the program is built and released (`.github/workflows/build.yml`):
 1. Changes are made on a separate branch and submitted as a *pull request*. GitHub builds and tests both the Windows and the Mac version.
@@ -84,7 +84,7 @@ How the program is built and released (`.github/workflows/build.yml`):
 
 The GitHub Actions steps are pinned to fixed versions (commit SHA), and Dependabot suggests updates every week.
 
-See `Windows/README.en.md` and `Mac/README.en.md` for details.
+See `Windows/README.md` and `Mac/README.md` for details.
 
 ## Licence
 
