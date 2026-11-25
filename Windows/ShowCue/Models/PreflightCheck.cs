@@ -43,6 +43,7 @@ public static class PreflightCheck
     public const string TargetSelf = "targetSelf";
     public const string TargetDisabled = "targetDisabled";
     public const string GroupNoMatch = "groupNoMatch";
+    public const string ClockTriggerOff = "clockTriggerOff";
     public const string ValuesOk = "valuesOk";
     public const string AudioDeviceMissing = "audioDeviceMissing";
     public const string PreviewDeviceMissing = "previewDeviceMissing";
@@ -67,6 +68,7 @@ public static class PreflightCheck
             fileCount += CheckMedia(cues[i], i, env, media);
             CheckValues(cues[i], i, cues, values);
         }
+        CheckClockTriggers(cues, settings, values);
         CheckDevices(cues, settings, env, devices);
         CheckNumbers(cues, numbers);
 
@@ -228,6 +230,17 @@ public static class PreflightCheck
                 list.Add(new(PreflightSeverity.Warning, MemoEmpty, Loc.F("{0}: beskjeden er tom.", label), index));
                 break;
         }
+    }
+
+    /// <summary>Cuer med klokketrigger gjør ingenting når «Klokke-triggere aktive» er av i innstillingene.</summary>
+    private static void CheckClockTriggers(IReadOnlyList<Cue> cues, AppSettings settings, List<PreflightFinding> list)
+    {
+        if (settings.ClockTriggersEnabled) return;
+        var withTrigger = cues.Select((c, i) => (c, i)).Where(x => !x.c.Disabled && x.c.ClockTrigger.Length > 0).ToList();
+        if (withTrigger.Count == 0) return;
+        list.Add(new(PreflightSeverity.Warning, ClockTriggerOff,
+            Loc.F("{0} cue(r) har klokketrigger, men «Klokke-triggere aktive» er av i innstillingene. Cuene starter ikke av seg selv.", withTrigger.Count),
+            withTrigger[0].i));
     }
 
     /// <summary>Mål-cuen slås opp på nummer, uten hensyn til store/små bokstaver (som i GO-motoren).</summary>

@@ -45,6 +45,7 @@ enum PreflightCheck {
     static let targetSelf = "targetSelf"
     static let targetDisabled = "targetDisabled"
     static let groupNoMatch = "groupNoMatch"
+    static let clockTriggerOff = "clockTriggerOff"
     static let valuesOk = "valuesOk"
     static let audioDeviceMissing = "audioDeviceMissing"
     static let previewDeviceMissing = "previewDeviceMissing"
@@ -62,6 +63,7 @@ enum PreflightCheck {
             fileCount += checkMedia(c, i, env, &media)
             checkValues(c, i, cues, &values)
         }
+        checkClockTriggers(cues, settings, &values)
         checkDevices(cues, settings, env, &devices)
         checkNumbers(cues, &numbers)
 
@@ -271,6 +273,15 @@ enum PreflightCheck {
     private static let audioTypes: [CueType] = [.audio, .video, .playlist, .slideshow, .input]
 
     private static func screen(of c: Cue) -> Int? { c.isVisual || c.type == .slideshow ? c.outputScreen : nil }
+
+    /// Cuer med klokketrigger gjør ingenting når «Klokke-triggere aktive» er av i innstillingene.
+    private static func checkClockTriggers(_ cues: [Cue], _ settings: AppSettings, _ list: inout [PreflightFinding]) {
+        if settings.clockTriggersEnabled { return }
+        let withTrigger = cues.enumerated().filter { !$0.element.disabled && !$0.element.clockTrigger.isEmpty }
+        guard let first = withTrigger.first else { return }
+        add(&list, .warning, clockTriggerOff,
+            L("{0} cue(r) har klokketrigger, men «Klokke-triggere aktive» er av i innstillingene. Cuene starter ikke av seg selv.", withTrigger.count), first.offset)
+    }
 
     private static func checkDevices(_ cues: [Cue], _ s: AppSettings, _ env: PreflightEnvironment, _ list: inout [PreflightFinding]) {
         let active = cues.enumerated().filter { !$0.element.disabled }

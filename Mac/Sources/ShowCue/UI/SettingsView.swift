@@ -248,6 +248,8 @@ struct SettingsView: View {
             Hint(L("GO ignoreres hvis det kommer innen denne tiden etter forrige GO (prell på tast eller kontroller)."))
             FieldLabel(L("Mål for «Normaliser lydstyrke» (LUFS)")); NumberInput(value: $draft.loudnessTarget, range: -40...(-5))
             Hint(L("−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke."))
+            Toggle(L("Klokke-triggere aktive (starter cuer med klokkeslett-trigger)"), isOn: $draft.clockTriggersEnabled).padding(.top, 14)
+            Hint(L("Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka."))
         }
     }
 }

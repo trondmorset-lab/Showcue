@@ -261,6 +261,18 @@ final class AppModel: ObservableObject, ShowControl {
         return due.count
     }
 
+    /// Klokketrigger: start cuer når veggklokka passerer klokkeslettet siden forrige sjekk. Cuene startes som ved tidskode-trigger.
+    func checkClockTriggers(now: Date) {
+        let previous = lastClockCheck
+        lastClockCheck = now
+        guard settings.clockTriggersEnabled, let previous else { return }
+        let due = ClockTriggers.due(cues, previous: previous, now: now)
+        due.forEach { engine.fire($0) }
+        if !due.isEmpty {
+            statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
+        }
+    }
+
     // MARK: - Show-fil
 
     private func observeCues() {
@@ -950,6 +962,8 @@ final class AppModel: ObservableObject, ShowControl {
 
     // MARK: - Takt
 
+    private var lastClockCheck: Date?
+
     private func tick() {
         tickCount += 1
         if tickCount % 1800 == 0 { autosave() } // hvert 30. sekund
@@ -958,6 +972,7 @@ final class AppModel: ObservableObject, ShowControl {
             live.meterR = max(MeterMath.fraction(m.busLevel(1)), live.meterR - 0.05)
         }
         if tickCount % 6 == 0, let f = feedback { f.update(buildStatus(), now: engine.now) }
+        checkClockTriggers(now: Date())
         if tickCount % 15 == 0 {
             let c = Self.clockFormatter.string(from: Date())
             if c != live.clockText { live.clockText = c }

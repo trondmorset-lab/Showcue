@@ -91,9 +91,18 @@ public abstract class Cue : ObservableObject
         set { if (SetCue(ref _timecodeTrigger, Timecode.TryParse(value, out var tc) ? tc.ToString() : "")) OnPropertyChanged(nameof(TriggerText)); }
     }
 
-    /// <summary>Hurtigtast, MIDI- og tidskode-trigger samlet, for visning i lista.</summary>
+    private string _clockTrigger = "";
+    /// <summary>Start cuen når veggklokka (lokal tid) passerer dette klokkeslettet, «tt:mm:ss». Tom = ingen. Virker bare når «Klokke-triggere aktive» er på i innstillingene.</summary>
+    public string ClockTrigger
+    {
+        get => _clockTrigger;
+        set { if (SetCue(ref _clockTrigger, ClockTriggers.Normalize(value))) OnPropertyChanged(nameof(TriggerText)); }
+    }
+
+    /// <summary>Hurtigtast, MIDI-, tidskode- og klokketrigger samlet, for visning i lista.</summary>
     [JsonIgnore] public string TriggerText => string.Join(" · ",
-        new[] { Hotkey, MidiTriggers.Describe(MidiTrigger), TimecodeTrigger.Length > 0 ? "TC " + TimecodeTrigger : "" }.Where(s => !string.IsNullOrEmpty(s)));
+        new[] { Hotkey, MidiTriggers.Describe(MidiTrigger), TimecodeTrigger.Length > 0 ? "TC " + TimecodeTrigger : "",
+                ClockTrigger.Length > 0 ? Loc.T("Kl.") + " " + ClockTrigger : "" }.Where(s => !string.IsNullOrEmpty(s)));
 
     /// <summary>Typenøkkelen som står i showfila («audio», «video» …).</summary>
     [JsonIgnore] public string TypeKey => CueJsonConverter.KeyOf(this);

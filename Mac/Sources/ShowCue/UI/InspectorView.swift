@@ -76,6 +76,9 @@ struct CueInspector: View {
                 FieldLabel(L("Tidskode-trigger (MTC inn, tt:mm:ss:ff)"))
                 TimecodeField(value: $cue.timecodeTrigger, allowEmpty: true)
                     .help(L("Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen."))
+                FieldLabel(L("Klokkeslett-trigger (tt:mm:ss)"))
+                ClockField(value: $cue.clockTrigger)
+                    .help(L("Cuen starter når klokka på maskinen passerer klokkeslettet, f.eks. 19:00:00. Slå på Klokke-triggere aktive under Innstillinger → Sikkerhet. Tomt = ingen."))
             case .advanced:
                 FieldLabel(L("Hurtigtast"))
                 Button(action: { model.hotkeyCapture = (model.hotkeyCapture === cue) ? nil : cue }) {
@@ -720,6 +723,29 @@ private struct RouteCell: View {
             .onSubmit { onCommit(text); NSApp.keyWindow?.makeFirstResponder(nil) }
             .onChange(of: focused) { f in if !f && text != initial { onCommit(text) } }
             .help(help)
+    }
+}
+
+/// Tekstfelt for klokkeslett: lagres når du trykker Enter eller går ut av feltet. Ugyldig tekst tilbakestilles.
+struct ClockField: View {
+    @EnvironmentObject var model: AppModel
+    @Binding var value: String
+    @State private var text = ""
+
+    var body: some View {
+        TextField(L("tt:mm:ss"), text: $text, onEditingChanged: { editing in if !editing { commit() } })
+            .onSubmit(commit)
+            .styledField(mono: true)
+            .onAppear { text = value }
+            .onChange(of: value) { text = $0 }
+    }
+
+    private func commit() {
+        let t = text.trimmingCharacters(in: .whitespaces)
+        if t.isEmpty { value = ""; text = ""; return }
+        if ClockTriggers.parse(t) != nil { value = ClockTriggers.normalize(t); text = value; return }
+        model.statusText = L("Klokkeslett må skrives tt:mm:ss, f.eks. 19:00:00.")
+        text = value
     }
 }
 

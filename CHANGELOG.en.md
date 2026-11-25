@@ -6,6 +6,15 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.21.0 – 2026-11-24
+
+### New
+- **Clock-time trigger** (Windows and Mac, same behaviour): a cue can start by itself when the computer's clock passes a chosen time (hh:mm:ss, local time), e.g. “doors open 19:00:00”.
+  The *Clock-time trigger* field is in the *Timing* tab, and the time is shown in the trigger column of the cue list (“At 19:00:00”).
+  Each cue starts once when the time is passed. Cues are not started after sleep, on large jumps in the clock (more than 2 seconds between two checks) or when daylight saving time changes.
+- **Clock triggers active** (*Settings → Safety*) turns the feature on and off. It is **off** by default, so nothing starts unexpectedly.
+- **Check the show** warns when cues have a clock trigger but the setting is off.
+
 ## 0.20.0 – 2026-11-24
 
 ### Changed

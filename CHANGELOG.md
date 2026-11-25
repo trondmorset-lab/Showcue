@@ -6,6 +6,15 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.21.0 – 2026-11-24
+
+### Nytt
+- **Klokkeslett-trigger** (Windows og Mac, samme oppførsel): en cue kan starte av seg selv når klokka på maskinen passerer et valgt klokkeslett (tt:mm:ss, lokal tid), f.eks. «dørene åpner 19:00:00».
+  Feltet *Klokkeslett-trigger* står i fanen *Tidsstyring*, og klokkeslettet vises i kolonnen for triggere i cuelista («Kl. 19:00:00»).
+  Hver cue starter én gang når klokkeslettet passeres. Cuer startes ikke etter dvale, ved store hopp i klokka (mer enn 2 sekunder mellom to sjekker) eller ved omstilling til sommer-/vintertid.
+- **Klokke-triggere aktive** (*Innstillinger → Sikkerhet*) slår funksjonen av og på. Den er **av** som standard, så ingenting starter uventet.
+- **Sjekk showet** advarer når cuer har klokketrigger, men innstillingen er av.
+
 ## 0.20.0 – 2026-11-24
 
 ### Endret

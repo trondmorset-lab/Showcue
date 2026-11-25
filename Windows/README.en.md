@@ -43,7 +43,7 @@ All cues have **pre-wait** (delay before start), **auto-continue** (start the ne
 - **The cue list** has column headings. The row of the cue that is **playing now** is green with a progress bar and the time left in the *Remaining* column
   (“∞” for loops and cues that run until stopped). The cue **GO will start** has a blue edge and ▶. Disabled cues are dimmed (and skipped by GO).
 - **The panel for the selected cue** is split into tabs: *Basic* (the cue's own fields), *Audio/media* (level, fades, outputs, scaling and screen – only for types with audio, pictures or video),
-  *Timing* (pre-wait, afterwards, timecode trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
+  *Timing* (pre-wait, afterwards, timecode trigger, clock-time trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
 - **Bottom:** active cues with a progress bar and time left, hotkeys and output.
 
 ### Start and end (waveform)
@@ -246,6 +246,8 @@ Audio from the page goes to the system audio output, not through the audio patch
   from the start time (e.g. 01:00:00:00). Length 0 = until the cue is stopped. Pause stops the timecode.
 - **Timecode trigger:** enter a time (hh:mm:ss:ff) in the panel, and turn on *MTC in* under *Settings → MIDI*.
   The cue starts when incoming MIDI Time Code passes the time (not when skipping past it).
+- **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
+  The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
 - **Light cue** (✺ Light): sends DMX over Art-Net (UDP 6454) to a node or as a broadcast. Levels are written
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,

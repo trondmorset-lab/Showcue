@@ -2,6 +2,14 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.21.0 – klokkeslett-trigger
+- Ny trigger per cue, `ClockTrigger` («tt:mm:ss», lokal tid, tom = av), ugyldig tekst blir tom (som `TimecodeTrigger`). Samme nøkkel og oppførsel på begge plattformer.
+- Logikken er ren og tar tidspunktene som argument (`ClockTriggers.Crossed`/`Due` på Windows, `ClockTriggers.crossed`/`due` på Mac): «passert» betyr forrige < klokkeslett ≤ nå, så hver cue starter høyst én gang per passering.
+  Intervall på mer enn 2 s, bakover eller null (dvale, klokkestilling), og intervall der UTC-forskyvningen endres (sommertid), starter ingenting. Bedre å gå glipp av en trigger enn å starte en cue uventet.
+- Innstillingen «Klokke-triggere aktive» er **av** som standard (maskininnstilling, ikke i showfila), så et show som åpnes på en annen maskin aldri starter noe av seg selv. «Sjekk showet» advarer når cuer har klokketrigger og innstillingen er av.
+- Cuene startes som ved tidskode-trigger (`Engine.Fire`/`engine.fire`), også i showmodus; ingen egen redigeringslås, siden tidskode- og MIDI-triggere heller ikke har det. Ikke lagt i `IShowControl`/`RemoteRouter` (ingen fjernstyring involvert), så stresstesten er uberørt.
+- Sjekken kjøres i den vanlige takten (Windows `OnTick`, Mac `tick`), ikke med egen timer.
+
 ## 0.20.0 – nytt hovedvindu
 - **Eierens godkjente forslag (mockup) er bygd innenfor de eksisterende temaene**: samme farger (`Running`/`RunningRow`, `Playhead`/`PlayheadRow`), samme font og samme kontroller. Ingen motor, showformat eller snarveier er endret.
 - **Visningsregler er ren logikk med tester på begge plattformer** (`CueDisplay` og `InspectorLayout`, Windows `Models/CueDisplay.cs`, Mac `Core/CueDisplay.swift`, `CueDisplayTests`):

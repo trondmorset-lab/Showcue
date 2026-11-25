@@ -1067,6 +1067,10 @@
                                 <TextBox Text="{Binding SelectedCue.TimecodeTrigger, Mode=OneWay}" LostFocus="TimecodeTrigger_LostFocus"
                                          FontFamily="{StaticResource MonoFont}"
                                          ToolTip="{local:T 'Cuen starter når innkommende MIDI Time Code passerer tiden. Slå på MTC inn under Innstillinger → MIDI. Tomt = ingen.'}" />
+                                <TextBlock Style="{StaticResource Label}" Text="{local:T 'Klokkeslett-trigger (tt:mm:ss)'}" />
+                                <TextBox Text="{Binding SelectedCue.ClockTrigger, Mode=OneWay}" LostFocus="ClockTrigger_LostFocus"
+                                         FontFamily="{StaticResource MonoFont}"
+                                         ToolTip="{local:T 'Cuen starter når klokka på maskinen passerer klokkeslettet, f.eks. 19:00:00. Slå på Klokke-triggere aktive under Innstillinger → Sikkerhet. Tomt = ingen.'}" />
                             </StackPanel>
 
                             <!-- Avansert -->

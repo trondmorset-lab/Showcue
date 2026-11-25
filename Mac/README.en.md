@@ -46,8 +46,10 @@ The first time you start the app, macOS asks for access to the **local network**
 - **The cue list** has column headings. The row of the cue that is **playing now** is green with a progress bar and the time left in the *Remaining* column
   (“∞” for loops and cues that run until stopped). The cue **GO will start** has a blue edge and ▶. Disabled cues are dimmed (and skipped by GO).
 - **The panel for the selected cue** is split into tabs: *Basic* (the cue's own fields), *Audio/media* (level, fades, outputs, scaling and screen – only for types with audio, pictures or video),
-  *Timing* (pre-wait, afterwards, timecode trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
+  *Timing* (pre-wait, afterwards, timecode trigger, clock-time trigger) and *Advanced* (hotkey, MIDI trigger, button panel, colour, notes). Number and name are always above the tabs.
 - **Bottom:** active cues with a progress bar and time left, hotkeys and output.
+- **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
+  The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
 
 ## Multichannel audio interfaces and network audio
 

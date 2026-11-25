@@ -26,7 +26,7 @@ Both have:
 - **Pause/resume all**, **real-time scrubbing** in audio and video while playing, release loop (devamp), start from the cursor and fade curves
 - **Start and end with waveform**, zoom and preview through the audio patch
 - Pre-wait, auto-continue and auto-follow
-- Hotkeys and MIDI triggers per cue
+- Hotkeys, MIDI triggers, timecode triggers and clock-time triggers per cue
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
 - **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
 - **Remote control** with OSC in, MIDI in and MSC

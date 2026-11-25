@@ -53,6 +53,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private CancellationTokenSource? _loudnessCancel;
     private OscFeedback? _feedback;
     private int _feedbackTick;
+    private DateTime _lastClockCheck = DateTime.MinValue;
 
     // Angre, autolagring og showmodus
     private readonly UndoHistory _history = new();
@@ -634,6 +635,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         return due.Count;
     }
 
+    /// <summary>Klokketrigger: start cuer når veggklokka passerer klokkeslettet siden forrige sjekk. Cuene startes som ved tidskode-trigger.</summary>
+    private void CheckClockTriggers(DateTime now)
+    {
+        var previous = _lastClockCheck;
+        _lastClockCheck = now;
+        if (!_settings.ClockTriggersEnabled || previous == DateTime.MinValue) return;
+        var due = ClockTriggers.Due(Cues, previous, now);
+        foreach (var c in due) Engine.Fire(c);
+        if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
+    }
+
     private static string? KeyName(Key k)
     {
         if (k is >= Key.A and <= Key.Z) return k.ToString();
@@ -964,6 +976,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void CloseMemo_Click(object sender, RoutedEventArgs e) => MemoText = "";
 
     private void About_Click(object sender, RoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+
+    private void ClockTrigger_LostFocus(object sender, RoutedEventArgs e)
+    {
+        var box = (TextBox)sender;
+        if (SelectedCue == null) return;
+        var text = box.Text.Trim();
+        if (text.Length > 0 && !ClockTriggers.TryParse(text, out _))
+        {
+            StatusText = Loc.T("Klokkeslett må skrives tt:mm:ss, f.eks. 19:00:00.");
+            box.Text = SelectedCue.ClockTrigger;
+            return;
+        }
+        SelectedCue.ClockTrigger = text;
+        box.Text = SelectedCue.ClockTrigger;
+    }
 
     private void TimecodeTrigger_LostFocus(object sender, RoutedEventArgs e)
     {
@@ -1445,6 +1472,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             try { _feedback.Update(BuildStatus(), Engine.Now); }
             catch { /* nettverksfeil skal aldri påvirke showet */ }
         }
+
+        CheckClockTriggers(DateTime.Now);
 
         var clock = DateTime.Now.ToString("HH:mm:ss");
         if (clock != _lastClock)
