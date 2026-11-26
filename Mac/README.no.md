@@ -54,6 +54,7 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
   Kryss av for *Hopp over i øvelse* i fanen *Tidsstyring* (en liten *ØV*-merking vises i cuelista). Mens modusen er på, flytter GO, auto-fortsett og auto-følg seg forbi merkede cuer og starter dem aldri,
   og klokkeslett- og tidskode-triggere starter dem heller ikke. Å starte en merket cue direkte virker fortsatt: med nummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
   Et tydelig felt øverst i vinduet står der så lenge modusen er på, og vindustittelen viser det også. Modusen **lagres aldri**: programmet starter alltid med den av. *Sjekk showet* advarer mens den er på og teller de merkede cuene.
+- **Forhåndslast neste cue:** *Innstillinger → Sikkerhet → Forhåndslast neste cue* (av som standard, prøv først på eget utstyr) forbereder cuen under GO-markøren og cuene den starter automatisk (høyst tre filer) i bakgrunnen, så lyd og video starter med mindre forsinkelse. Feiler forberedelsen, starter cuen som vanlig.
 
 ## Flerkanals lydkort og nettverkslyd
 
@@ -83,6 +84,8 @@ Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres 
 | Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
 | Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
 
+Routingforhåndsvalg fungerer som på Windows: knappen *Forhåndsvalg* under routingmatrisen setter et navngitt forhåndsvalg (utgangspar som `1-2` eller `3-4:-6`, lagret i showet) på cuen og alle andre valgte cuer, og kopierer/limer inn routing mellom cuer.
+
 Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
 Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
 
@@ -97,6 +100,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | Mellomrom | GO |
 | Esc | Stopp alt (to ganger = umiddelbart) |
 | ↑ / ↓ | Flytt GO-markøren |
+| ⌥⌘← / ⌥⌘→ | Forrige / neste scene (menyen *Scene* og velgeren over cuelista styrer scenene) |
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
 | ⌘P | Pause / fortsett alt |

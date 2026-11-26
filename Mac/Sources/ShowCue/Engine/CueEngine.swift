@@ -5,6 +5,10 @@ import QuartzCore
 /// bare selve lydmiksingen og dekodingen går på egne tråder.
 final class CueEngine: ObservableObject {
     let audio: AudioEngine
+    /// Forbereder cuene GO snart starter (se `Preloader`). Gjør ingenting før innstillingen er slått på.
+    let preloader = Preloader()
+    /// Forberedelsen er sluppet (stopp, nye innstillinger): modellen bør be om ny forberedelse for markøren.
+    var onPreloadRefresh: (() -> Void)?
     /// Standard utgang for video, bilde og PDF (skjermen i innstillingene). Vises også som forhåndsvisning.
     let output: OutputCompositor
     /// Skjermen standardutgangen står på (−1 = eget vindu).
@@ -51,6 +55,7 @@ final class CueEngine: ObservableObject {
         self.output = output
         self.midi = midi
         self.cueList = cueList
+        audio.preloader = preloader
         let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.tick() }
         RunLoop.main.add(t, forMode: .common) // går også mens menyer er åpne
         timer = t
@@ -169,6 +174,7 @@ final class CueEngine: ObservableObject {
         }
     }
 
+    /// Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.
     private func fireNext(after cue: Cue) {
         let list = cueList()
         guard let i = list.firstIndex(where: { $0 === cue }) else { return }
@@ -185,10 +191,20 @@ final class CueEngine: ObservableObject {
         i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
         return min(i, list.count)
     }
+        if let next = SceneLogic.nextEnabled(cueList(), after: cue) { fire(next) }
+    }
 
-    func findActive(_ number: String) -> [ActiveCue] {
+    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
+    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int { SceneLogic.nextPlayheadIndex(list, fired: fired) }
+
+    /// Aktive cuer et nummer peker på. `homeScene` er scenen til cuen som spør (nummeret søkes der først, se `SceneLogic`).
+    func findActive(_ number: String, homeScene: String? = nil) -> [ActiveCue] {
         let n = number.trimmingCharacters(in: .whitespaces)
         guard !n.isEmpty else { return [] }
+        let targets = SceneLogic.matching(cueList(), n, home: homeScene)
+        if !targets.isEmpty {
+            return active.filter { a in a.started && !a.done && targets.contains { $0 === a.cue } }
+        }
         return active.filter { $0.started && !$0.done && $0.cue.number.caseInsensitiveCompare(n) == .orderedSame }
     }
 
@@ -241,6 +257,8 @@ final class CueEngine: ObservableObject {
         if isPaused { resumeAll() } // stoppfader skal kunne høres
         preview.stop()
         active.forEach { $0.stop(fade: fade) }
+        preloader.clear() // filene slippes ved stopp; modellen forbereder markøren på nytt
+        onPreloadRefresh?()
     }
 
     // MARK: Takt

@@ -23,6 +23,9 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - **`byte.TryParse(…, HexNumber)` godtar mellomrom, Swifts `UInt8(_, radix: 16)` godtar «+»:** sjekk at begge tegn er sifre først (`\xHH`).
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
 
+- **Forhåndslasting:** aldri bruk en forberedt fil uten å sjekke at den fortsatt stemmer (størrelse/endringstid, samplingsfrekvens, start/slutt/loop); `Take…` skal returnere null, ikke kaste. En forberedt leser/dekoder har én eier: den som tar den, må lukke den. Ikke rør lydløkken for å «hjelpe» forberedelsen.
+- Windows: `MediaCache.Images` brukes nå også fra bakgrunnen (`Warm`), så alle tilganger går gjennom `ImagesLock`.
+
 ## Showfiler
 - Windows leste en cue med ett ugyldig felt (f.eks. `"FadeTime": "tre"`) som feil for hele filen. Nå leses feltene hver for seg (`CueJsonConverter.ReadFieldByField`),
   og «null» i `Cues`, `Files` og `Routes` fjernes i egenskapene. Mac har alltid brukt standardverdi per felt.
@@ -64,6 +67,11 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - `git filter-branch` på commits signert av GitHub: begrens området (`<commit>^..main`), ellers skrives hele historikken om.
 - En PR med en annen PR-gren som base blir lukket/merget sammen med den; sett base til `main`.
 - Byggesjekken på `main` kan feile selv om PR-en var grønn (ustabil test). Utgivelsen stopper da; rett testen i en ny PR.
+
+## Scener
+- **Filtrert liste og valgt cue:** i WPF setter `DataGrid` `SelectedItem` til null når valgt rad skjules av filteret. Bytte av scene og redigering av scenelista må skje med `_switchingScene` satt, ellers nullstilles GO-markøren til scenen (og «slutt på lista» vises). Sett valgt cue eksplisitt etterpå.
+- **Scenenavn i mållister:** `:`, `,`, `;`, `/` og `\` er skilletegn i mål og OSC-adresser og fjernes fra navn (`SceneLogic.CleanName`). Et cuenummer som selv inneholder «:» finnes fortsatt som vanlig nummer hvis scenen før kolonet ikke har cuer.
+- Nye cuer, innlimte og flyttede cuer må alltid få `Scene` = aktiv scene (`InsertCues`/`insert`), ellers havner de i en scene som ikke vises.
 
 ## Klokke og tid
 - `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.

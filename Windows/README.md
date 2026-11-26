@@ -74,6 +74,10 @@ file channels ──(routing per cue)──▶ outputs ──(audio patch)──
 - **Routing per audio cue**: the matrix in the panel on the right, with file channels as rows and outputs as columns. Enter the level in dB,
   or double-click a cell to turn it on/off. “Default” means mono → 1+2, stereo → 1/2, and multichannel files channel by channel.
   Changes to routing and level are heard immediately while the cue is playing.
+- **Routing presets**: the *Presets* button under the matrix. A preset is a named list of output pairs saved in the show (e.g. “Main” = `1-2`,
+  “Monitor” = `3-4`, “Main + Monitor” = `1-2, 3-4`, optionally with a level: `3-4:-6`). Choose one to set it on the cue and on all other selected cues
+  (mono goes to both outputs of each pair, stereo left/right, multichannel summed alternately at −3 dB). You can also copy a cue's routing and paste it on others.
+  The line above the matrix shows what the routing matches (a preset name, “Default”, “Off” or the outputs).
 
 **Audio in video (“de-embedding”):** the audio track in video files is decoded by Windows (Media Foundation: AAC, PCM, WMA …)
 and played by ShowCue's own audio engine. It goes through the audio patch just like an audio cue, with
@@ -106,6 +110,7 @@ and sample rate are then used directly. ASIO is recommended for the lowest laten
 | `/cue/{no}/stop` | Stop a cue (with the cue's fade out) |
 | `/cue/{no}/go` or `/go/{no}` | Set the playhead to a cue and run GO |
 | `/hotkey/{key}` | Like pressing the hotkey, e.g. `/hotkey/F1` |
+| `/scene/{name}` | Switch the active scene (or `/scene "Act 2"`). Cue numbers in the commands above are looked up in the active scene first, and `Act 2:5` points at a specific scene |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / resume all |
 | `/cue/{no}/devamp` | Release the loop in a cue (finishes and continues to the end of the file) |
 | `/cue/{no}/next`, `/cue/{no}/previous` | Step to the next / previous slide in a running slideshow |
@@ -175,6 +180,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 | **Ctrl+Shift+T / L / I / W** | Add timecode, light, input, web page cue |
 | **Ctrl+D** | Duplicate |
 | **Ctrl+↑ / Ctrl+↓** | Move cue up/down |
+| **Ctrl+Page Up / Page Down** | Previous / next scene |
 | **Delete** | Delete selected cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Save / open / new show |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo (also Ctrl+Shift+Z) |
@@ -198,7 +204,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
   Images and PDF pages are shown for *Time per slide* seconds (each PDF page becomes a slide of its own), videos play until they finish,
   and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
   (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
-- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
+- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away. With the *Scene* field it jumps to another scene (see Scenes).
+- **Scenes:** the picker above the cue list chooses the active scene. Each scene is its own cue list with its own numbering, GO playhead and GO order; GO never moves to another scene by itself. **Ctrl+Page Up / Page Down** switches scene, and the *Scenes* menu creates, renames, deletes and reorders scenes and moves the selected cues. The same number can be used in different scenes. Fade, stop, go to and group targets are looked up in the cue's own scene first, then in all scenes; write `Act 2:5` for a specific scene.
 - **Group:** starts several cues with one GO. Write the numbers, e.g. `2, 5, 8-10` (`8-10` is every cue from 8 to 10). Each cue follows its own pre-wait, and disabled cues are skipped.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
@@ -253,6 +260,7 @@ Audio from the page goes to the system audio output, not through the audio patch
   Tick *Skip in rehearsal* in the *Timing* tab (a small *REH* marker shows in the cue list). While the mode is on, GO, auto-continue and auto-follow move past marked cues and never start them,
   and clock and timecode triggers do not start them either. Starting a marked cue directly still works: by number (OSC, MIDI show control), hotkey, MIDI trigger, button panel, double-click and as a target of a group cue.
   A bright bar at the top of the window stays visible while the mode is on, and the window title says so. The mode is **never saved**: the program always starts with it off. *Check the show* warns while it is on and counts the marked cues.
+- **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 - **Light cue** (✺ Light): sends DMX over Art-Net (UDP 6454) to a node or as a broadcast. Levels are written
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,

@@ -494,7 +494,9 @@ struct CueInspector: View {
     private var gotoSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Mål-cue (nummer)")); TextInput($cue.target, mono: true)
+            FieldLabel(L("Scene (tom = nummeret søkes i denne scenen først, så i alle)")); TextInput($cue.targetScene)
             Toggle(L("Kjør mål-cuen med en gang (ellers flyttes bare GO-markøren)"), isOn: $cue.fire).padding(.top, 8)
+            Hint(L("Flytter GO-markøren, f.eks. for å hoppe tilbake og gjenta en del, eller hoppe over en del. Fyller du bare ut scene, byttes scenen og GO-markøren står der den sist var. Nummeret kan også skrives som Scene:nummer."))
         }
     }
 
@@ -629,6 +631,7 @@ struct RoutingMatrixView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.theme) var theme
     @ObservedObject var cue: Cue
+    @State private var presetEditor: PresetEditorTarget?
 
     private var rows: Int { max(1, min(16, cue.fileChannels > 0 ? cue.fileChannels : 2)) }
 
@@ -636,6 +639,8 @@ struct RoutingMatrixView: View {
         let buses = model.settings.buses
         let routes = cue.effectiveRoutes(fileChannels: rows)
         VStack(alignment: .leading, spacing: 6) {
+            Text(L("Routing: {0}", RoutingPresets.describe(cue.routes, fileChannels: cue.fileChannels, presets: model.routingPresets, busCount: buses.count)))
+                .uiFont(11.5).foregroundColor(theme.muted)
             ScrollView(.horizontal, showsIndicators: true) {
                 Grid(horizontalSpacing: 2, verticalSpacing: 2) {
                     GridRow {
@@ -669,10 +674,46 @@ struct RoutingMatrixView: View {
                     let g = ch > 1 ? -6.0 : 0
                     cue.routes = (1...ch).flatMap { [AudioRoute($0, 1, g), AudioRoute($0, 2, g)] }
                 }.help(L("Alle kanaler til utgang 1 og 2"))
+                presetMenu
             }
             .buttonStyle(PanelButtonStyle())
             .uiFont(11.5)
         }
+        .sheet(item: $presetEditor) { target in RoutingPresetSheet(index: target.index) }
+    }
+
+    /// Lagrede routinger for showet, og kopier/lim inn routing mellom cuer. Alt skjer på hovedtråden;
+    /// lydtråden får den nye routingen av den vanlige lyttingen på endringer i cuen.
+    private var presetMenu: some View {
+        let edit = model.isEditable
+        let presets = model.routingPresets
+        return Menu(L("Forhåndsvalg")) {
+            if presets.isEmpty { Text(L("Ingen forhåndsvalg ennå")) }
+            ForEach(Array(presets.enumerated()), id: \.offset) { _, p in
+                Button("\(p.name)   (\(RoutingPresets.formatPairs(p)))") { model.applyRoutingPreset(p, to: cue) }.disabled(!edit)
+            }
+            Divider()
+            Button(L("Nytt forhåndsvalg")) { presetEditor = PresetEditorTarget(index: nil) }
+                .disabled(!edit || presets.count >= RoutingPresets.maxPresets)
+            Menu(L("Endre forhåndsvalg")) {
+                ForEach(Array(presets.enumerated()), id: \.offset) { i, p in
+                    Button(p.name) { presetEditor = PresetEditorTarget(index: i) }
+                }
+            }.disabled(!edit || presets.isEmpty)
+            Menu(L("Slett forhåndsvalg")) {
+                ForEach(Array(presets.enumerated()), id: \.offset) { i, p in
+                    Button(p.name) { model.deleteRoutingPreset(at: i) }
+                }
+            }.disabled(!edit || presets.isEmpty)
+            Divider()
+            Button(L("Kopier routing")) { model.copyRouting(of: cue) }
+            Button(L("Lim inn routing")) { model.pasteRouting(to: cue) }.disabled(!edit || !model.routeClipboard.hasContent)
+            Button(L("Bruk denne routingen på alle valgte cuer")) { model.applyRouting(of: cue) }
+                .disabled(!edit || model.routingTargets(for: cue).count < 2)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help(L("Lagrede routinger for showet, og kopier/lim inn routing mellom cuer"))
     }
 
     private func commit(src: Int, bus: Int, text: String) {
@@ -693,6 +734,59 @@ struct RoutingMatrixView: View {
             }
         }
         cue.routes = list.sorted { ($0.source, $0.bus) < ($1.source, $1.bus) }
+    }
+}
+
+/// Hvilket forhåndsvalg dialogen redigerer (nil = nytt).
+private struct PresetEditorTarget: Identifiable {
+    let id = UUID()
+    let index: Int?
+}
+
+/// Dialog for å lage eller endre et routingforhåndsvalg: navn og stereopar («1-2, 3-4:-6»).
+private struct RoutingPresetSheet: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.theme) var theme
+    @Environment(\.dismiss) var dismiss
+    let index: Int?
+    @State private var name = ""
+    @State private var pairs = "1-2"
+    @State private var error = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(index == nil ? L("Nytt routingforhåndsvalg") : L("Endre routingforhåndsvalg")).uiFont(14)
+            Text(L("Navn"))
+            TextField("", text: $name).textFieldStyle(.roundedBorder)
+            Text(L("Utgangspar"))
+            TextField("", text: $pairs).textFieldStyle(.roundedBorder)
+            Text(L("Hvert par er to utganger, f.eks. «1-2» (hovedhøyttalere) eller «3-4» (monitor). Flere par skilles med komma: «1-2, 3-4». ")
+                 + L("Et nivå i dB kan legges til etter kolon: «3-4:-6»."))
+                .uiFont(11.5).foregroundColor(theme.muted).fixedSize(horizontal: false, vertical: true)
+            if !error.isEmpty { Text(error).foregroundColor(.red).fixedSize(horizontal: false, vertical: true) }
+            HStack {
+                Spacer()
+                Button(L("Avbryt")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(L("Lagre")) { save() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+        .frame(width: 420)
+        .onAppear {
+            if let i = index, i < model.routingPresets.count {
+                name = model.routingPresets[i].name
+                pairs = RoutingPresets.formatPairs(model.routingPresets[i])
+            }
+        }
+    }
+
+    private func save() {
+        guard let parsed = RoutingPresets.parsePairs(pairs) else {
+            error = L("Utgangsparene kan ikke leses. Skriv f.eks. «1-2» eller «1-2, 3-4:-6».")
+            return
+        }
+        let err = model.saveRoutingPreset(index: index, name: name, pairs: parsed)
+        if err == .ok { dismiss() } else { error = RoutingPresets.errorText(err) }
     }
 }
 

@@ -18,15 +18,16 @@ struct CueListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            SceneBar()
             header
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(Array(model.cues.enumerated()), id: \.element.id) { i, cue in
+                        ForEach(Array(model.visibleCues.enumerated()), id: \.element.id) { i, cue in
                             CueRow(cue: cue, index: i, selected: model.selection.contains(cue.id))
                                 .id(cue.id)
                                 .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                                    loadURLs(providers) { model.dropFiles($0, on: cue, index: i) }
+                                    loadURLs(providers) { model.dropFiles($0, on: cue, index: model.index(of: cue) ?? i) }
                                     return true
                                 }
                         }
@@ -37,7 +38,7 @@ struct CueListView: View {
                 }
             }
             .overlay {
-                if model.cues.isEmpty {
+                if model.visibleCues.isEmpty {
                     VStack(spacing: 6) {
                         Text(L("Dra lyd-, video-, bilde- eller PDF-filer hit")).uiFont(18).foregroundColor(theme.muted)
                         Text(L("eller bruk «＋ Media» i verktøylinja")).uiFont(13).foregroundColor(theme.faint)
@@ -201,6 +202,13 @@ struct CueRow: View {
             Button(cue.disabled ? L("Aktiver") : L("Deaktiver")) { cue.disabled.toggle() }
             Button(cue.skipInRehearsal ? L("Ikke hopp over i øvelse") : L("Hopp over i øvelse")) { cue.skipInRehearsal.toggle() }
             Button(L("Dupliser")) { model.select(cue); model.duplicateSelected() }
+            if model.sceneItems.count > 1 {
+                Menu(L("Flytt til scene")) {
+                    ForEach(model.sceneItems.filter { !SceneLogic.sameScene($0, model.activeSceneLabel) }, id: \.self) { name in
+                        Button(name) { if !model.selection.contains(cue.id) { model.select(cue) }; model.moveSelectedToScene(name) }
+                    }
+                }
+            }
         }
     }
 }
@@ -218,5 +226,45 @@ struct ProgressBar: View {
             }
         }
         .frame(height: height)
+    }
+}
+
+// MARK: - Scenevelger
+
+/// Velger scene over cuelista (hver scene er en egen cueliste med egen nummerering og GO-markør), med menyen for å lage, gi nytt navn, slette og flytte.
+struct SceneBar: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.theme) var theme
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(L("Scene")).foregroundColor(theme.muted)
+            Button("◀") { model.stepScene(-1) }.help(L("Forrige scene (⌘⌥←)"))
+            Picker("", selection: Binding(get: { model.activeSceneLabel }, set: { model.selectSceneLabel($0) })) {
+                ForEach(model.sceneItems, id: \.self) { Text($0).tag($0) }
+            }
+            .labelsHidden()
+            .frame(minWidth: 170, maxWidth: 260)
+            .help(L("Velg scene. GO bytter aldri scene av seg selv."))
+            Button("▶") { model.stepScene(1) }.help(L("Neste scene (⌘⌥→)"))
+            Menu(L("Scener")) {
+                Button(L("Ny scene")) { model.addSceneDialog() }
+                Button(L("Gi scenen nytt navn")) { model.renameSceneDialog() }
+                Button(L("Slett scenen")) { model.deleteSceneDialog() }
+                Divider()
+                Button(L("Flytt scenen mot starten")) { model.moveActiveScene(-1) }
+                Button(L("Flytt scenen mot slutten")) { model.moveActiveScene(1) }
+                Menu(L("Flytt valgte cuer til scene")) {
+                    ForEach(model.sceneItems.filter { !SceneLogic.sameScene($0, model.activeSceneLabel) }, id: \.self) { name in
+                        Button(name) { model.moveSelectedToScene(name) }
+                    }
+                }
+            }
+            .fixedSize()
+            Spacer()
+        }
+        .uiFont(13)
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(theme.panel)
     }
 }

@@ -23,4 +23,5 @@ enn 3 minutter, avbrytes kjøringen og saken står i `hang.txt`. Minnebruken skr
 | Playback edge cases | Avspilling med ekstreme verdier (NaN, uendelig, tomme filer, ett sample, loop), fades, pause, spoling |
 | Mixer concurrency | 8 s lydtråd og kontrolltråd samtidig: start/stopp, routing, patch, fades, spoling |
 | Loudness extremes, Waveform, LTC source, OSC feedback, Dmx fader, Undo history, Safety/Media tools paths | Grensetilfeller |
+| Preload planning | Tilfeldige cuelister (gå til-løkker, grupper, deaktiverte) mot planleggeren for forhåndslasting og regnskapet: aldri unntak, aldri over grensen, ingen doble |
 | Network sender | UDP/TCP/HTTP mot lokale mottakere og ugyldige adresser – skal aldri henge eller kaste |

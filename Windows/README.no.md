@@ -74,6 +74,10 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
 - **Routing per lyd-cue**: matrisen i panelet til høyre, med filkanaler som rader og utganger som kolonner. Skriv nivå i dB,
   eller dobbeltklikk en rute for å slå av/på. «Standard» betyr mono → 1+2, stereo → 1/2, og flerkanalsfiler kanal for kanal.
   Endringer i routing og nivå høres med en gang mens cuen spiller.
+- **Routingforhåndsvalg**: knappen *Forhåndsvalg* under matrisen. Et forhåndsvalg er en navngitt liste med utgangspar som lagres i showet (f.eks. «Hoved» = `1-2`,
+  «Monitor» = `3-4`, «Hoved + monitor» = `1-2, 3-4`, eventuelt med nivå: `3-4:-6`). Velg ett for å sette det på cuen og på alle andre valgte cuer
+  (mono går til begge utgangene i hvert par, stereo venstre/høyre, flerkanal summeres annenhver med −3 dB). Du kan også kopiere routingen til en cue og lime den inn på andre.
+  Linja over matrisen viser hva routingen svarer til (navn på forhåndsvalg, «Standard», «Av» eller utgangene).
 
 **Lyd i video («de-embedding»):** lydsporet i videofiler dekodes av Windows (Media Foundation: AAC, PCM, WMA …)
 og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen akkurat som en lyd-cue, med
@@ -106,6 +110,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 | `/cue/{nr}/stop` | Stopp cue (med cuens fade ut) |
 | `/cue/{nr}/go` eller `/go/{nr}` | Sett markøren til cue og kjør GO |
 | `/hotkey/{tast}` | Som å trykke hurtigtasten, f.eks. `/hotkey/F1` |
+| `/scene/{navn}` | Bytt aktiv scene (eller `/scene "Akt 2"`). Cuenumre i kommandoene over søkes først i aktiv scene, og `Akt 2:5` peker på en bestemt scene |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / fortsett alt |
 | `/cue/{nr}/devamp` | Slipp loopen i en cue (spiller ferdig og fortsetter til filslutt) |
 | `/cue/{nr}/next`, `/cue/{nr}/previous` | Bla til neste / forrige lysbilde i en lysbildeserie som kjører |
@@ -175,6 +180,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+Shift+T / L / I / W** | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
+| **Ctrl+Page Up / Page Down** | Forrige / neste scene |
 | **Delete** | Slett valgte cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Lagre / åpne / nytt show |
 | **Ctrl+Z / Ctrl+Y** | Angre / gjør om (også Ctrl+Shift+Z) |
@@ -198,7 +204,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
   Bilder og PDF-sider vises i *Tid per bilde* sekunder (hver PDF-side blir et eget lysbilde), videoer spiller til de er ferdige,
   og lysbildene krysstones. Velg loop og tilfeldig rekkefølge, eller slå av *Bytt automatisk* og bla med ⏮ / ⏭ under *Aktive cuer*
   (eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`). Stopp cuen for å avslutte serien.
-- **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
+- **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang. Med feltet *Scene* hopper den til en annen scene (se Scener).
+- **Scener:** velgeren over cuelista bestemmer aktiv scene. Hver scene er en egen cueliste med egen nummerering, GO-markør og GO-rekkefølge; GO flytter aldri til en annen scene av seg selv. **Ctrl+Page Up / Page Down** bytter scene, og menyen *Scener* lager, gir nytt navn, sletter og flytter scener og flytter valgte cuer. Samme nummer kan brukes i ulike scener. Mål i fade-, stopp-, gå til- og gruppe-cuer søkes først i cuens egen scene og deretter i alle scener; skriv `Akt 2:5` for en bestemt scene.
 - **Gruppe:** starter flere cuer med én GO. Skriv numrene, f.eks. `2, 5, 8-10` (`8-10` er alle cuer fra 8 til 10). Hver cue følger sin egen pre-wait, og deaktiverte cuer hoppes over.
 - **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
   runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.
@@ -253,6 +260,7 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
   Kryss av for *Hopp over i øvelse* i fanen *Tidsstyring* (en liten *ØV*-merking vises i cuelista). Mens modusen er på, flytter GO, auto-fortsett og auto-følg seg forbi merkede cuer og starter dem aldri,
   og klokkeslett- og tidskode-triggere starter dem heller ikke. Å starte en merket cue direkte virker fortsatt: med nummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
   Et tydelig felt øverst i vinduet står der så lenge modusen er på, og vindustittelen viser det også. Modusen **lagres aldri**: programmet starter alltid med den av. *Sjekk showet* advarer mens den er på og teller de merkede cuene.
+- **Forhåndslast neste cue:** *Innstillinger → Sikkerhet → Forhåndslast neste cue* (av som standard, prøv først på eget utstyr) forbereder cuen under GO-markøren og cuene den starter automatisk (høyst tre filer) i bakgrunnen, så lyd og video starter med mindre forsinkelse. Feiler forberedelsen, starter cuen som vanlig.
 - **Lys-cue** (✺ Lys): sender DMX over Art-Net (UDP 6454) til en node eller som kringkasting. Nivåer skrives
   `kanal@verdi`, f.eks. `1@255 2-4@50% 10@0`, og fades over valgt tid. Kanaler som ikke nevnes, beholder nivået.
 - **Live-inngang** (◉ Inn): lyden fra inngangen valgt under *Innstillinger → Lyd* (WASAPI: mikrofon, linje inn,

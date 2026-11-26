@@ -82,6 +82,10 @@ public abstract class Cue : ObservableObject
     /// <summary>MIDI-melding som starter cuen, f.eks. "N:60" (note), "CC:20" eller "PC:5". Tom = ingen.</summary>
     public string MidiTrigger { get => _midiTrigger; set { if (SetCue(ref _midiTrigger, value ?? "")) OnPropertyChanged(nameof(TriggerText)); } }
 
+    private string _scene = "";
+    /// <summary>Scenen cuen hører til (navnet). Tom = første (eller eneste) scene. Se <see cref="SceneLogic"/>.</summary>
+    public string Scene { get => _scene; set => SetCue(ref _scene, SceneLogic.CleanName(value)); }
+
     private bool _inButtonPanel;
     /// <summary>Vis cuen som knapp i knappepanelet. Cuer med hurtigtast vises der uansett.</summary>
     public bool InButtonPanel { get => _inButtonPanel; set => SetCue(ref _inButtonPanel, value); }
@@ -433,16 +437,22 @@ public sealed class StopCue : Cue
 public sealed class GotoCue : Cue
 {
     private string _target = "";
+    private string _targetScene = "";
     private bool _fire;
 
+    /// <summary>Cuenummeret (eller «Scene:nummer»). Tomt sammen med <see cref="TargetScene"/> = bare bytt scene.</summary>
     public string Target { get => _target; set => SetCue(ref _target, value?.Trim() ?? ""); }
+    /// <summary>Scenen hoppet går til. Tom = nummeret søkes i scenen cuen står i, deretter i alle scener.</summary>
+    public string TargetScene { get => _targetScene; set => SetCue(ref _targetScene, SceneLogic.CleanName(value)); }
     /// <summary>Kjør mål-cuen også (som GO), ikke bare flytt markøren.</summary>
     public bool Fire { get => _fire; set => SetCue(ref _fire, value); }
 
+    /// <summary>Målet slik det vises i lista: «5», «Akt 2:5» eller «scene Akt 2».</summary>
+    private string TargetText => Target.Length == 0 && TargetScene.Length > 0 ? Loc.F("scene {0}", TargetScene) : SceneLogic.GotoSpec(Target, TargetScene);
     public override string TypeName => Loc.T("Gå til");
     public override string TypeIcon => "↪";
-    protected override string DefaultName => string.IsNullOrEmpty(Target) ? Loc.T("Gå til") : Loc.F("Gå til {0}", Target);
-    public override string Summary => (string.IsNullOrEmpty(Target) ? Loc.T("(mål mangler)") : "→ " + Target) + (Fire ? "  + GO" : "");
+    protected override string DefaultName => TargetText.Length == 0 ? Loc.T("Gå til") : Loc.F("Gå til {0}", TargetText);
+    public override string Summary => (TargetText.Length == 0 ? Loc.T("(mål mangler)") : "→ " + TargetText) + (Fire ? "  + GO" : "");
 }
 
 /// <summary>Starter flere andre cuer med én GO. Hver cue i gruppen følger sin egen pre-wait og fortsett-innstilling.</summary>

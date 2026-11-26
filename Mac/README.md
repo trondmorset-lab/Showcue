@@ -54,6 +54,7 @@ The first time you start the app, macOS asks for access to the **local network**
   Tick *Skip in rehearsal* in the *Timing* tab (a small *REH* marker shows in the cue list). While the mode is on, GO, auto-continue and auto-follow move past marked cues and never start them,
   and clock and timecode triggers do not start them either. Starting a marked cue directly still works: by number (OSC, MIDI show control), hotkey, MIDI trigger, button panel, double-click and as a target of a group cue.
   A bright bar at the top of the window stays visible while the mode is on, and the window title says so. The mode is **never saved**: the program always starts with it off. *Check the show* warns while it is on and counts the marked cues.
+- **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 
 ## Multichannel audio interfaces and network audio
 
@@ -81,6 +82,8 @@ The sample rate follows the device, and files with a different rate are converte
 | Zoom in the waveform | Pinch on the trackpad or −/+ | Mouse wheel |
 | Hotkeys | The F keys require `fn`, unless “Use F1, F2, etc. keys as standard function keys” is turned on | |
 
+Routing presets work as on Windows: the *Presets* button under the routing matrix sets a named preset (output pairs such as `1-2` or `3-4:-6`, saved in the show) on the cue and all other selected cues, and copies/pastes routing between cues.
+
 Everything else is the same: language (Norwegian/English), cue types, start/end editing with waveform and preview, routing matrix, audio patch, video audio through the patch, OSC/MIDI in and out, MSC, status out over OSC, themes and cue colours.
 See the README in the Windows folder for a full description of OSC commands and status variables.
 
@@ -95,6 +98,7 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | Space | GO |
 | Esc | Stop all (twice = immediately) |
 | ↑ / ↓ | Move the GO playhead |
+| ⌥⌘← / ⌥⌘→ | Previous / next scene (the *Scene* menu and the picker above the cue list manage scenes) |
 | ⌘1 … ⌘8 | Add audio, video, image, PDF, fade, stop, OSC, MIDI |
 | ⌘9, ⌘0 | Add playlist, go to cue |
 | ⌘P | Pause / resume all |
