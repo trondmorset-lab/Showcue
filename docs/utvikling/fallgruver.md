@@ -91,3 +91,8 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 
 ## Klokke og tid
 - `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.
+
+## Sammenslåing av parallelle grener
+- Parallelle funksjonsgrener rører de samme delte stedene (`GO`, `FireNextAfter`, `PreflightCheck.Run`, `CodingKeys`, `AppModel`-didSet, innstillinger). En tekstlig sammenslåing som beholder begge sider gir duplikater som kompilerer feil eller, verre, kompilerer med feil oppførsel. Slå dem sammen semantisk til én versjon og les resultatet; ikke stol på at konfliktløseren «bare tok begge».
+- Rekkefølgen på parametere i en felles signatur (`Run(cues, settings, env, scenes, rehearsalMode)`) må velges én gang; oppdater alle kallesteder og tester.
+- Sjekk etter sammenslåing: `grep` etter `<<<<<<<`, doble `case`-linjer i `CodingKeys`, doble metoder med samme navn, og at `python3 tools/i18n.py` gir 0 feil. Bare CI kompilerer, så vent på grønn Windows og Mac før merge.
