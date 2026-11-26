@@ -132,8 +132,7 @@ struct AppSettings: Codable, Equatable {
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case webRemoteEnabled, webRemotePort, webRemotePin
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID, writeShowLog
-        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, preloadNextCue, inputDeviceUID
+        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, preloadNextCue, inputDeviceUID, writeShowLog
     }
 
     init(from decoder: Decoder) throws {
