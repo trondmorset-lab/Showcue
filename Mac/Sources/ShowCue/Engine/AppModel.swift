@@ -14,9 +14,7 @@ final class AppModel: ObservableObject, ShowControl {
 
     // Show
     @Published var cues: [Cue] = [] { didSet { observeCues(); updatePreload() } }
-    @Published var selection: Set<UUID> = [] { didSet { updatePreload() } }
-    @Published var cues: [Cue] = [] { didSet { observeCues() } }
-    @Published var selection: Set<UUID> = [] { didSet { recordPlayhead() } }
+    @Published var selection: Set<UUID> = [] { didSet { recordPlayhead(); updatePreload() } }
     /// Scenenavnene i rekkefølge. Tom = én scene uten navn (`SceneLogic`).
     @Published var scenes: [String] = []
     /// Aktiv scene (kanonisk navn; tom i et show uten scener). Cuelista viser bare cuene i den.
