@@ -830,11 +830,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         var previous = _lastClockCheck;
         _lastClockCheck = now;
         if (!_settings.ClockTriggersEnabled || previous == DateTime.MinValue) return;
-        var due = ClockTriggers.Due(Cues, previous, now);
+        var due = ClockTriggers.Due(Cues, previous, now).Where(c => !Rehearsal.IsSkipped(c, Engine.RehearsalMode)).ToList();
         using (ShowLog.Via(StartSource.Clock))
             foreach (var c in due) Engine.Fire(c);
-        var due = ClockTriggers.Due(Cues, previous, now).Where(c => !Rehearsal.IsSkipped(c, Engine.RehearsalMode)).ToList();
-        foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
     }
 

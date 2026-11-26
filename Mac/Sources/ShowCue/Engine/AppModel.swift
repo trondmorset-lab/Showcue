@@ -446,10 +446,8 @@ final class AppModel: ObservableObject, ShowControl {
         let previous = lastClockCheck
         lastClockCheck = now
         guard settings.clockTriggersEnabled, let previous else { return }
-        let due = ClockTriggers.due(cues, previous: previous, now: now)
-        ShowLog.via(.clock) { due.forEach { engine.fire($0) } }
         let due = ClockTriggers.due(cues, previous: previous, now: now).filter { !Rehearsal.isSkipped($0, mode: rehearsalMode) }
-        due.forEach { engine.fire($0) }
+        ShowLog.via(.clock) { due.forEach { engine.fire($0) } }
         if !due.isEmpty {
             statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
         }
