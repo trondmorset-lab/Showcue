@@ -553,8 +553,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // MARK: Codable – samme feltnavn som Windows-versjonen (PascalCase)
 
     enum K: String, CodingKey {
-        case type, Number, Name, Notes, PreWait, ContinueMode, Hotkey, Disabled, SkipInRehearsal, Color, MidiTrigger
-        case type, Number, Name, Notes, Scene, TargetScene, PreWait, ContinueMode, Hotkey, Disabled, Color, MidiTrigger
+        case type, Number, Name, Notes, Scene, TargetScene, PreWait, ContinueMode, Hotkey, Disabled, SkipInRehearsal, Color, MidiTrigger
         case FilePath, VolumeDb, Volume, StartTime, EndTime, Loop, FadeIn, FadeOut, FileDuration, FileChannels, Routes
         case ReplaceOthers, Stretch, OutputScreen, KnownDuration, HoldTime, Page
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
