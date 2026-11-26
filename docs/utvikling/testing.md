@@ -12,6 +12,7 @@
   `WebRemoteTests` (begge plattformer, like tilfeller) dekker HTTP-tolking (ufullstendig, feil, for stort, stitraversering), ruter, PIN, sperre, økter, JSON og sidene; `WebParserTests`/`WebRemoteCoreTests`/`WebRemoteContentTests`.
   Selve socket-løkka (`WebServer`) testes ikke i CI; stresstesten fuzzer `WebRemoteCore.Handle`.
 - **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
+- `StressFixTests` (begge plattformer): kjedeløkka (`ChainDrain`), tapte klokke-triggere, ødelagt sceneliste (0.27.2); loggrulling og filrekkefølge ligger i `ShowLogTests`.
 - `InteractionTests` (begge plattformer): regresjonstester for feil i samspillet mellom scener, øvelsesmodus, forhåndslasting, «gå til» og live-inngang (0.27.1).
 - Nye funksjoner får tester på begge plattformer. Rettede feil får en regresjonstest.
 

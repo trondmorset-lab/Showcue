@@ -204,18 +204,34 @@ final class ShowLogTests: XCTestCase {
         XCTAssertEqual(left, ["notes.txt", "showlog 2026-11-04 10.00.00.log", "showlog 2026-11-05 10.00.00.log", "showlog 2026-11-25 14.03.22.log"])
     }
 
-    func testStopsWritingAtTheSizeLimit() throws {
+    func testContinuesInANewFileAtTheSizeLimit() throws {
         let root = tempDir()
         defer { try? FileManager.default.removeItem(at: root) }
         let log = ShowLog(root: root, clock: { self.t0 }, maxFileBytes: 1024)
         for i in 0..<100 { log.record(.start, number: "\(i)", name: "Cue \(i)", cueType: "audio", how: .go) }
         XCTAssertTrue(log.flush())
         XCTAssertEqual(log.total, 100)
-        let path = try XCTUnwrap(log.filePath)
         log.close()
-        let size = (try FileManager.default.attributesOfItem(atPath: path))[.size] as? Int ?? 0
-        XCTAssertLessThanOrEqual(size, 1024)
-        XCTAssertTrue(try String(contentsOfFile: path, encoding: .utf8).contains("size limit reached"))
+        let files = ShowLogFiles.list(root: root)
+        XCTAssertGreaterThan(files.count, 1)
+        for f in files {
+            let size = (try FileManager.default.attributesOfItem(atPath: f.path))[.size] as? Int ?? 0
+            XCTAssertLessThanOrEqual(size, 1024)
+        }
+        XCTAssertTrue(try String(contentsOf: files[files.count - 1], encoding: .utf8).contains("the log continues in the next file"))
+        XCTAssertTrue(try String(contentsOf: files[0], encoding: .utf8).contains("| continued"))
+        XCTAssertTrue(try String(contentsOf: files[0], encoding: .utf8).contains("Cue 99"))
+    }
+
+    func testSameSecondFilesSortByNumberNotText() {
+        let names = [
+            "showlog 2026-11-25 14.03.22.log", "showlog 2026-11-25 14.03.22 (2).log", "showlog 2026-11-25 14.03.22 (10).log",
+            "showlog 2026-11-25 14.03.21 (12).log",
+        ]
+        let del = ShowLogFiles.toDelete(names, keep: 1)
+        XCTAssertEqual(del.count, 3)
+        XCTAssertFalse(del.contains("showlog 2026-11-25 14.03.22 (10).log"))
+        XCTAssertEqual(del[0], "showlog 2026-11-25 14.03.22 (2).log")
     }
 
     func testFileErrorIsSwallowedAndReportedOnce() throws {

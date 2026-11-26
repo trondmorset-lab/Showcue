@@ -101,4 +101,11 @@ Funksjonene i 0.21–0.27 ble slått sammen tekstlig, og feilene satt i skjøten
 - **Drivere kan levere NaN:** `LiveRing.Write` slipper bare gjennom endelige samples. Et NaN i mikseren når utgangen.
 - **Kontroller som kjører hvert tick (16 ms):** tolk ikke tekst for alle cuer hver gang (klokke-triggere sjekker først om feltet er tomt).
 - **Windows og `ExclusiveAddressUse`:** tjeneren lukker først (`Connection: close`), så porten har forbindelser i TIME_WAIT. Stresstesten «Web server sockets» starter tjeneren på nytt på samme port rett etter at klienter har vært koblet til; feiler den, må omstart prøve igjen.
-- **Ikke rettet, men kjent (se agentloggen):** en lang kjede av auto-fortsett-cuer går rekursivt (`StartActive` → `FireNextAfter` → `Fire`) og kan fylle stakken ved flere tusen cuer; loggfila slutter å vokse ved 5 MB og resten av kjøringen skrives ikke; en klokketrigger i overgangen til vintertid (02:xx) utløses to ganger og i overgangen til sommertid ikke; et tick som kommer mer enn 2 s etter forrige (UI-stopp) hopper over en klokketrigger.
+- **Ikke rettet, men kjent (se agentloggen):** ASIO-enhet som mistes (ingen `DriverResetRequest`; må prøves på ekte utstyr), felles PIN-sperre på nettsiden og ingen grense for antall kommandoer etter riktig PIN. Høstens overgang til vintertid (02:xx) utløser en klokketrigger to ganger (veggklokka passerer klokkeslettet to ganger, og hvert intervall er gyldig), og vårens overgang utløser den ikke (hoppet regnes som klokkestilling).
+
+## Rettet i 0.27.2
+- **Auto-fortsett-kjeder:** `FireNextAfter` legger neste cue i `ChainDrain` og den ytterste kallen kjører køen i en løkke. Ikke kall `Fire` rekursivt fra `StartActive`; stakken til WPF-tråden er 1 MB.
+- **Showloggen ruller til ny fil** ved 5 MB (`OpenFile(continued: true)`). Skriv aldri en «full»-flagg som stopper skrivingen for resten av kjøringen.
+- **Loggfilnavn sorteres med `SortKey`** (tid, så løpenummer som tall), ikke som tekst: `(10)` er nyere enn `(2)`, og `(2)` nyere enn navnet uten nummer.
+- **Klokketrigger og hang:** `ClockTriggers.Missed` melder (status + logg) en trigger som ble passert i en hang på 2–30 s uten klokkehopp. Cuen startes fortsatt ikke. Klokkestilling, sommertid og dvale gir ingen melding.
+- **`Scenes` med feil type** åpner showet på Windows (`TolerantStringListConverter`), som på Mac. Andre felt med samme risiko bør få samme omformer.

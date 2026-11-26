@@ -6,6 +6,24 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.27.2 – 2026-11-26
+
+### Rettet
+- **Lange auto-fortsett-kjeder** (Windows og Mac): cuer som starter hverandre med auto-fortsett eller auto-følg ligger ikke lenger inni hverandre. Før kunne flere tusen kjedede cuer bruke opp stakken til programmet og lukke det. Kjeden kjøres nå i en løkke, med samme rekkefølge og oppførsel som før.
+- **Showloggen stopper ikke lenger ved 5 MB** (Windows og Mac): når en loggfil er full, avsluttes den med en markering og loggen fortsetter i en ny fil (overskriften sier *continued*), så slutten av et langt show alltid blir logget. Gamle filer fjernes fortsatt slik at de 30 nyeste står igjen.
+- **Rekkefølge på loggfiler** (Windows og Mac): flere kjøringer startet i samme sekund ble sortert som tekst, så `(10)` regnet som eldre enn `(2)` og feil filer kunne slettes eller stå først. De sorteres nå etter tid og deretter nummer.
+- **Klokke-triggere og hang** (Windows og Mac): hvis programmet sto fast i 2–30 sekunder over et klokkeslett (for eksempel en veldig treg disk), ble cuen hoppet over uten beskjed. Den starter fortsatt ikke (den ville kommet for sent), men statuslinja og showloggen sier nå at en klokketrigger ble tapt. Hopp i klokka, sommertid og dvale ignoreres fortsatt uten melding.
+- **Ødelagt sceneliste** (Windows): en showfil der `Scenes` har feil type (tall, tekst eller objekt) lot seg ikke åpne i det hele tatt. Den åpnes nå, med tom sceneliste; elementer som ikke er tekst hoppes over. Mac-versjonen gjorde dette fra før.
+
+### Endret
+- `tools/stress/README.md` er nå på engelsk.
+
+### Tester
+- Nye enhetstester på begge plattformer (`StressFixTests`) for kjedeløkka, loggrulling og filrekkefølge, tapte klokke-triggere og ødelagte scenelister.
+
+### Ikke endret (designvalg, se prosjektnotatene)
+- Tap av en ASIO-enhet håndteres fortsatt ikke (må testes på ekte maskinvare). Nettsidens PIN-sperre er fortsatt felles for alle, og det er fortsatt ingen grense for antall kommandoer etter riktig PIN.
+
 ## 0.27.1 – 2026-11-26
 
 ### Rettet

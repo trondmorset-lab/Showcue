@@ -454,13 +454,20 @@ final class AppModel: ObservableObject, ShowControl {
     /// Klokketrigger: start cuer når veggklokka passerer klokkeslettet siden forrige sjekk. Cuene startes som ved tidskode-trigger.
     func checkClockTriggers(now: Date) {
         let previous = lastClockCheck
+        let uptime = ProcessInfo.processInfo.systemUptime
+        let previousUptime = lastClockUptime
         lastClockCheck = now
+        lastClockUptime = uptime
         guard settings.clockTriggersEnabled, let previous else { return }
         let due = ClockTriggers.due(cues, previous: previous, now: now).filter { !Rehearsal.isSkipped($0, mode: rehearsalMode) }
         ShowLog.via(.clock) { due.forEach { engine.fire($0) } }
         if !due.isEmpty {
             statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
         }
+        // Programmet sto fast en stund og gikk glipp av et klokkeslett: cuen startes ikke (den ville kommet for sent), men det meldes.
+        let missed = ClockTriggers.missedCues(cues, previous: previous, now: now, realElapsed: uptime - previousUptime)
+        for c in missed { ShowLog.add(.warning, cue: c, text: "clock trigger \(c.clockTrigger) missed (stall)") }
+        if !missed.isEmpty { statusText = L("Klokketrigger ble tapt fordi programmet sto fast ({0} cuer).", missed.count) }
     }
 
     // MARK: - Show-fil
@@ -1307,6 +1314,7 @@ final class AppModel: ObservableObject, ShowControl {
     // MARK: - Takt
 
     private var lastClockCheck: Date?
+    private var lastClockUptime: TimeInterval = 0
 
     private func tick() {
         tickCount += 1

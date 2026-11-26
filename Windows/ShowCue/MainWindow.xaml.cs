@@ -841,6 +841,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         using (ShowLog.Via(StartSource.Clock))
             foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
+        // Programmet sto fast en stund og gikk glipp av et klokkeslett: cuen startes ikke (den ville kommet for sent), men det meldes.
+        var missed = ClockTriggers.MissedCues(Cues, previous, now);
+        foreach (var c in missed) ShowLog.AddCue(ShowLogKind.Warning, c, text: "clock trigger " + c.ClockTrigger + " missed (stall)");
+        if (missed.Count > 0) StatusText = Loc.F("Klokketrigger ble tapt fordi programmet sto fast ({0} cuer).", missed.Count);
     }
 
     private static string? KeyName(Key k)

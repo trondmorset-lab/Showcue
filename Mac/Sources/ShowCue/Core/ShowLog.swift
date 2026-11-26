@@ -340,14 +340,31 @@ enum ShowLogFiles {
     /// Filene som skal slettes så bare de `keep` nyeste (etter navn = tidspunkt) står igjen.
     /// Filer som ikke ser ut som loggfiler røres aldri.
     static func toDelete(_ names: [String], keep: Int) -> [String] {
-        Array(names.filter(isLogName).sorted { $1.utf8.lexicographicallyPrecedes($0.utf8) }.dropFirst(Swift.max(0, keep)))
+        Array(names.filter(isLogName).sorted(by: newer).dropFirst(Swift.max(0, keep)))
+    }
+
+    /// Sorteringsnøkkel: tidspunktet (19 tegn) og løpenummeret som tall, så «(10)» er nyere enn «(2)» og «(2)» nyere enn navnet uten nummer.
+    static func sortKey(_ name: String) -> (String, Int) {
+        let chars = Array(name)
+        let time = chars.count >= 27 ? String(chars[8..<27]) : name
+        var n = 1
+        if name.hasSuffix(").log"), let open = name.range(of: " (", options: .backwards) {
+            n = Int(name[open.upperBound..<name.index(name.endIndex, offsetBy: -5)]) ?? 1
+        }
+        return (time, n)
+    }
+
+    /// Sant hvis `a` er nyere enn `b`.
+    static func newer(_ a: String, _ b: String) -> Bool {
+        let x = sortKey(a), y = sortKey(b)
+        return x.0 != y.0 ? x.0 > y.0 : x.1 > y.1
     }
 
     /// Loggfilene i mappa, nyeste først (tom liste hvis mappa ikke finnes).
     static func list(root: URL) -> [URL] {
         let dir = directory(root: root)
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir.path) else { return [] }
-        return names.filter(isLogName).sorted { $1.utf8.lexicographicallyPrecedes($0.utf8) }.map { dir.appendingPathComponent($0) }
+        return names.filter(isLogName).sorted(by: newer).map { dir.appendingPathComponent($0) }
     }
 }
 
@@ -454,7 +471,6 @@ final class ShowLog {
     private var handle: FileHandle?
     private var bytes = 0
     private var failed = false
-    private var full = false
     private var path: String?
 
     /// Tidspunktet kjøringen startet (tid siden start regnes herfra).
@@ -578,22 +594,21 @@ final class ShowLog {
     }
 
     private func writeBatch(_ batch: [ShowLogEvent]) {
-        guard writeFile, let root, !failed, !full else { return }
+        guard writeFile, let root, !failed else { return }
         do {
             if handle == nil { try openFile(root) }
-            var out = ""
             for ev in batch {
                 let line = ShowLogFormat.formatLine(ev) + "\n"
                 let size = line.utf8.count
                 if bytes + size + 200 > maxFileBytes {
-                    out += "# size limit reached; later events are not written to this file\n"
-                    full = true
-                    break
+                    // Fila er full: avslutt den med en markering og fortsett i en ny fil, så loggen aldri stopper midt i showet.
+                    try handle?.write(contentsOf: Data("# size limit reached; the log continues in the next file\n".utf8))
+                    closeFile()
+                    try openFile(root, continued: true)
                 }
-                out += line
+                try handle?.write(contentsOf: Data(line.utf8))
                 bytes += size
             }
-            try handle?.write(contentsOf: Data(out.utf8))
         } catch {
             failed = true // skriving gis opp for resten av kjøringen; feilen meldes én gang
             reportFault(error.localizedDescription)
@@ -601,7 +616,7 @@ final class ShowLog {
         }
     }
 
-    private func openFile(_ root: URL) throws {
+    private func openFile(_ root: URL, continued: Bool = false) throws {
         let fm = FileManager.default
         let dir = ShowLogFiles.directory(root: root)
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -621,7 +636,7 @@ final class ShowLog {
             if errno == EEXIST && attempt < 50 { attempt += 1; continue }
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno), userInfo: [NSLocalizedDescriptionKey: String(cString: strerror(errno))])
         }
-        let header = Data((ShowLogFormat.fileHeader + " | started " + ShowLogFormat.iso(runStart) + "\n").utf8)
+        let header = Data((ShowLogFormat.fileHeader + " | started " + ShowLogFormat.iso(runStart) + (continued ? " | continued" : "") + "\n").utf8)
         try handle?.write(contentsOf: header)
         bytes = header.count
     }
