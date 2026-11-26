@@ -26,23 +26,26 @@ public static class PreloadPlanner
     /// Cuen under markøren (eller neste som ikke er deaktivert, slik GO velger), så cuene den starter automatisk
     /// (fortsett automatisk / følg automatisk), «gå til» følges til målet, og en gruppe gir sine mål.
     /// Deaktiverte cuer, PDF, nettsider, spillelister og lysbildeserier forberedes ikke.
+    /// Planen følger det GO og motoren gjør: «neste» er alltid neste i samme scene (aldri en cue i en annen scene), «gå til» følges til
+    /// målet i riktig scene, og i øvelsesmodus (<paramref name="rehearsal"/>) hoppes merkede cuer over.
     /// </summary>
-    public static List<PreloadItem> Plan(IList<Cue>? cues, int playheadIndex, int max = MaxItems)
+    public static List<PreloadItem> Plan(IList<Cue>? cues, int playheadIndex, int max = MaxItems, bool rehearsal = false)
     {
         var result = new List<PreloadItem>();
         max = Math.Clamp(max, 0, MaxItems);
         if (cues == null || max == 0 || playheadIndex < 0 || playheadIndex >= cues.Count) return result;
 
         var visited = new HashSet<int>();
-        int i = FirstEnabled(cues, playheadIndex);
+        int i = NextPlayable(cues, playheadIndex, cues[playheadIndex].Scene, rehearsal);
         for (int step = 0; i >= 0 && i < cues.Count && step < MaxSteps && result.Count < max && visited.Add(i); step++)
         {
             var cue = cues[i];
             if (cue is GotoCue go)
             {
-                int target = IndexOfNumber(cues, go.Target);
-                if (target < 0) break;
-                i = FirstEnabled(cues, target); // GO på en deaktivert mål-cue hopper videre
+                var targetCue = SceneLogic.FindByNumber(cues, SceneLogic.GotoSpec(go.Target, go.TargetScene), go.Scene);
+                int target = targetCue == null ? -1 : cues.IndexOf(targetCue);
+                if (target < 0) break; // mangler målet, eller bare scenen byttes: ingen fil å forberede
+                i = NextPlayable(cues, target, targetCue!.Scene, rehearsal); // GO på en deaktivert mål-cue hopper videre
                 continue;
             }
             if (cue is GroupCue group)
@@ -53,25 +56,16 @@ public static class PreloadPlanner
             else Add(result, cue, max);
 
             if (cue.ContinueMode == ContinueMode.None) break;
-            i = FirstEnabled(cues, i + 1);
+            i = NextPlayable(cues, i + 1, cue.Scene, rehearsal);
         }
         return result;
     }
 
-    /// <summary>Første cue fra <paramref name="from"/> som ikke er deaktivert (−1 hvis ingen).</summary>
-    private static int FirstEnabled(IList<Cue> cues, int from)
+    /// <summary>Første cue fra <paramref name="from"/> i <paramref name="scene"/> som GO kan starte (ikke deaktivert, og i øvelsesmodus ikke merket). −1 hvis ingen.</summary>
+    private static int NextPlayable(IList<Cue> cues, int from, string? scene, bool rehearsal)
     {
         for (int i = Math.Max(0, from); i < cues.Count; i++)
-            if (!cues[i].Disabled) return i;
-        return -1;
-    }
-
-    private static int IndexOfNumber(IList<Cue> cues, string? number)
-    {
-        var n = (number ?? "").Trim();
-        if (n.Length == 0) return -1;
-        for (int i = 0; i < cues.Count; i++)
-            if (string.Equals(cues[i].Number, n, StringComparison.OrdinalIgnoreCase)) return i;
+            if (SceneLogic.InScene(cues[i], scene) && Rehearsal.IsPlayable(cues[i], rehearsal)) return i;
         return -1;
     }
 

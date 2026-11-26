@@ -244,23 +244,42 @@ public class ShowLogTests
     }
 
     [Fact]
-    public void StopsWritingAtTheSizeLimit()
+    public void ContinuesInANewFileAtTheSizeLimit()
     {
         var root = TempDir();
         try
         {
-            string path;
             using (var log = new ShowLog(root, clock: () => T0, maxFileBytes: 1024))
             {
                 for (int i = 0; i < 100; i++) log.Record(ShowLogKind.Start, i.ToString(), "Cue " + i, "audio", StartSource.Go);
                 Assert.True(log.Flush());
                 Assert.Equal(100, log.Total);
-                path = log.FilePath!;
             }
-            Assert.True(new FileInfo(path).Length <= 1024);
-            Assert.Contains("size limit reached", File.ReadAllText(path));
+            var files = ShowLogFiles.List(root);
+            Assert.True(files.Count > 1);
+            foreach (var f in files) Assert.True(new FileInfo(f).Length <= 1024);
+            var oldest = File.ReadAllText(files[^1]);
+            Assert.Contains("the log continues in the next file", oldest);
+            Assert.Contains("| continued", File.ReadAllText(files[0]));
+            // Den siste hendelsen står i den nyeste fila.
+            Assert.Contains("Cue 99", File.ReadAllText(files[0]));
         }
         finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void SameSecondFilesSortByNumberNotText()
+    {
+        var names = new[]
+        {
+            "showlog 2026-11-25 14.03.22.log", "showlog 2026-11-25 14.03.22 (2).log", "showlog 2026-11-25 14.03.22 (10).log",
+            "showlog 2026-11-25 14.03.21 (12).log",
+        };
+        // Beholder bare den nyeste: alt annet skal slettes.
+        var del = ShowLogFiles.ToDelete(names, 1);
+        Assert.Equal(3, del.Count);
+        Assert.DoesNotContain("showlog 2026-11-25 14.03.22 (10).log", del);
+        Assert.Equal("showlog 2026-11-25 14.03.22 (2).log", del[0]);
     }
 
     [Fact]

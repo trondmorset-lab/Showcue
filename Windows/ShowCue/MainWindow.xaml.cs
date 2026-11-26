@@ -44,6 +44,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
     private Cue? _selected;
     private string _statusText = "";
     private DateTime _lastGo = DateTime.MinValue;
+    private readonly GotoLoopGuard _gotoGuard = new();
     /// <summary>True mens programmet selv flytter GO-markøren (GO, «gå til», nytt show), så det ikke logges som brukerens flytting.</summary>
     private bool _playheadLogMuted;
     private ShowLogWindow? _logWindow;
@@ -291,6 +292,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
             CommitFocusedTextBox();
             Engine.RehearsalMode = value;
             Raise(); Raise(nameof(RehearsalLabel)); RaiseTitle();
+            UpdatePreload(); // GO hopper over andre cuer nå
             var n = Rehearsal.CountFlagged(Cues);
             StatusText = value ? Loc.F("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO (Ctrl+R for å slå av).", n) : Loc.T("Øvelsesmodus er av: alle cuer spilles.");
         }
@@ -341,16 +343,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         // «Gå til»-cue: vent til GO er ferdig med å flytte markøren, så flytt den til målet.
         Engine.GotoRequested += (target, fire) => Dispatcher.BeginInvoke(() =>
         {
-            var c = FindCue(target);
-            if (c == null) { StatusText = Loc.F("Gå til: fant ikke cue {0}.", target); return; }
-            _playheadLogMuted = true;
-            try { SelectedCue = c; }
-            finally { _playheadLogMuted = false; }
+            // Bare ResolveGoto kjenner «Scene:» (bytt scene uten cue); FindCue finner ikke et slikt mål.
             var t = SceneLogic.ResolveGoto(Cues, _show.Scenes, target, _activeScene);
             if (t == null) { StatusText = Loc.F("Gå til: fant ikke cue {0}.", target); return; }
             if (t.Cue != null) SelectedCue = t.Cue;
             else SwitchScene(t.Scene);
-            if (fire) { _lastGo = DateTime.MinValue; Go(); }
+            if (!fire) return;
+            // «Gå til»-cuer som starter hverandre uten pause ville holdt programmet opptatt for alltid.
+            if (!_gotoGuard.Allow(Environment.TickCount64))
+            {
+                StatusText = Loc.T("Gå til stoppet: cuer hopper til hverandre uten pause.");
+                ShowLog.Add(ShowLogKind.Error, text: StatusText);
+                return;
+            }
+            _lastGo = DateTime.MinValue;
+            Go();
         });
         Engine.PreloadRefreshRequested += () => Dispatcher.BeginInvoke(UpdatePreload);
         Engine.MemoShown += m => Dispatcher.BeginInvoke(() => MemoText = m.Text.Trim().Length > 0 ? m.Text.Trim() : m.DisplayName);
@@ -439,7 +446,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         try
         {
             if (Engine is null) return;
-            Engine.Preloader.Update(Cues, _selected == null ? -1 : Cues.IndexOf(_selected));
+            Engine.Preloader.Update(Cues, _selected == null ? -1 : Cues.IndexOf(_selected), Engine.RehearsalMode);
         }
         catch { /* forberedelse er aldri påkrevd */ }
     }
@@ -834,6 +841,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         using (ShowLog.Via(StartSource.Clock))
             foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
+        // Programmet sto fast en stund og gikk glipp av et klokkeslett: cuen startes ikke (den ville kommet for sent), men det meldes.
+        var missed = ClockTriggers.MissedCues(Cues, previous, now);
+        foreach (var c in missed) ShowLog.AddCue(ShowLogKind.Warning, c, text: "clock trigger " + c.ClockTrigger + " missed (stall)");
+        if (missed.Count > 0) StatusText = Loc.F("Klokketrigger ble tapt fordi programmet sto fast ({0} cuer).", missed.Count);
     }
 
     private static string? KeyName(Key k)
@@ -1596,6 +1607,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
     private WebStateInput BuildWebState()
     {
         var next = SelectedCue;
+        var sceneCues = SceneLogic.CuesIn(Cues, _activeScene); // nettsiden viser aktiv scene: samme nummer kan finnes i flere scener
         var playing = Engine.Active
             .Where(a => !a.Done)
             .Select(a => new WebPlaying(a.Cue.Number, a.Cue.DisplayName, a.Cue.TypeName, a.Started ? a.Elapsed : 0,
@@ -1605,11 +1617,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
             _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn"),
             Engine.IsPaused, _showMode,
             next != null ? new WebNext(next.Number, next.DisplayName, next.TypeName, next.Notes ?? "") : null,
-            next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
+            next != null ? sceneCues.IndexOf(next) + 1 : 0, sceneCues.Count, playing);
     }
 
     private IEnumerable<WebCueInfo> BuildWebCues() =>
-        Cues.Select(c => new WebCueInfo(c.Number, c.DisplayName, c.TypeName, c.Disabled)).ToList();
+        SceneLogic.CuesIn(Cues, _activeScene).Select(c => new WebCueInfo(c.Number, c.DisplayName, c.TypeName, c.Disabled)).ToList();
 
     void IShowControl.RefreshFeedback() => _feedback?.RequestRefresh();
 

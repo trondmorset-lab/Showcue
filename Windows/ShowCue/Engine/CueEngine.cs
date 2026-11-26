@@ -180,8 +180,11 @@ public sealed class CueEngine : IDisposable
     private void FireNextAfter(Cue cue, StartSource how)
     {
         if (SceneLogic.NextEnabledAfter(_cueList(), cue, RehearsalMode) is not { } next) return;
-        using (ShowLog.Via(how)) Fire(next);
+        // Kjeden kjøres av den ytterste kallen i en løkke, så mange kjedede cuer ikke bruker stakken.
+        _chain.Push((next, how), n => { using (ShowLog.Via(n.how)) Fire(n.cue); });
     }
+
+    private readonly ChainDrain<(Cue cue, StartSource how)> _chain = new();
 
     /// <summary>Finn neste cue for GO etter at cuen på <paramref name="firedIndex"/> er avfyrt (hopper over kjeder). Med <paramref name="rehearsal"/> hoppes også merkede cuer over.</summary>
     public static int NextPlayheadIndex(IList<Cue> list, int firedIndex, bool rehearsal = false) => SceneLogic.NextPlayheadIndex(list, firedIndex, rehearsal);

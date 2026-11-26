@@ -6,6 +6,38 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.27.2 – 2026-11-26
+
+### Fixed
+- **Long auto-continue chains** (Windows and Mac): cues that start each other with auto-continue or auto-follow no longer nest inside each other. Before, several thousand chained cues could exhaust the program's stack and close it. The chain is now run in a loop, with the same order and behaviour as before.
+- **Show log no longer stops at 5 MB** (Windows and Mac): when a log file is full it ends with a marker and the log continues in a new file (the header says *continued*), so the end of a long show is always logged. Old files are still removed so that the 30 newest remain.
+- **Log file order** (Windows and Mac): several runs started within the same second were ordered by text, so `(10)` counted as older than `(2)` and the wrong files could be deleted or listed first. They are now ordered by time and then by number.
+- **Clock triggers and stalls** (Windows and Mac): if the program stalled for 2–30 seconds across a trigger time (for example a very slow disk), the cue was silently skipped. It is still not started (it would be late), but the status line and the show log now say that a clock trigger was missed. Clock jumps, daylight-saving changes and sleep are still ignored without a message.
+- **Damaged scene list** (Windows): a show file where `Scenes` has the wrong type (a number, text or an object) could not be opened at all. It now opens, with the scene list empty; entries that are not text are skipped. The Mac version already behaved this way.
+
+### Changed
+- `tools/stress/README.md` is now in English.
+
+### Tests
+- New unit tests on both platforms (`StressFixTests`) for the chain loop, log rollover and file order, missed clock triggers and damaged scene lists.
+
+### Not changed (design decisions, see the project notes)
+- Loss of an ASIO device is still not handled (needs real hardware to test). The web remote's PIN lock-out is still global, and there is still no rate limit on commands after a correct PIN.
+
+## 0.27.1 – 2026-11-26
+
+### Fixed
+- **Go to scene** (Windows and Mac): a *Go to* cue that only names a scene (no cue number) always answered "cue not found" and never switched scene. It now switches scene as intended.
+- **Go to loops** (Windows and Mac): *Go to* cues that start each other without any pause (for example two cues pointing at each other) kept the program busy for ever. After 25 jumps in a row without a pause the chain is stopped, with a message in the status line and an error in the show log. Normal loops with sound or waiting in between are not affected.
+- **Preload follows GO** (Windows and Mac): the preload planner now stays inside the scene of the GO cursor (auto-continue never leads into another scene), follows a *Go to* cue to its target in the right scene, and skips cues marked *Skip in rehearsal* while rehearsal mode is on. Turning rehearsal mode on or off updates the preload at once. This only affects which files are prepared in advance.
+- **Web remote with scenes** (Windows and Mac): the cue list and the position (*3 / 12*) on the web page now show the active scene. Before, a cue number used in several scenes was highlighted in all of them.
+- **Live input** (Windows and Mac): a driver that delivers NaN or infinite samples can no longer send them on to the mixer; they are replaced by silence.
+- Clock triggers: cues without a trigger are no longer parsed on every 16 ms tick.
+
+### Tests
+- The stress test (`tools/stress`) has new cases for the features merged in 0.27.0: scenes combined with rehearsal mode, GO and preload; scene editing; show files with the new fields (old files, corrupted values, round trip); routing presets; clock triggers around midnight and clock jumps; settings with wrong types and extreme numbers; ASIO input planning and driver events; show log shutdown and disk errors; and the web server over real sockets (malformed and oversized requests, many and slow connections, wrong PIN lock-out, a failing command handler, stopping with open connections, restart on the same port).
+- New unit tests on both platforms (`InteractionTests`).
+
 ## 0.27.0 – 2026-11-25
 
 ### New

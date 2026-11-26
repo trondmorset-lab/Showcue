@@ -291,7 +291,18 @@ public static class ShowLogFiles
     /// Filer som ikke ser ut som loggfiler røres aldri.</summary>
     public static List<string> ToDelete(IEnumerable<string> names, int keep)
     {
-        return names.Where(IsLogName).OrderByDescending(n => n, StringComparer.Ordinal).Skip(Math.Max(0, keep)).ToList();
+        return names.Where(IsLogName).OrderByDescending(SortKey, Comparer<(string, int)>.Default).Skip(Math.Max(0, keep)).ToList();
+    }
+
+    /// <summary>Sorteringsnøkkel: tidspunktet (19 tegn) og løpenummeret som tall, så «(10)» er nyere enn «(2)» og «(2)» nyere enn navnet uten nummer.</summary>
+    public static (string, int) SortKey(string name)
+    {
+        var time = name.Length >= 8 + 19 ? name.Substring(8, 19) : name;
+        var open = name.LastIndexOf(" (", StringComparison.Ordinal);
+        int n = 1;
+        if (open > 0 && name.EndsWith(").log", StringComparison.Ordinal))
+            int.TryParse(name.AsSpan(open + 2, name.Length - open - 2 - 5), out n);
+        return (time, n);
     }
 
     /// <summary>Loggfilene i mappa, nyeste først (tom liste hvis mappa ikke finnes).</summary>
@@ -301,7 +312,7 @@ public static class ShowLogFiles
         {
             var dir = DirectoryFor(root);
             if (!Directory.Exists(dir)) return new();
-            return Directory.GetFiles(dir).Where(f => IsLogName(Path.GetFileName(f))).OrderByDescending(f => Path.GetFileName(f), StringComparer.Ordinal).ToList();
+            return Directory.GetFiles(dir).Where(f => IsLogName(Path.GetFileName(f))).OrderByDescending(f => SortKey(Path.GetFileName(f)), Comparer<(string, int)>.Default).ToList();
         }
         catch { return new(); }
     }
@@ -418,7 +429,7 @@ public sealed class ShowLog : IDisposable
     private volatile bool _writeFile;
     private FileStream? _stream;
     private long _bytes;
-    private bool _failed, _full;
+    private bool _failed;
 
     /// <summary>Tidspunktet kjøringen startet (tid siden start regnes herfra).</summary>
     public DateTimeOffset RunStart { get; }
@@ -555,27 +566,28 @@ public sealed class ShowLog : IDisposable
 
     private void WriteBatch(List<ShowLogEvent> batch)
     {
-        if (!_writeFile || _root == null || _failed || _full) return;
+        if (!_writeFile || _root == null || _failed) return;
         try
         {
             if (_stream == null) OpenFile();
-            var sb = new StringBuilder();
             foreach (var ev in batch)
             {
                 var line = ShowLogFormat.FormatLine(ev) + "\n";
                 var size = Encoding.UTF8.GetByteCount(line);
                 if (_bytes + size + 200 > _maxFileBytes)
                 {
-                    sb.Append("# size limit reached; later events are not written to this file\n");
-                    _full = true;
-                    break;
+                    // Fila er full: avslutt den med en markering og fortsett i en ny fil, så loggen aldri stopper midt i showet.
+                    var end = new UTF8Encoding(false).GetBytes("# size limit reached; the log continues in the next file\n");
+                    _stream!.Write(end, 0, end.Length);
+                    _stream.Flush();
+                    CloseFile();
+                    OpenFile(continued: true);
                 }
-                sb.Append(line);
+                var data = new UTF8Encoding(false).GetBytes(line);
+                _stream!.Write(data, 0, data.Length);
                 _bytes += size;
             }
-            var data = new UTF8Encoding(false).GetBytes(sb.ToString());
-            _stream!.Write(data, 0, data.Length);
-            _stream.Flush();
+            _stream!.Flush();
         }
         catch (Exception ex)
         {
@@ -585,7 +597,7 @@ public sealed class ShowLog : IDisposable
         }
     }
 
-    private void OpenFile()
+    private void OpenFile(bool continued = false)
     {
         var dir = ShowLogFiles.DirectoryFor(_root!);
         Directory.CreateDirectory(dir);
@@ -605,7 +617,7 @@ public sealed class ShowLog : IDisposable
             }
             catch (IOException) when (attempt < 50 && File.Exists(path)) { /* navnet er tatt: prøv neste løpenummer */ }
         }
-        var header = ShowLogFormat.FileHeader + " | started " + ShowLogFormat.Iso(RunStart) + "\n";
+        var header = ShowLogFormat.FileHeader + " | started " + ShowLogFormat.Iso(RunStart) + (continued ? " | continued" : "") + "\n";
         var bytes = new UTF8Encoding(false).GetBytes(header);
         _stream!.Write(bytes, 0, bytes.Length);
         _bytes = bytes.Length;

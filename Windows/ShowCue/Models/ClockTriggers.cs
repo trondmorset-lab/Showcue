@@ -48,7 +48,12 @@ public static class ClockTriggers
         var wall = now - previous;
         if (wall <= TimeSpan.Zero || wall > MaxInterval) return false;
         if (realElapsed <= TimeSpan.Zero || realElapsed > MaxInterval) return false;
-        // Intervallet er kort og kan høyst spenne over én midnatt: sjekk klokkeslettet på begge datoene.
+        return PassedBetween(previous, now, time);
+    }
+
+    /// <summary>Intervallet er kort og kan høyst spenne over én midnatt: sjekk klokkeslettet på begge datoene.</summary>
+    private static bool PassedBetween(DateTime previous, DateTime now, TimeSpan time)
+    {
         for (var day = previous.Date; day <= now.Date; day = day.AddDays(1))
         {
             var target = day + time;
@@ -57,7 +62,31 @@ public static class ClockTriggers
         return false;
     }
 
+    /// <summary>Lengste hang som meldes som en tapt trigger. Lengre opphold er dvale eller klokkestilling.</summary>
+    public static readonly TimeSpan MaxStall = TimeSpan.FromSeconds(30);
+
+    /// <summary>Ble klokkeslettet passert i et opphold der programmet sto fast (lengre enn <see cref="MaxInterval"/>, men høyst
+    /// <see cref="MaxStall"/>), uten at klokka ble stilt? Da starter ikke cuen (den ville kommet for sent), men kalleren kan melde det.
+    /// Et hopp i klokka (sommertid, stilling) eller dvale gir false.</summary>
+    public static bool Missed(DateTime previous, DateTime now, TimeSpan realElapsed, string? trigger)
+    {
+        if (!TryParse(trigger, out var time)) return false;
+        var wall = now - previous;
+        if (wall <= MaxInterval || wall > MaxStall) return false;
+        if (realElapsed <= TimeSpan.Zero || (wall - realElapsed).Duration() > TimeSpan.FromSeconds(1)) return false;
+        return PassedBetween(previous, now, time);
+    }
+
+    /// <summary>Cuene med klokketrigger som ble tapt under en hang (se <see cref="Missed"/>).</summary>
+    public static List<Cue> MissedCues(IEnumerable<Cue> cues, DateTime previous, DateTime now)
+    {
+        var real = previous.Kind == DateTimeKind.Local && now.Kind == DateTimeKind.Local
+            ? now.ToUniversalTime() - previous.ToUniversalTime()
+            : now - previous;
+        return cues.Where(c => !c.Disabled && !string.IsNullOrEmpty(c.ClockTrigger) && Missed(previous, now, real, c.ClockTrigger)).ToList();
+    }
+
     /// <summary>Cuene som skal starte: ikke deaktiverte, med klokketrigger som ble passert. Hver cue er med høyst én gang.</summary>
     public static List<Cue> Due(IEnumerable<Cue> cues, DateTime previous, DateTime now) =>
-        cues.Where(c => !c.Disabled && Crossed(previous, now, c.ClockTrigger)).ToList();
+        cues.Where(c => !c.Disabled && !string.IsNullOrEmpty(c.ClockTrigger) && Crossed(previous, now, c.ClockTrigger)).ToList();
 }

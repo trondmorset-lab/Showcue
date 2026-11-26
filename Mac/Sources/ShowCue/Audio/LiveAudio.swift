@@ -79,7 +79,8 @@ final class LiveRing {
         let cap = buf.count
         for i in 0..<samples {
             if count == cap { readIdx = (readIdx + 1) % cap; count -= 1 }
-            buf[(readIdx + count) % cap] = src[i]
+            let v = src[i]
+            buf[(readIdx + count) % cap] = v.isFinite ? v : 0 // en driver kan levere NaN/uendelig: det skal aldri nå mikseren
             count += 1
         }
         if count / channels > maxFrames {

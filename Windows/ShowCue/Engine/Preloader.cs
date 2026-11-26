@@ -36,12 +36,12 @@ public sealed class Preloader : IDisposable
     }
 
     /// <summary>Kalles fra UI-tråden når markøren eller cuelista er endret.</summary>
-    public void Update(IList<Cue> cues, int playheadIndex)
+    public void Update(IList<Cue> cues, int playheadIndex, bool rehearsal = false)
     {
         if (!Enabled) { Clear(); return; }
         try
         {
-            var plan = PreloadPlanner.Plan(cues, playheadIndex);
+            var plan = PreloadPlanner.Plan(cues, playheadIndex, PreloadPlanner.MaxItems, rehearsal);
             var starts = new List<Entry>();
             var dispose = new List<WaveStream>();
             lock (_lock)

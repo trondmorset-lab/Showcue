@@ -91,3 +91,21 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 
 ## Klokke og tid
 - `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.
+
+## Samspill mellom funksjoner (0.27.1)
+Funksjonene i 0.21–0.27 ble slått sammen tekstlig, og feilene satt i skjøtene. Sjekk alltid disse når en ny funksjon rører GO, mål eller cuelista:
+- **Mål som «Scene:» er ikke et cuenummer:** `FindByNumber("Akt 2:")` gir null. Hovedvinduet slo opp «gå til»-målet med `FindCue` før `ResolveGoto`, så «gå til scene» ga alltid «fant ikke cue». Bruk `SceneLogic.ResolveGoto` alene.
+- **«Gå til» som starter «gå til» uten pause går i evig løkke:** hver kjøring legges i dispatcherkøen (`BeginInvoke` / `DispatchQueue.main.async`) og hopper over dobbel-GO-sperren. På Windows har `Normal`-prioritet foran tegning og inndata, så vinduet fryser. `GotoLoopGuard` stopper kjeden etter 25 hopp tett etter hverandre.
+- **To steder som velger «neste cue» må bruke samme regler:** forhåndslastingens planlegger (`PreloadPlanner`) fulgte listen på tvers av scener og hoppet ikke over merkede cuer, mens GO og motoren (`SceneLogic.NextEnabledAfter`, `Rehearsal`) gjør begge deler. Tåler planen feil, er det bare bortkastet arbeid, men hold dem like (testen `PreloadChainNeverLeavesTheScene` og stresstesten «Scenes x rehearsal»).
+- **Nettsiden viser én scene:** samme cuenummer kan finnes i flere scener, og siden finner cuer på nummer. Bygg cuelista og posisjonen for aktiv scene.
+- **Drivere kan levere NaN:** `LiveRing.Write` slipper bare gjennom endelige samples. Et NaN i mikseren når utgangen.
+- **Kontroller som kjører hvert tick (16 ms):** tolk ikke tekst for alle cuer hver gang (klokke-triggere sjekker først om feltet er tomt).
+- **Windows og `ExclusiveAddressUse`:** tjeneren lukker først (`Connection: close`), så porten har forbindelser i TIME_WAIT. Stresstesten «Web server sockets» starter tjeneren på nytt på samme port rett etter at klienter har vært koblet til; feiler den, må omstart prøve igjen.
+- **Ikke rettet, men kjent (se agentloggen):** ASIO-enhet som mistes (ingen `DriverResetRequest`; må prøves på ekte utstyr), felles PIN-sperre på nettsiden og ingen grense for antall kommandoer etter riktig PIN. Høstens overgang til vintertid (02:xx) utløser en klokketrigger to ganger (veggklokka passerer klokkeslettet to ganger, og hvert intervall er gyldig), og vårens overgang utløser den ikke (hoppet regnes som klokkestilling).
+
+## Rettet i 0.27.2
+- **Auto-fortsett-kjeder:** `FireNextAfter` legger neste cue i `ChainDrain` og den ytterste kallen kjører køen i en løkke. Ikke kall `Fire` rekursivt fra `StartActive`; stakken til WPF-tråden er 1 MB.
+- **Showloggen ruller til ny fil** ved 5 MB (`OpenFile(continued: true)`). Skriv aldri en «full»-flagg som stopper skrivingen for resten av kjøringen.
+- **Loggfilnavn sorteres med `SortKey`** (tid, så løpenummer som tall), ikke som tekst: `(10)` er nyere enn `(2)`, og `(2)` nyere enn navnet uten nummer.
+- **Klokketrigger og hang:** `ClockTriggers.Missed` melder (status + logg) en trigger som ble passert i en hang på 2–30 s uten klokkehopp. Cuen startes fortsatt ikke. Klokkestilling, sommertid og dvale gir ingen melding.
+- **`Scenes` med feil type** åpner showet på Windows (`TolerantStringListConverter`), som på Mac. Andre felt med samme risiko bør få samme omformer.

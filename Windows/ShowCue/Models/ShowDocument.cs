@@ -42,6 +42,7 @@ public sealed class ShowDocument
 
     /// <summary>Scenenavnene i rekkefølge (cuelistene). Tom = én scene uten navn. Hver cue hører til scenen i <see cref="Cue.Scene"/>.
     /// Eldre versjoner av programmet ignorerer feltet og leser alle cuene som én liste.</summary>
+    [JsonConverter(typeof(TolerantStringListConverter))]
     public List<string> Scenes
     {
         get => _scenes;
@@ -147,5 +148,29 @@ public sealed class CueJsonConverter : JsonConverter<Cue>
             prop.WriteTo(writer);
         }
         writer.WriteEndObject();
+    }
+}
+
+/// <summary>Leser en liste med tekst, men tåler feil i filen: ikke-tekst i lista hoppes over, og en verdi som ikke er en liste
+/// gir tom liste. Ellers ville én ødelagt «Scenes» gjort at hele showet ikke lot seg åpne.</summary>
+public sealed class TolerantStringListConverter : JsonConverter<List<string>>
+{
+    public override List<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var list = new List<string>();
+        if (reader.TokenType != JsonTokenType.StartArray) { reader.Skip(); return list; }
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+        {
+            if (reader.TokenType == JsonTokenType.String) list.Add(reader.GetString() ?? "");
+            else reader.Skip();
+        }
+        return list;
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<string> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartArray();
+        foreach (var s in value) writer.WriteStringValue(s);
+        writer.WriteEndArray();
     }
 }

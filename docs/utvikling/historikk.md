@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.27.2 | (åpen) | Rettelser fra stresstesten: auto-fortsett-kjeder uten rekursjon (`ChainDrain`), showloggen ruller til ny fil ved 5 MB, riktig rekkefølge på loggfiler, tapte klokke-triggere ved hang meldes, tolerant `Scenes` på Windows, engelsk `tools/stress/README.md`; tester på begge plattformer |
 | 0.27.0 | (åpen) | Showlogg: hendelser (cue start/stopp/ferdig med hvordan, pause, stopp alt, markør, feil, show åpnet/lagret, programstart/avslutning) i begrenset kø og bakgrunnsskriver, en fil per kjøring i `Logs` (30 beholdes, 5 MB tak), loggvindu med filter og eksport til CSV/tekst, innstillingen «Skriv showlogg» (på). Ren logikk (`ShowLog*`) med tester og stresstest på Windows, tester på Mac |
 | 0.26.0 | (åpen) | Nettside for fjernstyring fra mobil/nettbrett: liten innebygd webtjener (av som standard, PIN påkrevd, sperre mot gjetting, faste ruter), viser neste cue og hva som spiller, knapper for GO/stopp alt/pause/neste/forrige og skrivebeskyttet cueliste; ren logikk (`WebRemote`, `WebRemoteCore`) med tester på begge plattformer |
 | 0.25.0 | (åpen) | Øvelsesmodus: `SkipInRehearsal` per cue og en kjøretidsbryter (aldri lagret) som får GO, auto-fortsett/-følg og triggere til å hoppe over merkede cuer; felt i Tidsstyring, merke i lista, banner, advarsel i Sjekk showet. Ren logikk (`Rehearsal`) med tester på begge plattformer |

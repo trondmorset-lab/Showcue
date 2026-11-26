@@ -72,6 +72,7 @@ final class AppModel: ObservableObject, ShowControl {
     private var feedback: OscFeedback?
     private var tickCount = 0
     private var lastGo = Date.distantPast
+    private var gotoGuard = GotoLoopGuard()
     private var lastPanic = Date.distantPast
     private var cueSubs: [AnyCancellable] = []
 
@@ -95,6 +96,7 @@ final class AppModel: ObservableObject, ShowControl {
         didSet {
             guard rehearsalMode != oldValue else { return }
             engine.rehearsalMode = rehearsalMode
+            updatePreload() // GO hopper over andre cuer nå
             let n = Rehearsal.countFlagged(cues)
             statusText = rehearsalMode ? L("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO (⌘R for å slå av).", n) : L("Øvelsesmodus er av: alle cuer spilles.")
         }
@@ -115,13 +117,21 @@ final class AppModel: ObservableObject, ShowControl {
         engine.onGoto = { [weak self] target, fire in
             DispatchQueue.main.async {
                 guard let self else { return }
-                guard let c = self.find(target) else { self.statusText = L("Gå til: fant ikke cue {0}.", target); return }
-                self.select(c, logged: false)
+                // Bare resolveGoto kjenner «Scene:» (bytt scene uten cue); find() finner ikke et slikt mål.
                 guard let t = SceneLogic.resolveGoto(self.cues, scenes: self.scenes, spec: target, home: self.activeScene) else {
                     self.statusText = L("Gå til: fant ikke cue {0}.", target); return
                 }
                 if let c = t.cue { self.select(c) } else { self.switchScene(t.scene) }
-                if fire { self.lastGo = .distantPast; self.go() }
+                guard fire else { return }
+                // «Gå til»-cuer som starter hverandre uten pause ville holdt programmet opptatt for alltid.
+                let nowMs = Int64(ProcessInfo.processInfo.systemUptime * 1000)
+                guard self.gotoGuard.allow(nowMs: nowMs) else {
+                    self.statusText = L("Gå til stoppet: cuer hopper til hverandre uten pause.")
+                    ShowLog.add(.error, text: self.statusText)
+                    return
+                }
+                self.lastGo = .distantPast
+                self.go()
             }
         }
         engine.onMemo = { [weak self] m in
@@ -444,13 +454,20 @@ final class AppModel: ObservableObject, ShowControl {
     /// Klokketrigger: start cuer når veggklokka passerer klokkeslettet siden forrige sjekk. Cuene startes som ved tidskode-trigger.
     func checkClockTriggers(now: Date) {
         let previous = lastClockCheck
+        let uptime = ProcessInfo.processInfo.systemUptime
+        let previousUptime = lastClockUptime
         lastClockCheck = now
+        lastClockUptime = uptime
         guard settings.clockTriggersEnabled, let previous else { return }
         let due = ClockTriggers.due(cues, previous: previous, now: now).filter { !Rehearsal.isSkipped($0, mode: rehearsalMode) }
         ShowLog.via(.clock) { due.forEach { engine.fire($0) } }
         if !due.isEmpty {
             statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
         }
+        // Programmet sto fast en stund og gikk glipp av et klokkeslett: cuen startes ikke (den ville kommet for sent), men det meldes.
+        let missed = ClockTriggers.missedCues(cues, previous: previous, now: now, realElapsed: uptime - previousUptime)
+        for c in missed { ShowLog.add(.warning, cue: c, text: "clock trigger \(c.clockTrigger) missed (stall)") }
+        if !missed.isEmpty { statusText = L("Klokketrigger ble tapt fordi programmet sto fast ({0} cuer).", missed.count) }
     }
 
     // MARK: - Show-fil
@@ -459,7 +476,7 @@ final class AppModel: ObservableObject, ShowControl {
     func updatePreload() {
         guard let engine else { return }
         engine.preloader.update(cues: cues, playheadIndex: playhead.flatMap(index(of:)) ?? -1,
-                                sampleRate: audio.sampleRate > 0 ? audio.sampleRate : nil, enabled: settings.preloadNextCue)
+                                sampleRate: audio.sampleRate > 0 ? audio.sampleRate : nil, enabled: settings.preloadNextCue, rehearsal: rehearsalMode)
     }
 
     private var preloadPending = false
@@ -1297,6 +1314,7 @@ final class AppModel: ObservableObject, ShowControl {
     // MARK: - Takt
 
     private var lastClockCheck: Date?
+    private var lastClockUptime: TimeInterval = 0
 
     private func tick() {
         tickCount += 1
@@ -1324,6 +1342,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Øyeblikksbilde til nettsiden: bare lesing, ingenting her kan endre showet.
     func buildWebState() -> WebStateInput {
         let next = playhead
+        let sceneCues = SceneLogic.cues(in: activeScene, of: cues) // nettsiden viser aktiv scene: samme nummer kan finnes i flere scener
         let playing = engine.active.filter { !$0.done }.map {
             WebPlaying(number: $0.cue.number, name: $0.cue.displayName, type: $0.cue.typeName, elapsed: $0.started ? $0.elapsed : 0,
                        remaining: $0.duration > 0 ? max(0, $0.duration - $0.elapsed) : 0, hasDuration: $0.duration > 0,
@@ -1332,15 +1351,16 @@ final class AppModel: ObservableObject, ShowControl {
         return WebStateInput(showName: showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn"),
                              paused: engine.isPaused, showMode: showMode,
                              next: next.map { WebNext(number: $0.number, name: $0.displayName, type: $0.typeName, notes: $0.notes) },
-                             position: next.flatMap(index(of:)).map { $0 + 1 } ?? 0, count: cues.count, playing: playing)
+                             position: next.flatMap { n in sceneCues.firstIndex { $0 === n } }.map { $0 + 1 } ?? 0, count: sceneCues.count, playing: playing)
     }
 
     func buildWebCues() -> [WebCueInfo] {
-        cues.map { WebCueInfo(number: $0.number, name: $0.displayName, type: $0.typeName, disabled: $0.disabled) }
+        SceneLogic.cues(in: activeScene, of: cues).map { WebCueInfo(number: $0.number, name: $0.displayName, type: $0.typeName, disabled: $0.disabled) }
     }
 
     func buildStatus() -> ShowStatus {
         let next = playhead
+        let sceneCues = SceneLogic.cues(in: activeScene, of: cues) // nettsiden viser aktiv scene: samme nummer kan finnes i flere scener
         let playing = engine.active.filter { !$0.done }.map {
             PlayingCue(number: $0.cue.number, name: $0.cue.displayName, elapsed: $0.started ? $0.elapsed : 0,
                        remaining: $0.duration > 0 ? max(0, $0.duration - $0.elapsed) : 0, hasDuration: $0.duration > 0,

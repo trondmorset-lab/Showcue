@@ -34,7 +34,11 @@ enum ClockTriggers {
         let elapsed = now.timeIntervalSince(previous)
         guard elapsed > 0, elapsed <= maxInterval else { return false }
         guard calendar.timeZone.secondsFromGMT(for: previous) == calendar.timeZone.secondsFromGMT(for: now) else { return false }
-        // Intervallet er kort og kan høyst spenne over én midnatt: sjekk klokkeslettet på begge datoene.
+        return passedBetween(previous: previous, now: now, time: t, calendar: calendar)
+    }
+
+    /// Intervallet er kort og kan høyst spenne over én midnatt: sjekk klokkeslettet på begge datoene.
+    private static func passedBetween(previous: Date, now: Date, time t: (hours: Int, minutes: Int, seconds: Int), calendar: Calendar) -> Bool {
         var days = [calendar.startOfDay(for: previous)]
         let nowDay = calendar.startOfDay(for: now)
         if nowDay != days[0] { days.append(nowDay) }
@@ -47,8 +51,28 @@ enum ClockTriggers {
         return false
     }
 
+    /// Lengste hang som meldes som en tapt trigger. Lengre opphold er dvale eller klokkestilling.
+    static let maxStall: TimeInterval = 30
+
+    /// Ble klokkeslettet passert i et opphold der programmet sto fast (lengre enn `maxInterval`, men høyst `maxStall`), uten at
+    /// klokka ble stilt? `realElapsed` er faktisk medgått tid (måler som ikke påvirkes av klokkestilling). Da starter ikke cuen
+    /// (den ville kommet for sent), men kalleren kan melde det. Hopp i klokka, omstilling til sommer- eller vintertid og dvale gir false.
+    static func missed(previous: Date, now: Date, realElapsed: TimeInterval, trigger: String?, calendar: Calendar = .current) -> Bool {
+        guard let t = parse(trigger) else { return false }
+        let wall = now.timeIntervalSince(previous)
+        guard wall > maxInterval, wall <= maxStall else { return false }
+        guard realElapsed > 0, abs(wall - realElapsed) <= 1 else { return false }
+        guard calendar.timeZone.secondsFromGMT(for: previous) == calendar.timeZone.secondsFromGMT(for: now) else { return false }
+        return passedBetween(previous: previous, now: now, time: t, calendar: calendar)
+    }
+
+    /// Cuene med klokketrigger som ble tapt under en hang (se `missed`).
+    static func missedCues(_ cues: [Cue], previous: Date, now: Date, realElapsed: TimeInterval, calendar: Calendar = .current) -> [Cue] {
+        cues.filter { !$0.disabled && !$0.clockTrigger.isEmpty && missed(previous: previous, now: now, realElapsed: realElapsed, trigger: $0.clockTrigger, calendar: calendar) }
+    }
+
     /// Cuene som skal starte: ikke deaktiverte, med klokketrigger som ble passert. Hver cue er med høyst én gang.
     static func due(_ cues: [Cue], previous: Date, now: Date, calendar: Calendar = .current) -> [Cue] {
-        cues.filter { !$0.disabled && crossed(previous: previous, now: now, trigger: $0.clockTrigger, calendar: calendar) }
+        cues.filter { !$0.disabled && !$0.clockTrigger.isEmpty && crossed(previous: previous, now: now, trigger: $0.clockTrigger, calendar: calendar) }
     }
 }

@@ -35,7 +35,7 @@ public sealed class LiveRing
             foreach (var v in interleaved)
             {
                 if (_count == _buf.Length) { _read = (_read + 1) % _buf.Length; _count--; }
-                _buf[(_read + _count) % _buf.Length] = v;
+                _buf[(_read + _count) % _buf.Length] = float.IsFinite(v) ? v : 0f; // en driver kan levere NaN/uendelig: det skal aldri nå mikseren
                 _count++;
             }
             if (_count / _channels > _maxFrames)

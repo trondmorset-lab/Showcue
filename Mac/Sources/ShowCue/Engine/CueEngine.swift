@@ -180,8 +180,11 @@ final class CueEngine: ObservableObject {
     /// Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).
     private func fireNext(after cue: Cue, how: StartSource) {
         guard let next = SceneLogic.nextEnabled(cueList(), after: cue, rehearsal: rehearsalMode) else { return }
-        ShowLog.via(how) { fire(next) }
+        // Kjeden kjøres av den ytterste kallen i en løkke, så mange kjedede cuer ikke bruker stakken.
+        chain.push((next, how)) { n in ShowLog.via(n.1) { fire(n.0) } }
     }
+
+    private let chain = ChainDrain<(Cue, StartSource)>()
 
     /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte, og merkede cuer i øvelsesmodus).
     static func nextPlayheadIndex(_ list: [Cue], fired: Int, rehearsal: Bool = false) -> Int {
