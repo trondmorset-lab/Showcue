@@ -267,6 +267,10 @@ Lyd fra siden går til systemets lydutgang, ikke gjennom lydpatchen.
   Cuen starter når innkommende MIDI Time Code passerer tidspunktet (ikke ved spoling forbi).
 - **Klokkeslett-trigger:** skriv et klokkeslett (tt:mm:ss, lokal tid, f.eks. 19:00:00) i fanen *Tidsstyring*, og slå på *Klokke-triggere aktive* under *Innstillinger → Sikkerhet* (av som standard).
   Cuen starter én gang når klokka på maskinen passerer klokkeslettet. Etter dvale, store hopp i klokka og omstilling til sommer-/vintertid starter ingen cuer. *Sjekk showet* advarer hvis innstillingen er av.
+- **Showlogg:** *Fil → Showlogg* viser hva som skjer i denne kjøringen, fortløpende (cue startet med nummer, navn, type og hvordan den ble startet, ferdig eller stoppet, pause, stopp alt, GO-markør flyttet, feil og advarsler, show åpnet og lagret, programstart og avslutning).
+  Bruk filteret for bare feil og advarsler, *Åpne eldre logg* for en tidligere kjøring, og *Eksporter CSV* / *Eksporter tekst* for å lagre det som vises (UTF-8; CSV bruker komma og har byte order mark så regneark leser æøå riktig).
+  Én fil per kjøring skrives til mappa `Logs` ved siden av `Autolagring` og `Sikkerhetskopier` (`%AppData%\ShowCue\Logs`); de 30 nyeste beholdes, og en fil stopper ved 5 MB. Slå av under *Innstillinger → Sikkerhet → Skriv showlogg* (på som standard).
+  Hver linje er ren tekst med tabulator mellom feltene: ISO-tid, tid siden start, hendelse, cuenummer, type, hvordan, navn og tekst (skråstrek, tabulator og linjeskift i tekster skrives som `\\`, `\t` og `\n`).
 - **Øvelsesmodus** (*Ctrl+R*, eller *Oppsett → Øvelsesmodus* / knappen *Øvelse*): hopp over valgte cuer under øvelser uten å slette eller deaktivere dem.
   Kryss av for *Hopp over i øvelse* i fanen *Tidsstyring* (en liten *ØV*-merking vises i cuelista). Mens modusen er på, flytter GO, auto-fortsett og auto-følg seg forbi merkede cuer og starter dem aldri,
   og klokkeslett- og tidskode-triggere starter dem heller ikke. Å starte en merket cue direkte virker fortsatt: med nummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.

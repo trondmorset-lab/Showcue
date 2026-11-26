@@ -27,6 +27,7 @@ Begge har:
 - **Pause/fortsett alt**, **spoling i sanntid** i lyd og video som spiller, slipp loop (devamp), start fra markøren og fadekurver
 - **Start og slutt med bølgeform**, zoom og forhåndslytting gjennom lydpatchen
 - Pre-wait, auto-continue og auto-follow
+- **Showlogg** over cue-starter og -stopp, pauser, feil og mer (*Fil → Showlogg*), skrevet til en fil per kjøring og kan eksporteres som CSV
 - Valgfri forberedelse av neste cue i bakgrunnen (forhåndslasting, av som standard)
 - Hurtigtaster, MIDI-triggere, tidskode-triggere og klokkeslett-triggere per cue
 - Øvelsesmodus: hopp over valgte cuer under øvelser uten å slette dem (lagres aldri som på)

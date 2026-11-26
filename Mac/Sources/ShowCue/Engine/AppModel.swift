@@ -38,6 +38,7 @@ final class AppModel: ObservableObject, ShowControl {
     @Published var memoText = ""
     private var panelWindow: NSWindow?
     private var preflightWindow: NSWindow?
+    private var logWindow: NSWindow?
     private var loudnessTask: Task<Void, Never>?
     @Published var learnText = ""
     @Published private(set) var remoteStatus = ""
@@ -106,6 +107,7 @@ final class AppModel: ObservableObject, ShowControl {
         router = RemoteRouter(settings: loaded)
         engine = CueEngine(audio: audio, output: output, midi: midi) { [weak self] in self?.cues ?? [] }
         router.show = self
+        startShowLog(writeFile: loaded.writeShowLog)
         engine.onLog = { [weak self] in self?.statusText = $0 }
         engine.onPreloadRefresh = { [weak self] in DispatchQueue.main.async { self?.updatePreload() } }
         engine.onTick = { [weak self] in self?.tick() }
@@ -113,6 +115,8 @@ final class AppModel: ObservableObject, ShowControl {
         engine.onGoto = { [weak self] target, fire in
             DispatchQueue.main.async {
                 guard let self else { return }
+                guard let c = self.find(target) else { self.statusText = L("Gå til: fant ikke cue {0}.", target); return }
+                self.select(c, logged: false)
                 guard let t = SceneLogic.resolveGoto(self.cues, scenes: self.scenes, spec: target, home: self.activeScene) else {
                     self.statusText = L("Gå til: fant ikke cue {0}.", target); return
                 }
@@ -128,9 +132,9 @@ final class AppModel: ObservableObject, ShowControl {
         }
         engine.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subs)
         audio.$status.sink { [weak self] s in self?.statusText = s }.store(in: &subs)
-        oscServer.onMessage = { [weak self] m, from in self?.router.handleOsc(m, from: from) }
-        midi.onTrigger = { [weak self] t, ch in self?.router.handleMidiTrigger(t, channel: ch) }
-        midi.onMsc = { [weak self] m in self?.router.handleMsc(m) }
+        oscServer.onMessage = { [weak self] m, from in ShowLog.via(.osc) { self?.router.handleOsc(m, from: from) } }
+        midi.onTrigger = { [weak self] t, ch in ShowLog.via(.midi) { self?.router.handleMidiTrigger(t, channel: ch) } }
+        midi.onMsc = { [weak self] m in ShowLog.via(.midi) { self?.router.handleMsc(m) } }
         midi.onTimecode = { [weak self] tc, r in self?.router.handleTimecode(tc, rate: r) }
         router.onTimecodeStatus = { [weak self] _ in self?.applyStatusLine() }
         webServer.onCommand = { [weak self] cmd, from in self?.router.handleWeb(cmd, from: from) }
@@ -167,8 +171,10 @@ final class AppModel: ObservableObject, ShowControl {
     var selectedCues: [Cue] { cues.filter { selection.contains($0.id) } }
     func index(of c: Cue) -> Int? { cues.firstIndex { $0 === c } }
 
+    /// - Parameter logged: false når programmet selv flytter markøren (GO, «gå til», nytt show), så det ikke logges som brukerens flytting.
     /// Velger cuen (GO-markøren). Står cuen i en annen scene, byttes det til den scenen først.
-    func select(_ c: Cue?) {
+    func select(_ c: Cue?, logged: Bool = true) {
+        if logged, let c, c !== playhead { ShowLog.add(.playhead, cue: c) }
         if let c, !SceneLogic.sameScene(c.scene, activeScene) { activeScene = c.scene }
         selection = c.map { [$0.id] } ?? []
     }
@@ -334,21 +340,22 @@ final class AppModel: ObservableObject, ShowControl {
         let idx = Rehearsal.goIndex(list, playhead: at, mode: rehearsalMode, explicitStart: explicitStart)
         guard idx >= 0 else { return }
         let fired = list[idx]
-        engine.fire(fired)
+        ShowLog.via(.go, keepExisting: true) { engine.fire(fired) }
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode))
+        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode), logged: false)
     }
 
     func panic() {
         let hard = Date().timeIntervalSince(lastPanic) < 1
         lastPanic = Date()
+        ShowLog.add(.stopAll, text: hard ? "hard" : "fade")
         engine.stopAll(fade: hard ? 0 : settings.panicFadeTime)
         statusText = hard ? L("Alt stoppet umiddelbart.")
             : L("Stopper alt (fade {0} s). Trykk Esc igjen for umiddelbar stopp.", Cue.fmt(settings.panicFadeTime))
     }
 
-    func stopAll() { engine.stopAll(fade: settings.panicFadeTime) }
-    func hardStop() { engine.stopAll(fade: 0) }
+    func stopAll() { ShowLog.add(.stopAll, text: "fade"); engine.stopAll(fade: settings.panicFadeTime) }
+    func hardStop() { ShowLog.add(.stopAll, text: "hard"); engine.stopAll(fade: 0) }
 
     static func fadeOut(of c: Cue) -> Double {
         if c.type == .slideshow { return c.crossfade }
@@ -390,7 +397,10 @@ final class AppModel: ObservableObject, ShowControl {
         else { engine.fire(c) }
     }
 
-    func fire(_ c: Cue) { engine.fire(c) }
+    func fire(_ c: Cue) { ShowLog.via(.manual) { engine.fire(c) } }
+
+    /// Knapp i knappepanelet eller hurtigtastlista.
+    func toggleFromPanel(_ c: Cue) { ShowLog.via(.buttonPanel) { toggleHot(c) } }
     func stop(_ c: Cue) { engine.stop(c, fade: AppModel.fadeOut(of: c)) }
 
     // MARK: - ShowControl (fjernstyring)
@@ -410,7 +420,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
     func fireHotkey(_ key: String) -> Bool {
         guard let c = cues.first(where: { $0.hotkey == key && !$0.disabled }) else { return false }
-        toggleHot(c)
+        ShowLog.via(.hotkey, keepExisting: true) { toggleHot(c) }
         return true
     }
     func fireMidiTrigger(_ trigger: String) -> Int {
@@ -427,7 +437,7 @@ final class AppModel: ObservableObject, ShowControl {
             guard Rehearsal.isPlayable(c, mode: rehearsalMode), let t = Timecode.parse(c.timecodeTrigger) else { return false }
             return Timecode.crossed(previous: previous, now: frame, target: t.toFrame(rate), rate: rate)
         }
-        due.forEach { engine.fire($0) }
+        ShowLog.via(.timecode) { due.forEach { engine.fire($0) } }
         return due.count
     }
 
@@ -437,7 +447,7 @@ final class AppModel: ObservableObject, ShowControl {
         lastClockCheck = now
         guard settings.clockTriggersEnabled, let previous else { return }
         let due = ClockTriggers.due(cues, previous: previous, now: now).filter { !Rehearsal.isSkipped($0, mode: rehearsalMode) }
-        due.forEach { engine.fire($0) }
+        ShowLog.via(.clock) { due.forEach { engine.fire($0) } }
         if !due.isEmpty {
             statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
         }
@@ -464,6 +474,13 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     private func observeCues() {
+        cueSubs = cues.map { $0.objectWillChange.sink { [weak self] _ in self?.markMaybeDirty() } }
+        // Feil som settes på en cue (fil mangler, enhet mistet …) havner i showloggen.
+        cueSubs += cues.map { c in
+            c.$error.dropFirst().removeDuplicates().sink { e in
+                if let e, !e.isEmpty { ShowLog.add(.error, cue: c, text: e) }
+            }
+        }
         cueSubs = cues.map { $0.objectWillChange.sink { [weak self] _ in self?.markMaybeDirty(); self?.schedulePreloadUpdate() } }
     }
 
@@ -651,6 +668,7 @@ final class AppModel: ObservableObject, ShowControl {
             isDirty = false
             settings.lastShowPath = target.path
             settings.save()
+            ShowLog.add(.showSaved, text: target.path)
             statusText = L("Lagret {0}", target.path)
             return true
         } catch {
@@ -682,6 +700,8 @@ final class AppModel: ObservableObject, ShowControl {
         isDirty = false
         history.reset(cueData())
         refreshUndo()
+        select(cues.first { !$0.disabled }, logged: false)
+        ShowLog.add(.showOpened, text: url?.path ?? "")
         select(SceneLogic.firstEnabled(cues, activeScene))
         memoText = ""
         let missing = cues.filter { $0.isFileCue && !$0.filePath.isEmpty && !FileManager.default.fileExists(atPath: $0.filePath) }
@@ -1040,6 +1060,29 @@ final class AppModel: ObservableObject, ShowControl {
         preflightWindow = w
     }
 
+    /// Starter loggen for denne kjøringen (ingen fil i skjermbildemodus).
+    private func startShowLog(writeFile: Bool) {
+        let log = ShowLog(root: ShowSafety.defaultRoot, writeFile: writeFile && Screenshots.directory == nil)
+        log.onFault = { [weak self] msg in DispatchQueue.main.async { self?.statusText = L("Showloggen kunne ikke skrives: {0}", msg) } }
+        ShowLog.current = log
+        ShowLog.add(.appStart, text: "ShowCue " + AppModel.version)
+    }
+
+    /// «Showlogg»: åpner vinduet med loggen (ett om gangen).
+    func showShowLog() {
+        guard let log = ShowLog.current else { return }
+        if let w = logWindow { w.makeKeyAndOrderFront(nil); return }
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 560),
+                         styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        w.title = L("Showlogg")
+        w.isReleasedWhenClosed = false
+        w.contentView = NSHostingView(rootView: ShowLogView(log: log, root: ShowSafety.defaultRoot).environmentObject(self))
+        w.center()
+        w.makeKeyAndOrderFront(nil)
+        logWindow = w
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { [weak self] _ in self?.logWindow = nil }
+    }
+
     // MARK: - Lydstyrke
 
     func normalize(_ list: [Cue]) {
@@ -1138,6 +1181,7 @@ final class AppModel: ObservableObject, ShowControl {
         s.normalize()
         settings = s
         settings.save()
+        ShowLog.current?.writeFile = settings.writeShowLog
         if restartAudio {
             engine.stopAll(fade: 0)
             audio.start(settings)

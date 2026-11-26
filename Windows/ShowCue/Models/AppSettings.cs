@@ -93,6 +93,8 @@ public sealed class AppSettings
     public bool MtcInEnabled { get; set; }
     /// <summary>Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.</summary>
     public bool ClockTriggersEnabled { get; set; }
+    /// <summary>Skriv showloggen til fil (en fil per kjøring i Logs-mappa). På som standard: den er begrenset og ufarlig.</summary>
+    public bool WriteShowLog { get; set; } = true;
     /// <summary>Forbered cuen GO-markøren står på (og cuene den starter automatisk) i bakgrunnen. Av som standard til den er prøvd på ekte utstyr.</summary>
     public bool PreloadNextCue { get; set; }
     /// <summary>Lydenhet for live-inngang-cuer (WASAPI-opptaksenhet, tom = Windows standard).</summary>

@@ -87,14 +87,20 @@ final class AudioEngine: ObservableObject {
             try open(s, uid: s.audioDeviceUID)
         } catch {
             let reason = error.localizedDescription
-            guard fallbackToDefault else { status = L("Kunne ikke åpne lydenheten: {0}", reason); return }
+            guard fallbackToDefault else { fail(L("Kunne ikke åpne lydenheten: {0}", reason)); return }
             do {
                 try open(s, uid: "")
-                status = L("Kunne ikke åpne valgt lydenhet ({0}). Bruker systemets standard utgang.", reason)
+                fail(L("Kunne ikke åpne valgt lydenhet ({0}). Bruker systemets standard utgang.", reason))
             } catch {
-                status = L("Ingen lydutgang: {0}", error.localizedDescription)
+                fail(L("Ingen lydutgang: {0}", error.localizedDescription))
             }
         }
+    }
+
+    /// Setter statusen og noterer feilen i showloggen.
+    private func fail(_ text: String) {
+        status = text
+        ShowLog.add(.error, text: text)
     }
 
     private func open(_ s: AppSettings, uid: String) throws {

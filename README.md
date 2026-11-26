@@ -27,6 +27,7 @@ Both have:
 - **Pause/resume all**, **real-time scrubbing** in audio and video while playing, release loop (devamp), start from the cursor and fade curves
 - **Start and end with waveform**, zoom and preview through the audio patch
 - Pre-wait, auto-continue and auto-follow
+- **Show log** of cue starts and stops, pauses, errors and more (*File → Show log*), written to a file per run and exportable as CSV
 - Optional background preparation of the next cue (preload, off by default)
 - Hotkeys, MIDI triggers, timecode triggers and clock-time triggers per cue
 - Rehearsal mode: skip chosen cues during rehearsals without deleting them (never saved as on)

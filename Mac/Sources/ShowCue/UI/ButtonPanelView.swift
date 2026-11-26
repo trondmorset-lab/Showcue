@@ -56,7 +56,7 @@ private struct PanelTile: View {
     @ObservedObject var cue: Cue
 
     var body: some View {
-        Button { model.toggleHot(cue) } label: {
+        Button { model.toggleFromPanel(cue) } label: {
             VStack(alignment: .leading, spacing: 6) {
                 RoundedRectangle(cornerRadius: 2).fill(theme.stripe(cue.color) ?? .clear).frame(height: 5)
                 HStack {

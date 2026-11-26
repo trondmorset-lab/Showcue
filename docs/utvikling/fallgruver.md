@@ -68,6 +68,13 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - En PR med en annen PR-gren som base blir lukket/merget sammen med den; sett base til `main`.
 - Byggesjekken på `main` kan feile selv om PR-en var grønn (ustabil test). Utgivelsen stopper da; rett testen i en ny PR.
 
+## Logging
+- **Logging må aldri vente på disk eller kaste:** `ShowLog.Record` er det eneste som kalles fra motoren, og det gjør ingen I/O. Ikke kall `Flush`/`Dispose` fra tidsløkka (bare ved avslutning og i tester).
+- **`FileShare`:** loggfila holdes åpen mens programmet kjører. Åpne den for lesing med `FileShare.ReadWrite` (`ShowLogExport.ReadFile`), ellers feiler «Åpne eldre logg» på den fila som er i bruk. Skriveren bruker `FileShare.Read` så den kan leses mens den skrives.
+- **Mac: `\r\n` er ett tegn:** i Swift er «\r\n» ett `Character`. Gå gjennom `unicodeScalars` ved escaping og CSV, og sjekk `unicodeScalars.contains` i stedet for `contains("\n")`.
+- **Regneark og formler:** et CSV-felt som begynner med `= + - @` (også tabulator og CR) kjøres som formel. Tiden i CSV skrives derfor uten «+» foran. Test med `=cmd|…`.
+- **Trådlokal kilde:** `ShowLog.Via` gjelder bare tråden den settes på. Hvis en fjernstyring hopper til en annen tråd (`Dispatcher.BeginInvoke`) før den kaller showet, må `Via` settes på den siste tråden (Windows `RemoteControl` gjør det inne i UI-tråd-metodene).
+
 ## Nettside (0.26.0)
 - `HttpListener` med `http://+:port/` krever administrator (URL-reservasjon); bruk `TcpListener`. `ExclusiveAddressUse = true` hindrer at et annet program deler porten.
 - `NWListener` lages uten feil selv om porten er opptatt; feilen kommer først i `stateUpdateHandler` (`.failed`). Tjenerens `onFailure` oppdaterer statuslinja.
