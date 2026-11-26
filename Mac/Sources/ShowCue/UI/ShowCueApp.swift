@@ -262,6 +262,17 @@ struct ShowCommands: Commands {
             Button(L("Normaliser lydstyrke for valgte lyd-cuer")) { model.normalizeSelected() }
             Button(L("Normaliser lydstyrke for alle lyd-cuer")) { model.normalizeAll() }
         }
+        CommandMenu(L("Scene")) {
+            Button(L("Ny scene")) { model.addSceneDialog() }
+            Button(L("Gi scenen nytt navn")) { model.renameSceneDialog() }
+            Button(L("Slett scenen")) { model.deleteSceneDialog() }
+            Divider()
+            Button(L("Flytt scenen mot starten")) { model.moveActiveScene(-1) }
+            Button(L("Flytt scenen mot slutten")) { model.moveActiveScene(1) }
+            Divider()
+            Button(L("Forrige scene")) { model.stepScene(-1) }.keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+            Button(L("Neste scene")) { model.stepScene(1) }.keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+        }
         CommandMenu(L("Cue")) {
             Button(L("GO (Mellomrom)")) { model.go() }
             Button(L("Stopp alt (Esc)")) { model.panic() }
@@ -289,12 +300,13 @@ struct ShowCommands: Commands {
             Button(L("Slett")) { model.deleteSelected() }.keyboardShortcut(.delete)
             Button(L("Flytt opp")) { model.moveSelected(-1) }.keyboardShortcut(.upArrow)
             Button(L("Flytt ned")) { model.moveSelected(1) }.keyboardShortcut(.downArrow)
-            Button(L("Nummerer alle (1, 2, 3)")) { model.renumber() }
+            Button(L("Nummerer scenen på nytt (1, 2, 3)")) { model.renumber() }
             Divider()
             Button(L("Pause / fortsett alt")) { model.togglePause() }.keyboardShortcut("p")
             Button(L("Slipp loop (devamp) i valgt cue")) { model.releaseSelected() }
             Divider()
             Button(L("Showmodus (lås/lås opp redigering)")) { model.showMode.toggle() }.keyboardShortcut("l")
+            Button(model.rehearsalMode ? L("Øvelsesmodus: slå av") : L("Øvelsesmodus (hopp over merkede cuer)")) { model.rehearsalMode.toggle() }.keyboardShortcut("r")
             Divider()
             Button(L("Vis/skjul utgang")) { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
             Button(L("Knappepanel")) { model.showButtonPanel() }.keyboardShortcut("k")

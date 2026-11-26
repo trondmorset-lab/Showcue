@@ -40,8 +40,15 @@ struct TopBar: View {
     @Environment(\.theme) var theme
 
     var body: some View {
+        VStack(spacing: 0) {
+            if model.rehearsalMode { RehearsalBanner() }
+            topRow
+        }
+    }
+
+    private var topRow: some View {
         HStack(spacing: 18) {
-            Button(action: model.go) {
+            Button(action: { model.go() }) {
                 VStack(spacing: 0) {
                     Text("GO").uiFont(40, weight: .bold)
                     Text(L("Mellomrom")).uiFont(12).opacity(0.85)
@@ -91,6 +98,23 @@ struct TopBar: View {
         .padding(.horizontal, 14).padding(.vertical, 12)
         .background(theme.panel)
         .overlay(Rectangle().fill(theme.line).frame(height: 1), alignment: .bottom)
+    }
+}
+
+/// Står øverst så lenge øvelsesmodus er på, så ingen glemmer at den er på.
+struct RehearsalBanner: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.theme) var theme
+
+    var body: some View {
+        HStack {
+            Text(L("ØVELSESMODUS PÅ – cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett. Slå av før forestillingen (⌘R)."))
+                .uiFont(13, weight: .bold).foregroundColor(.black).lineLimit(1).truncationMode(.tail)
+            Spacer(minLength: 8)
+            Button(L("Slå av")) { model.rehearsalMode = false }.buttonStyle(PanelButtonStyle())
+        }
+        .padding(.horizontal, 14).padding(.vertical, 5)
+        .background(theme.wait)
     }
 }
 
@@ -255,9 +279,12 @@ struct ToolbarRow: View {
             .disabled(model.showMode)
             Spacer(minLength: 8)
             Button(L("▦ Knappepanel")) { model.showButtonPanel() }.help(L("Store knapper som starter og stopper cuer direkte, uten å flytte GO-markøren – for jingler, lydeffekter og berøringsskjerm (⌘K)"))
+            Button(model.rehearsalMode ? L("🎭 Øvelse PÅ") : L("🎭 Øvelse")) { model.rehearsalMode.toggle() }
+                .help(L("Øvelsesmodus: cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett (⌘R). Slås alltid av når programmet startes."))
             Button(model.showMode ? L("🔓 Lås opp") : L("🔒 Showmodus")) { model.showMode.toggle() }
                 .help(L("Lås redigering under forestillingen: bare GO, stopp og hurtigtaster virker (⌘L)"))
             menu(L("Oppsett")) {
+                Button(L("Øvelsesmodus (hopp over merkede cuer) (⌘R)")) { model.rehearsalMode.toggle() }
                 Button(L("Lydpatch")) { openWindow(id: "patch") }
                 Button(L("Vis/skjul utgangsvinduet (⇧⌘U)")) { model.output.toggle() }
                 SettingsButton()

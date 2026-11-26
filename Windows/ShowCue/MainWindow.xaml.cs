@@ -16,7 +16,7 @@ using ShowCue.Views;
 
 namespace ShowCue;
 
-public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
+public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, IRoutingHost
 {
     // ---------- Filtyper ----------
     private static readonly string[] AudioExt = MediaTools.AudioExtensions;
@@ -56,6 +56,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private CancellationTokenSource? _loudnessCancel;
     private OscFeedback? _feedback;
     private int _feedbackTick;
+    private int _webTick;
     private DateTime _lastClockCheck = DateTime.MinValue;
 
     // Angre, autolagring og showmodus
@@ -72,8 +73,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     public RemoteControl Remote { get; }
     /// <summary>Lydpatchens utganger (ny liste ved hver endring, så routingmatrisen tegnes på nytt).</summary>
     public IReadOnlyList<PatchBus> Buses => _settings.Buses.ToList();
+
+    // ---------- Routingforhåndsvalg (IRoutingHost) ----------
+    public List<RoutingPreset> RoutingPresets => _show.RoutingPresets;
+    public RouteClipboard RouteClipboard { get; } = new();
+    public int BusCount => _settings.Buses.Count;
+    public bool CanEditRouting => IsEditable;
+
+    public IReadOnlyList<Cue> RoutingTargets(Cue current)
+    {
+        var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
+        return selected.Contains(current) ? selected : new List<Cue> { current };
+    }
+
+    public void RoutingChanged(string status)
+    {
+        StatusText = status;
+        RaiseTitle();
+    }
+
     public string RemoteStatus => Remote.OscStatus + "   ·   " + Remote.MidiStatus
         + (Remote.TimecodeStatus.Length > 0 ? "   ·   " + Remote.TimecodeStatus : "")
+        + (_settings.WebRemoteEnabled ? "   ·   " + Remote.WebStatus : "")
         + (_settings.OscFeedbackEnabled ? Loc.F("   ·   Status ut: {0}:{1}", _settings.OscFeedbackHost, _settings.OscFeedbackPort) : "");
     private string _learnText = "";
     /// <summary>Vises i inspector mens vi venter på en MIDI-melding.</summary>
@@ -83,14 +104,107 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     public ObservableCollection<Cue> Cues => _show.Cues;
 
+    // ---------- Scener ----------
+    /// <summary>Cuene i aktiv scene (det cuelista viser).</summary>
+    public ListCollectionView VisibleCues { get; private set; } = null!;
+    /// <summary>Aktiv scene (kanonisk navn; tom i et show uten scener).</summary>
+    private string _activeScene = "";
+    /// <summary>Settes mens scene byttes eller redigeres, så listevisningen som skjuler valgt cue ikke nullstiller GO-markøren.</summary>
+    private bool _switchingScene;
+    /// <summary>GO-markøren per scene (null = slutten av scenen).</summary>
+    private readonly Dictionary<string, Cue?> _playheads = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Navnene i scenevelgeren. Et show uten scener har én scene.</summary>
+    public IReadOnlyList<string> SceneItems => _show.Scenes.Count > 0 ? _show.Scenes.ToList() : new List<string> { SceneLogic.DefaultName };
+
+    public string ActiveSceneLabel
+    {
+        get => _activeScene.Length == 0 ? SceneLogic.DefaultName : _activeScene;
+        set
+        {
+            if (string.IsNullOrEmpty(value) || _show.Scenes.Count == 0) return;
+            if (SceneLogic.Canonical(_show.Scenes, Cues, value) is { } scene)
+            {
+                SwitchScene(scene);
+                Dispatcher.BeginInvoke(() => { CueGrid.Focus(); });
+            }
+        }
+    }
+
+    private void RaiseScenes()
+    {
+        Raise(nameof(SceneItems));
+        Raise(nameof(ActiveSceneLabel));
+        Raise(nameof(IsEmpty));
+    }
+
+    /// <summary>Bytter aktiv scene uten å røre valgt cue.</summary>
+    private void SwitchSceneCore(string scene)
+    {
+        _switchingScene = true;
+        try { _activeScene = scene; VisibleCues?.Refresh(); }
+        finally { _switchingScene = false; }
+        Raise(nameof(ActiveSceneLabel));
+        Raise(nameof(IsEmpty));
+    }
+
+    /// <summary>GO-markøren scenen hadde sist (første aktive cue hvis den ikke har vært brukt).</summary>
+    private Cue? PlayheadFor(string scene)
+    {
+        if (_playheads.TryGetValue(scene, out var p))
+            return p == null || (Cues.Contains(p) && SceneLogic.InScene(p, scene)) ? p : SceneLogic.FirstEnabled(Cues, scene);
+        return SceneLogic.FirstEnabled(Cues, scene);
+    }
+
+    /// <summary>Bytter scene og flytter GO-markøren til den sist brukte i den scenen. GO bytter aldri scene av seg selv.</summary>
+    private void SwitchScene(string scene)
+    {
+        if (SceneLogic.SameScene(scene, _activeScene)) return;
+        SwitchSceneCore(scene);
+        SelectedCue = PlayheadFor(_activeScene);
+        StatusText = Loc.F("Scene: {0}", ActiveSceneLabel);
+    }
+
+    private void StepScene(int delta)
+    {
+        if (_show.Scenes.Count == 0) return;
+        if (SceneLogic.Neighbour(_show.Scenes, _activeScene, delta) is { } next) SwitchScene(next);
+    }
+
+    /// <summary>Endrer scenelista (<paramref name="edit"/>) og velger aktiv scene etterpå. Listevisningen oppdateres, og angre-historikken får et steg.</summary>
+    private void EditScenes(Action edit, Func<string> activeAfter)
+    {
+        if (!IsEditable) return;
+        CommitFocusedTextBox();
+        var keep = SelectedCue;
+        _switchingScene = true;
+        try
+        {
+            edit();
+            _activeScene = activeAfter();
+            VisibleCues?.Refresh();
+        }
+        finally { _switchingScene = false; }
+        RaiseScenes();
+        ScheduleUndo();
+        SelectedCue = keep != null && Cues.Contains(keep) && SceneLogic.InScene(keep, _activeScene) ? keep : PlayheadFor(_activeScene);
+    }
+
     public Cue? SelectedCue
     {
         get => _selected;
         set
         {
             if (_selected == value) return;
+            // Velges en cue i en annen scene, bytter vi til den scenen først.
+            if (value != null && !_switchingScene && !SceneLogic.SameScene(value.Scene, _activeScene))
+            {
+                SwitchSceneCore(value.Scene);
+                if (_selected == value) return;
+            }
             if (_selected != null) { _selected.PropertyChanged -= Selected_PropertyChanged; _selected.IsNext = false; }
             _selected = value;
+            if (!_switchingScene) _playheads[_activeScene] = value;
             if (_selected != null) { _selected.PropertyChanged += Selected_PropertyChanged; _selected.IsNext = true; }
             if (_selected != null && !_playheadLogMuted) ShowLog.AddCue(ShowLogKind.Playhead, _selected);
             Raise();
@@ -103,6 +217,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             Raise(nameof(ShowMediaTab));
             Raise(nameof(MediaCue));
             if (_selected != null) CueGrid.ScrollIntoView(_selected);
+            UpdatePreload();
         }
     }
 
@@ -129,14 +244,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     public bool HasSelection => _selected != null;
     public bool NoSelection => _selected == null;
-    public bool IsEmpty => Cues.Count == 0;
+    public bool IsEmpty => !Cues.Any(c => SceneLogic.InScene(c, _activeScene));
     public bool NothingActive => Engine.Active.Count == 0;
     public bool NoHotkeys => HotkeyCues.Count == 0;
     public string NextCueTitle => _selected?.DisplayName ?? (Cues.Count > 0 ? Loc.T("— slutt på lista —") : "");
     public string ActiveCountText => Engine.Active.Count == 0 ? "" : Loc.F("{0} aktive", Engine.Active.Count);
     public string StatusText { get => _statusText; set { _statusText = value; Raise(); } }
     public string WindowTitle =>
-        Loc.F("{0}{1}{2} — ShowCue {3}", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), (IsDirty ? " •" : ""), (_showMode ? Loc.T("  🔒 SHOWMODUS") : ""), AppVersion);
+        Loc.F("{0}{1}{2} — ShowCue {3}", (_showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn")), (IsDirty ? " •" : ""), (_showMode ? Loc.T("  🔒 SHOWMODUS") : "") + (Engine.RehearsalMode ? Loc.T("  🎭 ØVELSESMODUS") : ""), AppVersion);
 
     /// <summary>Programversjonen (fra VERSION-fila ved bygging), f.eks. «0.5.0».</summary>
     public static string AppVersion
@@ -165,6 +280,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         }
     }
     public bool IsEditable => !_showMode;
+
+    /// <summary>Øvelsesmodus: cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett/-følg. Lagres ikke; programmet starter alltid med den av.</summary>
+    public bool IsRehearsal
+    {
+        get => Engine.RehearsalMode;
+        set
+        {
+            if (Engine.RehearsalMode == value) return;
+            CommitFocusedTextBox();
+            Engine.RehearsalMode = value;
+            Raise(); Raise(nameof(RehearsalLabel)); RaiseTitle();
+            var n = Rehearsal.CountFlagged(Cues);
+            StatusText = value ? Loc.F("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO (Ctrl+R for å slå av).", n) : Loc.T("Øvelsesmodus er av: alle cuer spilles.");
+        }
+    }
+    public string RehearsalLabel => Engine.RehearsalMode ? Loc.T("🎭 Øvelse PÅ") : Loc.T("🎭 Øvelse");
     public string PauseGlyph => Engine.IsPaused ? "▶" : "⏸";
     /// <summary>Teksten fra siste memo-cue (tom = ingen beskjed vises).</summary>
     public string MemoText { get => _memoText; set { _memoText = value ?? ""; Raise(); } }
@@ -215,8 +346,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             _playheadLogMuted = true;
             try { SelectedCue = c; }
             finally { _playheadLogMuted = false; }
+            var t = SceneLogic.ResolveGoto(Cues, _show.Scenes, target, _activeScene);
+            if (t == null) { StatusText = Loc.F("Gå til: fant ikke cue {0}.", target); return; }
+            if (t.Cue != null) SelectedCue = t.Cue;
+            else SwitchScene(t.Scene);
             if (fire) { _lastGo = DateTime.MinValue; Go(); }
         });
+        Engine.PreloadRefreshRequested += () => Dispatcher.BeginInvoke(UpdatePreload);
         Engine.MemoShown += m => Dispatcher.BeginInvoke(() => MemoText = m.Text.Trim().Length > 0 ? m.Text.Trim() : m.DisplayName);
         Engine.Active.CollectionChanged += (_, _) => { Raise(nameof(NothingActive)); Raise(nameof(ActiveCountText)); };
 
@@ -249,6 +385,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         foreach (var c in _show!.Cues) c.PropertyChanged -= Cue_PropertyChanged;
 
         _show = doc;
+        _show.NormalizeScenes();
+        _activeScene = _show.Scenes.Count > 0 ? _show.Scenes[0] : "";
+        _playheads.Clear();
         _showPath = path;
         _show.Cues.CollectionChanged += Cues_CollectionChanged;
         foreach (var c in _show.Cues) c.PropertyChanged += Cue_PropertyChanged;
@@ -261,10 +400,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         HotkeyCues.LiveFilteringProperties.Add(nameof(Cue.Hotkey));
         ((INotifyCollectionChanged)HotkeyCues).CollectionChanged += (_, _) => Raise(nameof(NoHotkeys));
 
+        VisibleCues = new ListCollectionView(_show.Cues) { Filter = o => o is Cue c && SceneLogic.InScene(c, _activeScene) };
+
         // Fyll inn manglende lengder og forhåndslast bilder/PDF.
         foreach (var a in _show.Cues.OfType<AudioCue>().Where(a => (a.FileDuration <= 0 || a.FileChannels <= 0) && File.Exists(a.FilePath)))
             (a.FileDuration, a.FileChannels) = AudioEngine.Probe(a.FilePath);
         MediaCache.Clear();
+        Engine?.Preloader.Clear(); // nytt show: slipp alt som var forberedt
         MediaCache.Preload(_show.Cues);
         foreach (var v in _show.Cues.OfType<VideoCue>().Where(v => v.FileChannels < 0)) ProbeVideoAudio(v);
 
@@ -273,6 +415,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         RaiseUndo();
         Raise(nameof(Cues));
         Raise(nameof(HotkeyCues));
+        Raise(nameof(VisibleCues));
+        RaiseScenes();
         Raise(nameof(NoHotkeys));
         _panelWindow?.SetCues(_show.Cues);
         MemoText = "";
@@ -281,6 +425,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         try { SelectedCue = _show.Cues.FirstOrDefault(c => !c.Disabled); }
         finally { _playheadLogMuted = false; }
         ShowLog.Add(ShowLogKind.ShowOpened, text: path ?? "");
+        SelectedCue = SceneLogic.FirstEnabled(_show.Cues, _activeScene);
         RaiseTitle();
 
         var missing = _show.Cues.Where(c => c is IFileCue f && !string.IsNullOrEmpty(f.FilePath) && !File.Exists(f.FilePath)).ToList();
@@ -288,11 +433,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (missing.Count > 0) StatusText = Loc.F("Advarsel: {0} mediefil(er) mangler. De er merket med ! i lista.", missing.Count);
     }
 
+    /// <summary>Be om at cuen GO-markøren står på (og cuene den starter automatisk) forberedes i bakgrunnen.</summary>
+    private void UpdatePreload()
+    {
+        try
+        {
+            if (Engine is null) return;
+            Engine.Preloader.Update(Cues, _selected == null ? -1 : Cues.IndexOf(_selected));
+        }
+        catch { /* forberedelse er aldri påkrevd */ }
+    }
+
     private void Cues_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems != null) foreach (Cue c in e.NewItems) c.PropertyChanged += Cue_PropertyChanged;
         if (e.OldItems != null) foreach (Cue c in e.OldItems) c.PropertyChanged -= Cue_PropertyChanged;
         ScheduleUndo();
+        UpdatePreload();
         Raise(nameof(IsEmpty));
         Raise(nameof(NextCueTitle));
         RaiseTitle();
@@ -306,6 +463,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (e.PropertyName is nameof(Cue.Progress) or nameof(Cue.ActiveCount) or nameof(Cue.IsRunning)
             or nameof(Cue.IsPreWaiting) or nameof(Cue.Error) or nameof(Cue.HasError)) return;
         ScheduleUndo();
+        if (e.PropertyName is nameof(IFileCue.FilePath) or nameof(Cue.Disabled) or nameof(Cue.ContinueMode) or nameof(Cue.Number)
+            or nameof(GotoCue.Target) or nameof(GroupCue.Targets) or nameof(AudioCue.StartTime))
+            UpdatePreload();
+        if (e.PropertyName == nameof(Cue.Scene)) VisibleCues?.Refresh();
 
         if (e.PropertyName == nameof(IFileCue.FilePath))
         {
@@ -412,7 +573,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ==================================================================
     //  GO / stopp
     // ==================================================================
-    private void Go()
+    /// <param name="explicitStart">Cuen er valgt med nummer: en cue merket «Hopp over i øvelse» startes likevel.</param>
+    private void Go(bool explicitStart = false)
     {
         if ((DateTime.Now - _lastGo).TotalMilliseconds < _settings.DoubleGoProtectionMs) return;
         _lastGo = DateTime.Now;
@@ -420,20 +582,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
         var cue = SelectedCue;
         if (cue == null) return;
-        int idx = Cues.IndexOf(cue);
-        if (cue.Disabled)
-        {
-            // Hopp til neste aktive cue og kjør den.
-            var next = Cues.Skip(idx + 1).FirstOrDefault(c => !c.Disabled);
-            if (next == null) return;
-            cue = next;
-            idx = Cues.IndexOf(cue);
-        }
+        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue i scenen som kan spilles.
+        var list = SceneLogic.CuesIn(Cues, cue.Scene);
+        int idx = Rehearsal.GoIndex(list, list.IndexOf(cue), Engine.RehearsalMode, explicitStart);
+        if (idx < 0) return;
+        cue = list[idx];
         Engine.Fire(cue);
         int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx);
         _playheadLogMuted = true;
         try { SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null; }
         finally { _playheadLogMuted = false; }
+        // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
+        SelectedCue = SceneLogic.NextPlayhead(Cues, cue, Engine.RehearsalMode);
     }
 
     private void Panic()
@@ -490,6 +650,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                 case Key.O: Open_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.N: New_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.L: IsShowMode = !IsShowMode; e.Handled = true; return;
+                case Key.R: IsRehearsal = !IsRehearsal; e.Handled = true; return;
                 case Key.P: Engine.TogglePause(); e.Handled = true; return;
                 case Key.K: ButtonPanel_Click(this, new RoutedEventArgs()); e.Handled = true; return;
                 case Key.OemPlus or Key.Add: SetZoom(1); e.Handled = true; return;
@@ -502,6 +663,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
                     case Key.Z: Undo(); e.Handled = true; return;
                     case Key.Y: Redo(); e.Handled = true; return;
                     case Key.D: Duplicate_Click(this, new RoutedEventArgs()); e.Handled = true; return;
+                    case Key.PageUp: StepScene(-1); e.Handled = true; return;
+                    case Key.PageDown: StepScene(1); e.Handled = true; return;
                     case Key.Up: MoveSelected(-1); e.Handled = true; return;
                     case Key.Down: MoveSelected(1); e.Handled = true; return;
                     case >= Key.D0 and <= Key.D9:
@@ -553,7 +716,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             case Key.Down when !inCombo:
                 MovePlayhead(1); e.Handled = true; return;
             case Key.Home when !inCombo:
-                SelectedCue = Cues.FirstOrDefault(); e.Handled = true; return;
+                SelectedCue = SceneLogic.CuesIn(Cues, _activeScene).FirstOrDefault(); e.Handled = true; return;
             case Key.Delete:
                 Delete_Click(this, new RoutedEventArgs()); e.Handled = true; return;
         }
@@ -576,8 +739,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ==================================================================
     //  Fjernstyring (OSC / MIDI)
     // ==================================================================
-    private Cue? FindCue(string number) =>
-        Cues.FirstOrDefault(c => string.Equals(c.Number, number.Trim(), StringComparison.OrdinalIgnoreCase));
+    /// <summary>Cuen et nummer peker på: aktiv scene først, deretter alle scener; «Scene:nummer» bare i den scenen.</summary>
+    private Cue? FindCue(string number) => SceneLogic.FindByNumber(Cues, number, _activeScene);
+
+    bool IShowControl.SelectScene(string name)
+    {
+        if (_show.Scenes.Count == 0) return SceneLogic.SameScene(name, SceneLogic.DefaultName);
+        if (SceneLogic.Canonical(_show.Scenes, Cues, name) is not { } scene) return false;
+        SwitchScene(scene);
+        return true;
+    }
 
     void IShowControl.Go() => Go();
     void IShowControl.StopAll() { ShowLog.Add(ShowLogKind.StopAll, text: "fade"); Engine.StopAll(_settings.PanicFadeTime); }
@@ -615,7 +786,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (c == null) return false;
         SelectedCue = c;
         _lastGo = DateTime.MinValue; // eksplisitt cue: ingen dobbel-GO-sperre
-        Go();
+        Go(explicitStart: true);
         return true;
     }
 
@@ -647,7 +818,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     int IShowControl.FireTimecodeTriggers(long previousFrame, long frame, TimecodeRate rate)
     {
-        var due = Cues.Where(c => !c.Disabled && Timecode.TryParse(c.TimecodeTrigger, out var t)
+        // Triggere starter av seg selv, så merkede cuer hoppes over i øvelsesmodus.
+        var due = Cues.Where(c => Rehearsal.IsPlayable(c, Engine.RehearsalMode) && Timecode.TryParse(c.TimecodeTrigger, out var t)
                                   && Timecode.Crossed(previousFrame, frame, t.ToFrame(rate), rate)).ToList();
         using var via = ShowLog.Via(StartSource.Timecode);
         foreach (var c in due) Engine.Fire(c);
@@ -663,6 +835,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         var due = ClockTriggers.Due(Cues, previous, now);
         using (ShowLog.Via(StartSource.Clock))
             foreach (var c in due) Engine.Fire(c);
+        var due = ClockTriggers.Due(Cues, previous, now).Where(c => !Rehearsal.IsSkipped(c, Engine.RehearsalMode)).ToList();
+        foreach (var c in due) Engine.Fire(c);
         if (due.Count > 0) StatusText = Loc.F("Klokke {0} → {1}", now.ToString("HH:mm:ss"), due.Count == 1 ? Loc.T("1 cue") : Loc.F("{0} cuer", due.Count));
     }
 
@@ -695,10 +869,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
 
     private void MovePlayhead(int delta)
     {
-        if (Cues.Count == 0) return;
-        int idx = SelectedCue != null ? Cues.IndexOf(SelectedCue) : (delta > 0 ? -1 : Cues.Count);
-        idx = Math.Clamp(idx + delta, 0, Cues.Count - 1);
-        SelectedCue = Cues[idx];
+        var list = SceneLogic.CuesIn(Cues, _activeScene);
+        if (list.Count == 0) return;
+        SelectedCue = SceneLogic.Step(list, SelectedCue, delta);
     }
 
     private void CommitFocusedTextBox()
@@ -712,17 +885,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     // ==================================================================
     private string NextNumber()
     {
-        double max = 0;
-        foreach (var c in Cues)
-            if (double.TryParse(c.Number, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n))
-                max = Math.Max(max, n);
-        return ((int)Math.Floor(max) + 1).ToString();
+        return SceneLogic.NextNumber(Cues, _activeScene);
     }
 
     private int InsertIndex()
     {
         var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
-        if (selected.Count == 0) return Cues.Count;
+        if (selected.Count == 0) return SceneLogic.EndOfScene(Cues, _activeScene);
         return selected.Max(c => Cues.IndexOf(c)) + 1;
     }
 
@@ -731,6 +900,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (!IsEditable) return;
         foreach (var c in newCues)
         {
+            c.Scene = _activeScene; // nye cuer havner alltid i aktiv scene
             if (string.IsNullOrEmpty(c.Number)) c.Number = NextNumber();
             Cues.Insert(Math.Min(at++, Cues.Count), c);
         }
@@ -816,21 +986,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (selected.Count == 0) return;
         var text = selected.Count == 1 ? Loc.F("Slette cue {0} «{1}»?", selected[0].Number, selected[0].DisplayName) : Loc.F("Slette {0} cuer?", selected.Count);
         if (MessageBox.Show(this, text, "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        int idx = selected.Min(c => Cues.IndexOf(c));
+        int idx = Math.Max(0, SceneLogic.CuesIn(Cues, _activeScene).IndexOf(selected.OrderBy(c => Cues.IndexOf(c)).First()));
         foreach (var c in selected)
         {
             Engine.Stop(c, 0);
             Cues.Remove(c);
         }
-        SelectedCue = Cues.Count == 0 ? null : Cues[Math.Min(idx, Cues.Count - 1)];
+        var left = SceneLogic.CuesIn(Cues, _activeScene);
+        SelectedCue = left.Count == 0 ? null : left[Math.Min(idx, left.Count - 1)];
     }
 
     private void MoveSelected(int delta)
     {
         if (SelectedCue == null || !IsEditable) return;
         var c = SelectedCue;
-        int i = Cues.IndexOf(c), j = i + delta;
-        if (j < 0 || j >= Cues.Count) return;
+        int i = Cues.IndexOf(c), j = SceneLogic.NeighbourIndex(Cues, i, delta); // nærmeste cue i samme scene
+        if (j < 0) return;
         Cues.Move(i, j);
         SelectedCue = null;
         SelectedCue = c;
@@ -842,19 +1013,89 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void Renumber_Click(object sender, RoutedEventArgs e)
     {
         if (!IsEditable) return;
-        if (MessageBox.Show(this, Loc.T("Gi alle cuer nye nummer (1, 2, 3)?\nFade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk."), "ShowCue",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        for (int i = 0; i < Cues.Count; i++)
+        var text = _show.Scenes.Count > 0
+            ? Loc.F("Gi alle cuer i scenen «{0}» nye nummer (1, 2, 3)?\nFade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk.", ActiveSceneLabel)
+            : Loc.T("Gi alle cuer nye nummer (1, 2, 3)?\nFade-, stopp-, gå til- og gruppe-cuer oppdateres automatisk.");
+        if (MessageBox.Show(this, text, "ShowCue", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        SceneLogic.Renumber(Cues, _activeScene);
+    }
+
+    // ---------- Scener: menyvalg ----------
+    private void PrevScene_Click(object sender, RoutedEventArgs e) => StepScene(-1);
+    private void NextScene_Click(object sender, RoutedEventArgs e) => StepScene(1);
+
+    private void AddScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsEditable) return;
+        var name = NamePrompt.Ask(this, Loc.T("Ny scene"), Loc.T("Navn på scenen (f.eks. Akt 2):"));
+        if (name == null) return;
+        string? added = null;
+        EditScenes(() =>
         {
-            var n = (i + 1).ToString();
-            if (!string.IsNullOrEmpty(Cues[i].Number)) map.TryAdd(Cues[i].Number, n);
-            Cues[i].Number = n;
+            var oldKey = _activeScene;
+            var oldPlayhead = _selected;
+            added = SceneLogic.AddScene(_show.Scenes, Cues, name);
+            // Den første scenen får navn: GO-markøren den hadde følger med.
+            if (oldKey.Length == 0 && _show.Scenes.Count > 0) { _playheads.Remove(""); _playheads[_show.Scenes[0]] = oldPlayhead; }
+        }, () => added ?? (_show.Scenes.Count > 0 && _activeScene.Length == 0 ? _show.Scenes[0] : _activeScene));
+        StatusText = added != null ? Loc.F("Scene «{0}» er laget.", added) : Loc.T("Kunne ikke lage scenen (tomt navn eller navnet er i bruk).");
+    }
+
+    private void RenameScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsEditable) return;
+        var old = _activeScene;
+        var name = NamePrompt.Ask(this, Loc.T("Gi scenen nytt navn"), Loc.T("Nytt navn på scenen:"), ActiveSceneLabel);
+        if (name == null) return;
+        bool ok = false;
+        var now = old;
+        EditScenes(() =>
+        {
+            ok = SceneLogic.RenameScene(_show.Scenes, Cues, old, name);
+            if (!ok) return;
+            now = SceneLogic.CleanName(name);
+            if (_playheads.Remove(old, out var p)) _playheads[now] = p;
+        }, () => now);
+        if (!ok) StatusText = Loc.T("Kunne ikke endre navnet (tomt navn eller navnet er i bruk).");
+    }
+
+    private void DeleteScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (!IsEditable) return;
+        if (_show.Scenes.Count < 2) { StatusText = Loc.T("Showet må ha minst én scene."); return; }
+        if (MessageBox.Show(this, Loc.F("Slette scenen «{0}»?\nCuene i den flyttes til scenen foran.", ActiveSceneLabel), "ShowCue",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        var gone = _activeScene;
+        string? heir = null;
+        EditScenes(() => { heir = SceneLogic.DeleteScene(_show.Scenes, Cues, gone); _playheads.Remove(gone); }, () => heir ?? gone);
+    }
+
+    private void MoveScene_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string t } && int.TryParse(t, out var delta))
+            EditScenes(() => SceneLogic.MoveScene(_show.Scenes, _activeScene, delta), () => _activeScene);
+    }
+
+    /// <summary>Flytter de valgte cuene til slutten av en annen scene.</summary>
+    private void MoveSelectedToScene(string scene)
+    {
+        var selected = CueGrid.SelectedItems.Cast<Cue>().ToList();
+        if (selected.Count == 0 || !IsEditable) return;
+        EditScenes(() => SceneLogic.MoveToScene(Cues, selected, scene), () => _activeScene);
+        StatusText = Loc.F("Flyttet {0} cue(r) til scenen «{1}».", selected.Count, scene);
+    }
+
+    private void SceneMoveMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        SceneMoveMenu.Items.Clear();
+        foreach (var scene in SceneItems.Where(n => !SceneLogic.SameScene(n, ActiveSceneLabel)))
+        {
+            var target = scene;
+            var item = new MenuItem { Header = target };
+            item.Click += (_, _) => MoveSelectedToScene(target);
+            SceneMoveMenu.Items.Add(item);
         }
-        foreach (var f in Cues.OfType<FadeCue>()) if (map.TryGetValue(f.Target, out var t)) f.Target = t;
-        foreach (var s in Cues.OfType<StopCue>()) if (map.TryGetValue(s.Target, out var t)) s.Target = t;
-        foreach (var g in Cues.OfType<GotoCue>()) if (map.TryGetValue(g.Target, out var t)) g.Target = t;
-        foreach (var g in Cues.OfType<GroupCue>()) g.Targets = CueTargets.Renumber(g.Targets, map);
+        SceneMoveMenu.IsEnabled = SceneMoveMenu.Items.Count > 0;
     }
 
     private void PdfNextPage_Click(object sender, RoutedEventArgs e)
@@ -899,7 +1140,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         if (cues.Count == 0) { StatusText = Loc.T("Ingen støttede filer i det du slapp."); return; }
 
         // Sett inn under raden det ble sluppet på, ellers nederst.
-        int at = Cues.Count;
+        int at = SceneLogic.EndOfScene(Cues, _activeScene);
         if (row?.Item is Cue c) at = Cues.IndexOf(c) + 1;
         InsertCues(cues, at);
         StatusText = Loc.F("La til {0} cue(s).", cues.Count);
@@ -1078,7 +1319,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             (a.FileDuration, a.FileChannels) = AudioEngine.Probe(a.FilePath);
         foreach (var c in Cues.Where(c => c is IFileCue f && File.Exists(f.FilePath))) c.Error = null;
         MediaCache.Clear();
+        Engine.Preloader.Clear();
         MediaCache.Preload(Cues);
+        UpdatePreload();
         var left = MediaTools.Missing(Cues).Count;
         StatusText = Loc.F("Fant {0} fil(er).", found) + (left > 0 ? Loc.F(" {0} mangler fortsatt.", left) : Loc.T(" Alle mediefiler er på plass."));
     }
@@ -1088,7 +1331,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     {
         CommitFocusedTextBox();
         var env = new SystemPreflightEnvironment();
-        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env)) { Owner = this }.ShowDialog();
+        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env, _show.Scenes, Engine.RehearsalMode)) { Owner = this }.ShowDialog();
     }
 
     /// <summary>Starter loggen for denne kjøringen (ingen fil i skjermbildemodus).</summary>
@@ -1353,6 +1596,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
             next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
     }
 
+    /// <summary>Øyeblikksbilde til nettsiden: bare lesing, ingenting her kan endre showet.</summary>
+    private WebStateInput BuildWebState()
+    {
+        var next = SelectedCue;
+        var playing = Engine.Active
+            .Where(a => !a.Done)
+            .Select(a => new WebPlaying(a.Cue.Number, a.Cue.DisplayName, a.Cue.TypeName, a.Started ? a.Elapsed : 0,
+                a.Duration > 0 ? Math.Max(0, a.Duration - a.Elapsed) : 0, a.Duration > 0, !a.Started))
+            .ToList();
+        return new WebStateInput(
+            _showPath != null ? Path.GetFileNameWithoutExtension(_showPath) : Loc.T("Uten navn"),
+            Engine.IsPaused, _showMode,
+            next != null ? new WebNext(next.Number, next.DisplayName, next.TypeName, next.Notes ?? "") : null,
+            next != null ? Cues.IndexOf(next) + 1 : 0, Cues.Count, playing);
+    }
+
+    private IEnumerable<WebCueInfo> BuildWebCues() =>
+        Cues.Select(c => new WebCueInfo(c.Number, c.DisplayName, c.TypeName, c.Disabled)).ToList();
+
     void IShowControl.RefreshFeedback() => _feedback?.RequestRefresh();
 
     private void Patch_Click(object sender, RoutedEventArgs e)
@@ -1438,15 +1700,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     private void ReplaceCues(string json)
     {
         var doc = System.Text.Json.JsonSerializer.Deserialize<ShowDocument>(json, ShowDocument.JsonOptions)!;
-        int idx = SelectedCue != null ? Cues.IndexOf(SelectedCue) : 0;
+        int idx = SelectedCue != null ? Math.Max(0, SceneLogic.CuesIn(Cues, _activeScene).IndexOf(SelectedCue)) : 0;
         _restoring = true;
+        _switchingScene = true;
         try
         {
             while (Cues.Count > 0) Cues.RemoveAt(Cues.Count - 1);
             foreach (var c in doc.Cues) Cues.Add(c);
+            _show.Scenes = doc.Scenes;
+            _show.NormalizeScenes();
+            if (_show.Scenes.Count > 0 && !_show.Scenes.Any(n => SceneLogic.SameScene(n, _activeScene))) _activeScene = _show.Scenes[0];
+            if (_show.Scenes.Count == 0) _activeScene = "";
+            VisibleCues?.Refresh();
         }
-        finally { _restoring = false; }
-        SelectedCue = Cues.Count == 0 ? null : Cues[Math.Clamp(idx, 0, Cues.Count - 1)];
+        finally { _restoring = false; _switchingScene = false; }
+        RaiseScenes();
+        _playheads.Clear();
+        var inScene = SceneLogic.CuesIn(Cues, _activeScene);
+        SelectedCue = inScene.Count == 0 ? null : inScene[Math.Clamp(idx, 0, inScene.Count - 1)];
         RaiseUndo();
         RaiseTitle();
     }
@@ -1486,6 +1757,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
     }
 
     private void ShowMode_Click(object sender, RoutedEventArgs e) => IsShowMode = !IsShowMode;
+    private void Rehearsal_Click(object sender, RoutedEventArgs e) => IsRehearsal = !IsRehearsal;
 
     // ==================================================================
     //  Utgang, måler og klokke
@@ -1512,6 +1784,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl
         {
             try { _feedback.Update(BuildStatus(), Engine.Now); }
             catch { /* nettverksfeil skal aldri påvirke showet */ }
+        }
+
+        // Tilstand til nettsiden: ca. 4 ganger i sekundet, cuelista ca. én gang i sekundet.
+        if (Remote.WebRunning && ++_webTick % 15 == 0)
+        {
+            try { Remote.PublishWebState(WebRemote.BuildStateJson(BuildWebState()), _webTick % 60 == 0 ? WebRemote.BuildCuesJson(BuildWebCues()) : null); }
+            catch { /* nettsiden skal aldri påvirke showet */ }
         }
 
         CheckClockTriggers(DateTime.Now);

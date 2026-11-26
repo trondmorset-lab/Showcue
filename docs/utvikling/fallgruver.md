@@ -23,6 +23,9 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - **`byte.TryParse(…, HexNumber)` godtar mellomrom, Swifts `UInt8(_, radix: 16)` godtar «+»:** sjekk at begge tegn er sifre først (`\xHH`).
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
 
+- **Forhåndslasting:** aldri bruk en forberedt fil uten å sjekke at den fortsatt stemmer (størrelse/endringstid, samplingsfrekvens, start/slutt/loop); `Take…` skal returnere null, ikke kaste. En forberedt leser/dekoder har én eier: den som tar den, må lukke den. Ikke rør lydløkken for å «hjelpe» forberedelsen.
+- Windows: `MediaCache.Images` brukes nå også fra bakgrunnen (`Warm`), så alle tilganger går gjennom `ImagesLock`.
+
 ## Showfiler
 - Windows leste en cue med ett ugyldig felt (f.eks. `"FadeTime": "tre"`) som feil for hele filen. Nå leses feltene hver for seg (`CueJsonConverter.ReadFieldByField`),
   og «null» i `Cues`, `Files` og `Routes` fjernes i egenskapene. Mac har alltid brukt standardverdi per felt.
@@ -48,6 +51,8 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - macOS husker app-ikoner: etter nytt ikon, `touch /Applications/ShowCue.app && killall Dock`. Appen setter også ikonet selv ved oppstart.
 - Kjøring fra Xcode gir ingen app-pakke (ikonet hentes da fra ressurspakken ved siden av programfila).
 - ⌘0 er brukt («gå til»-cue); Option-tastene gir spesialtegn på norsk tastatur.
+- En metode med standardargument (`go(explicitStart: Bool = false)`) oppfyller ikke en protokollkrav `go()` og kan ikke brukes som `() -> Void` (`Button(action: model.go)`). Lag en egen overload uten argument og bruk lukning i knappen.
+- ⌘R er brukt av øvelsesmodus (Windows: Ctrl+R).
 
 - SwiftUI: en `ViewBuilder`-blokk tar høyst 10 elementer. En `switch` med mange felt per `case` (inspektørfanene) må gruppere i `VStack`.
 
@@ -69,6 +74,20 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - **Mac: `\r\n` er ett tegn:** i Swift er «\r\n» ett `Character`. Gå gjennom `unicodeScalars` ved escaping og CSV, og sjekk `unicodeScalars.contains` i stedet for `contains("\n")`.
 - **Regneark og formler:** et CSV-felt som begynner med `= + - @` (også tabulator og CR) kjøres som formel. Tiden i CSV skrives derfor uten «+» foran. Test med `=cmd|…`.
 - **Trådlokal kilde:** `ShowLog.Via` gjelder bare tråden den settes på. Hvis en fjernstyring hopper til en annen tråd (`Dispatcher.BeginInvoke`) før den kaller showet, må `Via` settes på den siste tråden (Windows `RemoteControl` gjør det inne i UI-tråd-metodene).
+
+## Nettside (0.26.0)
+- `HttpListener` med `http://+:port/` krever administrator (URL-reservasjon); bruk `TcpListener`. `ExclusiveAddressUse = true` hindrer at et annet program deler porten.
+- `NWListener` lages uten feil selv om porten er opptatt; feilen kommer først i `stateUpdateHandler` (`.failed`). Tjenerens `onFailure` oppdaterer statuslinja.
+- Swift: «\r\n» er ÉN `Character`; del byte-matrisen på CRLF i stedet for å splitte en `String` på tegn. Tolkeren arbeider på byte og avviser alt over ASCII på forhånd.
+- Språk i nettsiden: tekstene bygges ved start av tjeneren (ikke per forespørsel), så et språkbytte (som alltid krever omstart) følger med. Nye tekster i `PageTexts` må ha `{{navn}}` i begge malene og engelsk i `i18n/en.json`.
+- Skriptet i siden må aldri bruke `innerHTML` med data fra showet (cuenavn kan inneholde `<`); bruk `textContent`. Testen `PagesAreSelfContained` sjekker at siden ikke har `src=`, `href=`, `http://` eller `innerHTML`.
+- JSON til siden escaper også `<`, `>` og `&` (og U+2028/2029), så innholdet aldri kan tolkes som HTML selv om det en dag settes inn feil.
+- Stresstesten (`tools/stress`) kompilerer `RemoteControl.cs`, så `WebServer.cs` måtte med i `stress.csproj`.
+
+## Scener
+- **Filtrert liste og valgt cue:** i WPF setter `DataGrid` `SelectedItem` til null når valgt rad skjules av filteret. Bytte av scene og redigering av scenelista må skje med `_switchingScene` satt, ellers nullstilles GO-markøren til scenen (og «slutt på lista» vises). Sett valgt cue eksplisitt etterpå.
+- **Scenenavn i mållister:** `:`, `,`, `;`, `/` og `\` er skilletegn i mål og OSC-adresser og fjernes fra navn (`SceneLogic.CleanName`). Et cuenummer som selv inneholder «:» finnes fortsatt som vanlig nummer hvis scenen før kolonet ikke har cuer.
+- Nye cuer, innlimte og flyttede cuer må alltid få `Scene` = aktiv scene (`InsertCues`/`insert`), ellers havner de i en scene som ikke vises.
 
 ## Klokke og tid
 - `DateTime`-subtraksjon på lokale tidspunkter regner i veggklokketid og ser ikke sommertid: et hopp fra 01:59:59 til 03:00:00 gir «ett sekund». `ClockTriggers.Crossed` sammenligner derfor også faktisk tid (UTC), og Mac sammenligner tidssonens forskyvning før og etter.

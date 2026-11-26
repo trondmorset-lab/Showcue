@@ -67,6 +67,13 @@ public partial class SettingsWindow : Window
             ? Loc.T("Fant ingen nettverksadresser.")
             : Loc.T("Send til: ") + string.Join(Loc.T("  eller  "), ips) + Loc.F("  (port {0}). Fra samme maskin: 127.0.0.1.", settings.OscInPort);
 
+        // ---- Web ----
+        WebEnabledBox.IsChecked = settings.WebRemoteEnabled;
+        WebPortBox.Text = settings.WebRemotePort.ToString();
+        WebPinBox.Text = WebRemote.IsAcceptablePin(settings.WebRemotePin) ? settings.WebRemotePin : WebRemote.GeneratePin();
+        WebAddressText.Text = Loc.T("Adresse: ") + WebRemote.Url(ips, settings.WebRemotePort)
+            + (remote != null && remote.WebRunning ? "" : Loc.T("  (vises når nettsiden er slått på og innstillingene er lagret)"));
+
         FbEnabledBox.IsChecked = settings.OscFeedbackEnabled;
         FbHostBox.Text = settings.OscFeedbackHost;
         FbPortBox.Text = settings.OscFeedbackPort.ToString();
@@ -108,6 +115,7 @@ public partial class SettingsWindow : Window
         DoubleGoBox.Text = settings.DoubleGoProtectionMs.ToString();
         ClockTriggersBox.IsChecked = settings.ClockTriggersEnabled;
         ShowLogBox.IsChecked = settings.WriteShowLog;
+        PreloadBox.IsChecked = settings.PreloadNextCue;
 
         UpdatePanels();
         ThemeManager.Register(this);
@@ -161,6 +169,8 @@ public partial class SettingsWindow : Window
         });
     }
 
+    private void WebNewPin_Click(object sender, RoutedEventArgs e) => WebPinBox.Text = WebRemote.GeneratePin();
+
     private void Driver_Changed(object sender, SelectionChangedEventArgs e) => UpdatePanels();
 
     /// <summary>Forhåndsvis tema med en gang.</summary>
@@ -198,6 +208,17 @@ public partial class SettingsWindow : Window
         Result.OscInEnabled = OscEnabledBox.IsChecked == true;
         if (int.TryParse(OscPortBox.Text, out var port) && port is > 0 and < 65536) Result.OscInPort = port;
 
+        Result.WebRemoteEnabled = WebEnabledBox.IsChecked == true;
+        if (int.TryParse(WebPortBox.Text, out var wport) && wport is >= 1024 and <= 65535) Result.WebRemotePort = wport;
+        var webPin = WebPinBox.Text.Trim();
+        if (Result.WebRemoteEnabled && !WebRemote.IsAcceptablePin(webPin))
+        {
+            MessageBox.Show(this, Loc.F("PIN-koden må være {0}–{1} bokstaver eller siffer og kan ikke være lett å gjette (for eksempel 123456). Trykk «Ny PIN-kode» for å lage en.", WebRemote.PinMin, WebRemote.PinMax),
+                Loc.T("Innstillinger"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        Result.WebRemotePin = WebRemote.NormalizePin(webPin, Result.WebRemoteEnabled);
+
         Result.OscFeedbackEnabled = FbEnabledBox.IsChecked == true;
         Result.OscFeedbackHost = string.IsNullOrWhiteSpace(FbHostBox.Text) ? "127.0.0.1" : FbHostBox.Text.Trim();
         if (int.TryParse(FbPortBox.Text, out var fp) && fp is > 0 and < 65536) Result.OscFeedbackPort = fp;
@@ -223,6 +244,7 @@ public partial class SettingsWindow : Window
         if (TryDouble(LoudnessBox.Text, out var lufs)) Result.LoudnessTarget = Math.Clamp(lufs, -40, -5);
         Result.ClockTriggersEnabled = ClockTriggersBox.IsChecked == true;
         Result.WriteShowLog = ShowLogBox.IsChecked == true;
+        Result.PreloadNextCue = PreloadBox.IsChecked == true;
         if (int.TryParse(DoubleGoBox.Text, out var dg)) Result.DoubleGoProtectionMs = Math.Clamp(dg, 0, 2000);
 
         if (Result.AudioDriver == AudioDriverType.Asio && string.IsNullOrEmpty(Result.AsioDriverName))

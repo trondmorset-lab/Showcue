@@ -68,7 +68,7 @@ final class CueDisplayTests: XCTestCase {
 
     func testCommonFieldsKeepEveryFieldFromTheOldListExactlyOnce() {
         let all = InspectorTab.allCases.flatMap { InspectorLayout.commonFields($0) }
-        let expected = ["disabled", "preWait", "continueMode", "timecodeTrigger", "clockTrigger", "hotkey", "midiTrigger", "inButtonPanel", "color", "notes"]
+        let expected = ["disabled", "preWait", "skipInRehearsal", "continueMode", "timecodeTrigger", "clockTrigger", "hotkey", "midiTrigger", "inButtonPanel", "color", "notes"]
         XCTAssertEqual(all.sorted(), expected.sorted())
         XCTAssertEqual(all.count, Set(all).count)
     }

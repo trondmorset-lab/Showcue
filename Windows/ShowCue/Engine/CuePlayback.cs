@@ -67,8 +67,9 @@ public sealed class CuePlayback : IBusSource, IDisposable
 
     /// <summary>Spill en lydfil (lyd-cue).</summary>
     /// <param name="offset">Start så mange sekunder inn i cuen (for prøver: «spill fra her»).</param>
-    public CuePlayback(AudioCue cue, int sampleRate, double offset = 0)
-        : this(cue, new AudioFileReader(cue.FilePath), cue,
+    /// <param name="prepared">Lydfil som allerede er åpnet i bakgrunnen (null = åpne den her).</param>
+    public CuePlayback(AudioCue cue, int sampleRate, double offset = 0, WaveStream? prepared = null)
+        : this(cue, prepared ?? new AudioFileReader(cue.FilePath), cue,
                new Options(cue.VolumeDb, cue.StartTime + (offset > 0 ? Math.Min(offset, 86400) : 0), cue.EndTime, cue.Loop, offset > 0 ? 0.02 : cue.FadeIn, cue.FadeOut), sampleRate) { }
 
     /// <summary>Spill en vilkårlig lydstrøm, f.eks. lydsporet i en video (dekodet med Media Foundation).</summary>

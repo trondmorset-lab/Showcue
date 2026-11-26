@@ -74,6 +74,10 @@ file channels ──(routing per cue)──▶ outputs ──(audio patch)──
 - **Routing per audio cue**: the matrix in the panel on the right, with file channels as rows and outputs as columns. Enter the level in dB,
   or double-click a cell to turn it on/off. “Default” means mono → 1+2, stereo → 1/2, and multichannel files channel by channel.
   Changes to routing and level are heard immediately while the cue is playing.
+- **Routing presets**: the *Presets* button under the matrix. A preset is a named list of output pairs saved in the show (e.g. “Main” = `1-2`,
+  “Monitor” = `3-4`, “Main + Monitor” = `1-2, 3-4`, optionally with a level: `3-4:-6`). Choose one to set it on the cue and on all other selected cues
+  (mono goes to both outputs of each pair, stereo left/right, multichannel summed alternately at −3 dB). You can also copy a cue's routing and paste it on others.
+  The line above the matrix shows what the routing matches (a preset name, “Default”, “Off” or the outputs).
 
 **Audio in video (“de-embedding”):** the audio track in video files is decoded by Windows (Media Foundation: AAC, PCM, WMA …)
 and played by ShowCue's own audio engine. It goes through the audio patch just like an audio cue, with
@@ -106,6 +110,7 @@ and sample rate are then used directly. ASIO is recommended for the lowest laten
 | `/cue/{no}/stop` | Stop a cue (with the cue's fade out) |
 | `/cue/{no}/go` or `/go/{no}` | Set the playhead to a cue and run GO |
 | `/hotkey/{key}` | Like pressing the hotkey, e.g. `/hotkey/F1` |
+| `/scene/{name}` | Switch the active scene (or `/scene "Act 2"`). Cue numbers in the commands above are looked up in the active scene first, and `Act 2:5` points at a specific scene |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / resume all |
 | `/cue/{no}/devamp` | Release the loop in a cue (finishes and continues to the end of the file) |
 | `/cue/{no}/next`, `/cue/{no}/previous` | Step to the next / previous slide in a running slideshow |
@@ -155,6 +160,17 @@ plus `/showcue/cue/{no}/running 1|0` when a cue starts and stops. Suits other pr
 - CC triggers when the value goes from below 64 to 64 or more, so a fader does not trigger all the time.
 - **MIDI Show Control:** GO and STOP with a cue number from lighting desks etc., with an optional device ID.
 
+### Web page for phone and tablet
+
+*Settings → Web*: switch on the web remote, choose the port (8088 by default) and the **PIN**. The address is shown in the settings and in the status line,
+e.g. `http://192.168.1.20:8088`. Open it in the browser on a phone or tablet on **the same Wi-Fi or network** and enter the PIN.
+
+- The page shows the next cue, what is playing with time left, and the buttons **GO**, **Stop all**, **Pause/Resume**, **Next** and **Previous**. The cue list is read-only; nothing can be edited from the page.
+- It uses the same controls as OSC (double-GO protection applies). Show mode does not block it.
+- It is **off** by default. The PIN is 6–32 letters or digits; ShowCue makes a random one if it is empty or easy to guess. After five wrong attempts the client is locked out for a minute.
+- **The traffic is plain HTTP (not encrypted).** The PIN only protects against casual use on a network you trust. Do not use it on open or shared networks and do not open the port to the internet.
+- The firewall asks the first time: allow ShowCue on private networks. The page uses no external resources, so it works without internet.
+
 OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 
 ## Operation
@@ -175,10 +191,12 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 | **Ctrl+Shift+T / L / I / W** | Add timecode, light, input, web page cue |
 | **Ctrl+D** | Duplicate |
 | **Ctrl+↑ / Ctrl+↓** | Move cue up/down |
+| **Ctrl+Page Up / Page Down** | Previous / next scene |
 | **Delete** | Delete selected cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Save / open / new show |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo (also Ctrl+Shift+Z) |
 | **Ctrl+L** | Show mode on/off |
+| **Ctrl+R** | Rehearsal mode on/off |
 | **Enter** (in a field) | Confirm and go back to the list |
 
 - **Drag files** from Explorer straight into the cue list. Drop one file on a media cue without a file, and the cue gets the file.
@@ -197,7 +215,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
   Images and PDF pages are shown for *Time per slide* seconds (each PDF page becomes a slide of its own), videos play until they finish,
   and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
   (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
-- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
+- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away. With the *Scene* field it jumps to another scene (see Scenes).
+- **Scenes:** the picker above the cue list chooses the active scene. Each scene is its own cue list with its own numbering, GO playhead and GO order; GO never moves to another scene by itself. **Ctrl+Page Up / Page Down** switches scene, and the *Scenes* menu creates, renames, deletes and reorders scenes and moves the selected cues. The same number can be used in different scenes. Fade, stop, go to and group targets are looked up in the cue's own scene first, then in all scenes; write `Act 2:5` for a specific scene.
 - **Group:** starts several cues with one GO. Write the numbers, e.g. `2, 5, 8-10` (`8-10` is every cue from 8 to 10). Each cue follows its own pre-wait, and disabled cues are skipped.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.
@@ -252,6 +271,11 @@ Audio from the page goes to the system audio output, not through the audio patch
   Use the filter for errors and warnings only, *Open an older log* for a previous run, and *Export CSV* / *Export text* to save what is shown (UTF-8; the CSV uses commas and has a byte order mark so spreadsheets read æøå correctly).
   One file per run is written to the `Logs` folder next to `Autolagring` and `Sikkerhetskopier` (`%AppData%\ShowCue\Logs`); the 30 newest are kept and a file stops at 5 MB. Turn it off under *Settings → Safety → Write show log* (on by default).
   Each line is plain text with tab-separated fields: ISO time, time since start, event, cue number, type, how, name and text (backslash, tab and line breaks in texts are written as `\\`, `\t` and `\n`).
+- **Rehearsal mode** (*Ctrl+R*, or *Setup → Rehearsal mode* / the *Rehearsal* button): skip chosen cues during rehearsals without deleting or disabling them.
+  Tick *Skip in rehearsal* in the *Timing* tab (a small *REH* marker shows in the cue list). While the mode is on, GO, auto-continue and auto-follow move past marked cues and never start them,
+  and clock and timecode triggers do not start them either. Starting a marked cue directly still works: by number (OSC, MIDI show control), hotkey, MIDI trigger, button panel, double-click and as a target of a group cue.
+  A bright bar at the top of the window stays visible while the mode is on, and the window title says so. The mode is **never saved**: the program always starts with it off. *Check the show* warns while it is on and counts the marked cues.
+- **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 - **Light cue** (✺ Light): sends DMX over Art-Net (UDP 6454) to a node or as a broadcast. Levels are written
   `channel@value`, e.g. `1@255 2-4@50% 10@0`, and fade over the chosen time. Channels not mentioned keep their level.
 - **Live input** (◉ In): the audio from the input chosen under *Settings → Audio* (WASAPI: microphone, line in,

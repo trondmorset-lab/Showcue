@@ -21,6 +21,10 @@ public sealed class CueEngine : IDisposable
     private readonly Dictionary<int, OutputWindow> _extraOutputs = new();
 
     public AudioEngine Audio { get; } = new();
+    /// <summary>Forbereder cuene GO snart starter (se <see cref="Preloader"/>). Av til innstillingen er slått på.</summary>
+    public Preloader Preloader { get; } = new();
+    /// <summary>Forberedelsen er sluppet (stopp, nye innstillinger): hovedvinduet bør be om ny forberedelse for markøren.</summary>
+    public event Action? PreloadRefreshRequested;
     /// <summary>Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.</summary>
     public AudioEngine PreviewAudio { get; } = new();
     private string _previewDevice = "";
@@ -48,9 +52,13 @@ public sealed class CueEngine : IDisposable
     /// <summary>Alt står stille: lyd, video og tiden for pre-wait og fader.</summary>
     public bool IsPaused { get; private set; }
 
+    /// <summary>Øvelsesmodus: auto-fortsett og auto-følg hopper over cuer merket «Hopp over i øvelse». Lagres aldri; starter alltid av.</summary>
+    public bool RehearsalMode { get; set; }
+
     public CueEngine(AppSettings settings, Func<IList<Cue>> cueList)
     {
         Settings = settings;
+        Preloader.Enabled = settings.PreloadNextCue;
         _cueList = cueList;
         Preview = new AudioPreview(PreviewTarget);
         _timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
@@ -72,11 +80,13 @@ public sealed class CueEngine : IDisposable
     public void ApplySettings(AppSettings s, bool restartAudio = true)
     {
         Settings = s;
+        Preloader.Enabled = s.PreloadNextCue;
         if (restartAudio)
         {
             StopAll(0);
             Audio.Start(s);
         }
+        PreloadRefreshRequested?.Invoke();
         if (s.PreviewDeviceId != _previewDevice || (restartAudio && s.PreviewDeviceId != ""))
         {
             Preview.Stop();
@@ -177,27 +187,23 @@ public sealed class CueEngine : IDisposable
             using (ShowLog.Via(how)) Fire(list[i]);
             return;
         }
-    }
-
-    /// <summary>Finn neste cue for GO etter at <paramref name="cue"/> er avfyrt (hopper over kjeder).</summary>
-    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex)
+    /// <summary>Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).</summary>
+    private void FireNextAfter(Cue cue)
     {
-        int i = firedIndex;
-        // Hopp over cues som blir trigget automatisk av forrige cue.
-        while (i < list.Count && list[i].ContinueMode != ContinueMode.None)
-        {
-            i++;
-            while (i < list.Count && list[i].Disabled) i++;
-        }
-        i++;
-        while (i < list.Count && list[i].Disabled) i++;
-        return Math.Min(i, list.Count);
+        if (SceneLogic.NextEnabledAfter(_cueList(), cue, RehearsalMode) is { } next) Fire(next);
     }
 
-    public IEnumerable<ActiveCue> FindActive(string number)
+    /// <summary>Finn neste cue for GO etter at cuen på <paramref name="firedIndex"/> er avfyrt (hopper over kjeder). Med <paramref name="rehearsal"/> hoppes også merkede cuer over.</summary>
+    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex, bool rehearsal = false) => SceneLogic.NextPlayheadIndex(list, firedIndex, rehearsal);
+
+    /// <summary>Aktive cuer et nummer peker på. <paramref name="homeScene"/> er scenen til cuen som spør (nummeret søkes der først, se <see cref="SceneLogic"/>).</summary>
+    public IEnumerable<ActiveCue> FindActive(string number, string? homeScene = null)
     {
         if (string.IsNullOrWhiteSpace(number)) return Enumerable.Empty<ActiveCue>();
-        return Active.Where(a => a.Started && !a.Done && string.Equals(a.Cue.Number, number.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+        var n = number.Trim();
+        var targets = SceneLogic.Matching(_cueList(), n, homeScene);
+        if (targets.Count > 0) return Active.Where(a => a.Started && !a.Done && targets.Contains(a.Cue)).ToList();
+        return Active.Where(a => a.Started && !a.Done && string.Equals(a.Cue.Number, n, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     public void Stop(Cue cue, double fade)
@@ -261,6 +267,8 @@ public sealed class CueEngine : IDisposable
         if (IsPaused) ResumeAll(); // stoppfader skal kunne høres
         Preview.Stop();
         foreach (var a in Active.ToList()) a.Stop(fade);
+        Preloader.Clear(); // filene slippes ved stopp; hovedvinduet forbereder markøren på nytt
+        PreloadRefreshRequested?.Invoke();
     }
 
     // ------------------------------------------------------------------
@@ -341,6 +349,7 @@ public sealed class CueEngine : IDisposable
         Try(() => StopAll(0));
         foreach (var w in _extraOutputs.Values.Append(_output).OfType<OutputWindow>())
             Try(() => { w.AllowClose = true; w.Close(); });
+        Try(Preloader.Dispose);
         Try(Audio.Dispose);
         Try(PreviewAudio.Dispose);
         Try(Midi.Dispose);

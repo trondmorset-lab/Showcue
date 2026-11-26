@@ -54,6 +54,11 @@ Første gang du starter appen, spør macOS om tilgang til **lokalt nettverk**. S
   Bruk filteret for bare feil og advarsler, *Åpne eldre logg* for en tidligere kjøring, og *Eksporter CSV* / *Eksporter tekst* for å lagre det som vises (UTF-8; CSV bruker komma og har byte order mark så regneark leser æøå riktig).
   Én fil per kjøring skrives til mappa `Logs` ved siden av `Autolagring` og `Sikkerhetskopier` (`~/Library/Application Support/ShowCue/Logs`); de 30 nyeste beholdes, og en fil stopper ved 5 MB. Slå av under *Innstillinger → Sikkerhet → Skriv showlogg* (på som standard).
   Hver linje er ren tekst med tabulator mellom feltene: ISO-tid, tid siden start, hendelse, cuenummer, type, hvordan, navn og tekst (skråstrek, tabulator og linjeskift i tekster skrives som `\\`, `\t` og `\n`).
+- **Øvelsesmodus** (*⌘R*, eller *Oppsett → Øvelsesmodus* / knappen *Øvelse*): hopp over valgte cuer under øvelser uten å slette eller deaktivere dem.
+  Kryss av for *Hopp over i øvelse* i fanen *Tidsstyring* (en liten *ØV*-merking vises i cuelista). Mens modusen er på, flytter GO, auto-fortsett og auto-følg seg forbi merkede cuer og starter dem aldri,
+  og klokkeslett- og tidskode-triggere starter dem heller ikke. Å starte en merket cue direkte virker fortsatt: med nummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
+  Et tydelig felt øverst i vinduet står der så lenge modusen er på, og vindustittelen viser det også. Modusen **lagres aldri**: programmet starter alltid med den av. *Sjekk showet* advarer mens den er på og teller de merkede cuene.
+- **Forhåndslast neste cue:** *Innstillinger → Sikkerhet → Forhåndslast neste cue* (av som standard, prøv først på eget utstyr) forbereder cuen under GO-markøren og cuene den starter automatisk (høyst tre filer) i bakgrunnen, så lyd og video starter med mindre forsinkelse. Feiler forberedelsen, starter cuen som vanlig.
 
 ## Flerkanals lydkort og nettverkslyd
 
@@ -83,8 +88,12 @@ Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres 
 | Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
 | Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
 
+Routingforhåndsvalg fungerer som på Windows: knappen *Forhåndsvalg* under routingmatrisen setter et navngitt forhåndsvalg (utgangspar som `1-2` eller `3-4:-6`, lagret i showet) på cuen og alle andre valgte cuer, og kopierer/limer inn routing mellom cuer.
+
 Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
 Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
+
+**Nettside for mobil/nettbrett** (*Innstillinger → Web*, av som standard, krever PIN-kode): se «Nettside for mobil og nettbrett» i Windows-README. På Mac kan macOS spørre om tilgang til lokalt nettverk første gang. Trafikken er vanlig HTTP, så PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på.
 
 **Showfiler mellom Mac og Windows:** stiene til mediefilene er forskjellige på de to plattformene. ShowCue leter derfor etter mediefiler
 ved siden av showfila og i en undermappe `Media`, så legg showfil og media i samme mappe når du flytter mellom maskiner.
@@ -97,6 +106,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | Mellomrom | GO |
 | Esc | Stopp alt (to ganger = umiddelbart) |
 | ↑ / ↓ | Flytt GO-markøren |
+| ⌥⌘← / ⌥⌘→ | Forrige / neste scene (menyen *Scene* og velgeren over cuelista styrer scenene) |
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
 | ⌘P | Pause / fortsett alt |
@@ -109,6 +119,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Lagre, lagre som, åpne, nytt |
 | ⌘Z, ⇧⌘Z | Angre, gjør om |
 | ⌘L | Showmodus (lås redigering) av/på |
+| ⌘R | Øvelsesmodus av/på |
 | ⇧⌘T | Bytt tema |
 | ⇧⌘U | Vis/skjul utgangsvinduet |
 | ⌘, | Innstillinger |

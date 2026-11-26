@@ -15,6 +15,7 @@ struct SettingsView: View {
                 page { audioTab }.tabItem { Text(L("Lyd")) }
                 page { videoTab }.tabItem { Text("Video") }
                 page { oscTab }.tabItem { Text("OSC") }
+                page { webTab }.tabItem { Text(L("Web")) }
                 page { midiTab }.tabItem { Text(L("MIDI inn")) }
                 page { lookTab }.tabItem { Text(L("Utseende")) }
                 page { safetyTab }.tabItem { Text(L("Sikkerhet")) }
@@ -32,7 +33,11 @@ struct SettingsView: View {
         .frame(width: 580, height: 640)
         .background(theme.panel)
         .onAppear {
-            if !loaded { draft = model.settings; loaded = true }
+            if !loaded {
+                draft = model.settings
+                if !WebRemote.isAcceptablePin(draft.webRemotePin) { draft.webRemotePin = WebRemote.generatePin() }
+                loaded = true
+            }
             devices = CoreAudioDevices.outputDevices()
             midiInputs = MidiSystem.sources()
         }
@@ -99,6 +104,27 @@ struct SettingsView: View {
                 ForEach(Array(OutputCompositor.screenNames().enumerated()), id: \.offset) { i, n in Text(n).tag(i) }
             }.labelsHidden()
             Hint(L("Velg projektoren/skjermen. «Vindu» gir et vanlig vindu, nyttig for å teste på én skjerm."))
+        }
+    }
+
+    // MARK: Web
+
+    private var webTab: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Toggle(L("Slå på nettside for fjernstyring fra mobil eller nettbrett"), isOn: $draft.webRemoteEnabled)
+            FieldLabel(L("TCP-port")); IntInput(value: $draft.webRemotePort, range: 1024...65535)
+            FieldLabel(L("PIN-kode"))
+            HStack(spacing: 10) {
+                TextInput($draft.webRemotePin, mono: true)
+                Button(L("Ny PIN-kode")) { draft.webRemotePin = WebRemote.generatePin() }
+            }
+            Hint(L("Adresse: ") + WebRemote.url(UDP.localAddresses(), port: draft.webRemotePort)
+                 + (model.settings.webRemoteEnabled ? "" : L("  (vises når nettsiden er slått på og innstillingene er lagret)")))
+            if draft.webRemoteEnabled && !WebRemote.isAcceptablePin(draft.webRemotePin) {
+                Hint(L("PIN-koden må være {0}–{1} bokstaver eller siffer og kan ikke være lett å gjette (for eksempel 123456). Trykk «Ny PIN-kode» for å lage en.", WebRemote.pinMin, WebRemote.pinMax))
+            }
+            Hint(L("Åpne adressen i nettleseren på en mobil eller et nettbrett som er på samme Wi-Fi eller nettverk som denne maskinen, og skriv inn PIN-koden. Siden viser neste cue og hva som spiller, og har knappene GO, Stopp alt, Pause, Neste og Forrige. Cuelista kan bare leses; ingenting kan redigeres. Showmodus stopper ikke fjernstyringen."))
+            Hint(L("Trafikken er vanlig HTTP, uten kryptering. PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på. Bruk aldri nettsiden på åpent eller delt nett, og ikke åpne porten mot internett. macOS kan spørre om tilgang til lokalt nettverk første gang – tillat det."))
         }
     }
 
@@ -252,6 +278,8 @@ struct SettingsView: View {
             Hint(L("Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka."))
             Toggle(L("Skriv showlogg"), isOn: $draft.writeShowLog).padding(.top, 14)
             Hint(L("Skriver en logg over hva som skjedde under showet (cuer, pause, stopp, feil) til en fil per kjøring i mappa Logs. De 30 nyeste beholdes. Loggen kan også vises og eksporteres fra Fil-menyen."))
+            Toggle(L("Forhåndslast neste cue (forbereder lyd, video og bilde før GO)"), isOn: $draft.preloadNextCue).padding(.top, 14)
+            Hint(L("Av som standard til den er prøvd på ekte utstyr. Når den er på, åpner ShowCue filene til cuen GO-markøren står på, og cuene den starter automatisk, i bakgrunnen (høyst tre). Filene slippes når markøren flytter seg eller ved stopp. Feiler forberedelsen, starter cuen som vanlig."))
         }
     }
 }

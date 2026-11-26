@@ -60,6 +60,10 @@ lydfil-kanaler ──(routing per cue, dB)──▶ utganger/busser ──(lydpa
 - Alle tider/nivåer som kommer inn i lydmotoren saneres (NaN, uendelig, negative → gyldige verdier).
   En loop må være minst 10 ms, og to tilbakespolinger uten lyd imellom avslutter i stedet for å henge.
 
+## Forhåndslasting
+
+`PreloadPlanner`/`PreloadBook` (Windows `Models/Preload.cs`, Mac `Core/Preload.swift`) er ren logikk: hvilke filer (høyst 3) som forberedes for en markør, og regnskap med eviction. `Preloader` (Windows `Engine/Preloader.cs`, Mac `Engine/Preloader.swift`) gjør jobben i bakgrunnen og eies av `CueEngine`. Hovedvinduet/`AppModel` kaller `Update`/`updatePreload` når markøren, cuelista eller innstillingen endres, og `CueEngine` slipper alt ved `StopAll`. Lyd-cuer og videolyd henter forberedt leser/dekoder via `TakeAudio`/`TakeVideoAudio` (`takeStream`/`takeVideoAsset`). Innstilling: `PreloadNextCue`/`preloadNextCue` (av).
+
 ## Aktive cuer
 
 `CueEngine` lager én `ActiveCue` per avfyrt cue (pre-wait → spiller → ferdig) og kaller `Tick` ca. 60 ganger i sekundet.
@@ -95,14 +99,30 @@ Hva som vises avgjøres av ren logikk i `CueDisplay` (radtilstand, «gjenstår»
 Cuen har kjøretidsfeltene `RemainingText` og (Windows) `IsNext`/`RowState`, satt av motoren og hovedvinduet og aldri lagret i showfila. Cuetypens egne felt ligger i Grunnleggende,
 og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i `ContentControl.Resources`, Mac: `basicSection`/`mediaSection`). Se [beslutninger.md](beslutninger.md#0200--nytt-hovedvindu).
 
+## Scener
+
+Cuene ligger i én liste i showfila; hver cue har `Scene` (navn) og showet `Scenes` (rekkefølge). Cuelista viser bare aktiv scene. All logikk (nummerering, GO-markør, oppslag av mål, nytt navn/sletting) står i `SceneLogic`
+(Windows `Models/Scenes.cs`, Mac `Core/Scenes.swift`) uten GUI. Hovedvinduet holder aktiv scene og en GO-markør per scene (Windows `MainWindow` `_activeScene`/`_playheads`/`VisibleCues`, Mac `AppModel.activeScene`/`playheads`/`visibleCues`).
+Regler for oppslag og begrunnelse: [beslutninger.md](beslutninger.md#0220--scener-cuelister).
+
 ## Fjernstyring og status
 
 - **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,
-  `/hotkey/{tast}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
+  `/hotkey/{tast}`, `/scene/{navn}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
   Dekoderen leser aldri utenfor pakken, uansett hva lengdefeltene påstår.
+- **Nettside** (0.26.0, av som standard): `WebServer` (Windows `Engine/WebServer.cs` med `TcpListener`, Mac `Engine/WebServer.swift` med `NWListener`) leser én forespørsel per forbindelse og gir bytene til `WebRemoteCore.Handle`
+  (`Models/WebRemote.cs`, `Core/WebRemote.swift`: ren tolking, ruter, PIN, sperre, JSON og sider). Kommandoer (GO, stopp alt, pause/fortsett, neste, forrige) går via `RemoteControl.HandleWeb` / `RemoteRouter.handleWeb` til `IShowControl`/`ShowControl`.
+  Hovedvinduet gir tilstanden med `PublishWebState` / `setState` i den vanlige takten. Innstillinger: `WebRemoteEnabled`/`WebRemotePort`/`WebRemotePin` (Mac `webRemote…`). Se [beslutninger.md](beslutninger.md#0260--nettside-for-fjernstyring).
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
   hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.
+- **Øvelsesmodus**: `SkipInRehearsal` per cue (nøkkel `SkipInRehearsal`, standard av) og en kjøretidsbryter som aldri lagres (`CueEngine.RehearsalMode` / `rehearsalMode`, `MainWindow.IsRehearsal` / `AppModel.rehearsalMode`).
+  Den rene logikken ligger i `Rehearsal` (`Models/Rehearsal.cs`, `Core/Rehearsal.swift`): `IsSkipped`, `IsPlayable`, `NextPlayableIndex`, `GoIndex`, `CountFlagged`.
+  Motoren endres bare i `FireNextAfter` og `NextPlayheadIndex` (som nå bruker `NextPlayableIndex`); GO (`Go`/`go`) bruker `GoIndex`. Banneret øverst, knappen, menyvalget og Ctrl+R/⌘R ligger i hovedvinduet.
+- **Routingforhåndsvalg**: `RoutingPresets` (`Models/RoutingPresets.cs`, `Core/RoutingPresets.swift`) er ren logikk uten UI: lage/endre/slette forhåndsvalg, lese og skrive utgangspar som tekst («1-2, 3-4:-6»),
+  gjøre et forhåndsvalg om til `AudioRoute`-er for en cue med et gitt antall kanaler, sette det på flere cuer (`Apply`, `ApplyRoutes`, `Paste`) og beskrive routingen (`Describe`). `RouteClipboard` holder kopiert routing.
+  Forhåndsvalg lagres i showet (`RoutingPresets` i `ShowDocument`), ikke i innstillingene, og tas ikke med i angre-historikken. UI: knappen «Forhåndsvalg» i `RoutingMatrix` (Windows, via `IRoutingHost` i `MainWindow`) og `RoutingMatrixView` (Mac, via `AppModel`).
+  Alt skjer på hovedtråden og endrer bare `Routes` på cuene; lydtråden får det nye mønsteret på samme måte som ved redigering av matrisen.
 - **Status ut over OSC** (`OscFeedback`): format «Companion» (egendefinerte variabler `sc_*`, port 12321) eller generisk `/showcue/...`.
 
 ## Showfil
@@ -111,6 +131,8 @@ JSON (`.showcue`), lesbar. Cuer har `"type"` (`audio`, `video`, `image`, `pdf`, 
 `playlist`, `slideshow`, `group`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
 Mediefiler letes etter ved siden av showfila og i `Media/` når stien ikke finnes (show flyttes mellom maskiner).
 Nøkkelen for knappepanelet er `InButtonPanel` (het `Cart` før 0.12.0; den gamle leses ikke).
+Valgfritt felt på toppnivå: `RoutingPresets` (liste av `{ "Name", "Pairs": [ { "Bus", "GainDb" } ] }`, `Bus` = utgang for venstre kanal i paret). Skrives alltid (tom liste hvis ingen); leses tolerant:
+feil type eller skadet oppføring gir tom liste/hopper over oppføringen, og navn/par/nivå begrenses.
 Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerflaten er endret).
 
 ## Språk

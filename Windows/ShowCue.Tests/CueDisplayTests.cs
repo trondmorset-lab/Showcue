@@ -95,7 +95,7 @@ public class CueDisplayTests
     public void CommonFieldsKeepEveryFieldFromTheOldListExactlyOnce()
     {
         var all = Enum.GetValues<InspectorTab>().SelectMany(t => InspectorLayout.CommonFields(t)).ToList();
-        var expected = new[] { "disabled", "preWait", "continueMode", "timecodeTrigger", "clockTrigger", "hotkey", "midiTrigger", "inButtonPanel", "color", "notes" };
+        var expected = new[] { "disabled", "preWait", "skipInRehearsal", "continueMode", "timecodeTrigger", "clockTrigger", "hotkey", "midiTrigger", "inButtonPanel", "color", "notes" };
         Assert.Equal(expected.OrderBy(x => x), all.OrderBy(x => x));
         Assert.Equal(all.Count, all.Distinct().Count());
     }

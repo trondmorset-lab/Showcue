@@ -17,6 +17,62 @@ Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også
 - Én loggfil per kjøring i mappa `Logs` ved siden av `Autolagring` og `Sikkerhetskopier` (Windows `%AppData%\ShowCue\Logs`, Mac `~/Library/Application Support/ShowCue/Logs`). De 30 nyeste filene beholdes, og en fil slutter å vokse ved 5 MB.
 - **Skriv showlogg** (*Innstillinger → Sikkerhet*) er **på** som standard. Loggingen bremser eller stopper aldri showet: hendelser legges i en kø og skrives av en bakgrunnstråd, og er køen full kastes de eldste (telles og vises i loggvinduet). Diskfeil meldes én gang og avbryter aldri showet.
 
+## 0.26.0 – 2026-11-25
+
+### Nytt
+- **Nettside for fjernstyring** (Windows og Mac, samme oppførsel): en liten innebygd webtjener lar en mobil eller et nettbrett på samme nettverk styre showet fra nettleseren.
+  Siden viser neste cue (nummer, navn, type), hva som spiller med tid igjen, og store knapper for **GO**, **Stopp alt**, **Pause/Fortsett**, **Neste** og **Forrige**, pluss en cueliste som bare kan leses.
+  Siden bruker de samme styringene som OSC, så sperren mot dobbel-GO gjelder. Showmodus stopper den ikke (som med OSC), men ingenting kan redigeres utenfra.
+- Innstillinger: *Innstillinger → Web* med av/på, port (standard 8088) og PIN-kode. Adressen (f.eks. `http://192.168.1.20:8088`) vises der og i statuslinja mens tjeneren går.
+- **Sikkerhet:** nettsiden er **av** som standard og krever **PIN-kode** (6–32 bokstaver eller siffer; en tilfeldig lages når den er tom eller lett å gjette, som `123456`).
+  Alt unntatt innloggingssiden krever PIN-koden (øktcookie etter innlogging), mislykkede forsøk begrenses med sperre, og tjeneren har bare faste ruter, ingen tilgang til filer, ingen CORS,
+  grenser for størrelse/tid/antall forbindelser og bare HTTP/1.1 med lukkede forbindelser. **Trafikken er vanlig HTTP (ikke kryptert), så PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på.**
+  Siden er ennå ikke prøvd på ekte enheter.
+
+## 0.25.0 – 2026-11-25
+
+### Nytt
+- **Øvelsesmodus** (Windows og Mac, samme oppførsel): hopp over valgte cuer under øvelser uten å slette eller deaktivere dem.
+  - Nytt cuefelt **Hopp over i øvelse** (fanen *Tidsstyring*; lagres som `SkipInRehearsal`, av som standard, så gamle show åpnes uendret). Merkede cuer har en liten *ØV*-merking i cuelista.
+  - **Slå modusen av og på** med Ctrl+R (⌘R på Mac), *Oppsett → Øvelsesmodus* eller knappen *Øvelse*. Mens den er på, viser et tydelig felt øverst i vinduet og vindustittelen det.
+    Modusen **lagres aldri**: programmet starter alltid med den av.
+  - Mens modusen er på, flytter **GO, auto-fortsett og auto-følg** seg forbi merkede cuer og starter dem aldri. Klokkeslett- og tidskode-triggere starter dem heller ikke.
+    Å starte en merket cue direkte virker fortsatt: med cuenummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
+  - **Sjekk showet** advarer mens øvelsesmodus er på og viser hvor mange cuer som er merket.
+
+## 0.24.0 – 2026-11-25
+
+### Nytt
+- **Forhåndslast neste cue** (Windows og Mac, samme oppførsel; *Innstillinger → Sikkerhet*, **av** som standard til den er prøvd på ekte utstyr).
+  Når den er på, forbereder ShowCue cuen GO-markøren står på, og cuene den starter automatisk etterpå (høyst tre filer om gangen), i en bakgrunnstråd så snart markøren flytter seg:
+  lydfiler åpnes og de første sekundene leses på forhånd (Mac: dekodes inn i ringbufferen), lydsporet i en video åpnes på samme måte (Mac laster også videofilas egenskaper), og bilder dekodes.
+  «Gå til»-cuer følges til målet, og gruppe-cuer forbereder sine aktive mål. Deaktiverte cuer hoppes over, slik GO gjør.
+  Forberedelsen skjer aldri i lydtråden. Filene slippes når markøren flytter seg, ved stopp, når et show åpnes og ved avslutning. Feiler forberedelsen, eller er fila endret, starter cuen akkurat som før.
+  Merk: gevinsten i starttid er ikke målt; prøv den på ekte utstyr før du stoler på den.
+
+## 0.23.0 – 2026-11-25
+
+### Nytt
+- **Routingforhåndsvalg** (Windows og Mac, samme oppførsel): routingmatrisen per cue fantes fra før; nå kan du sende en cue til f.eks. hovedhøyttalerne eller monitorene med ett klikk, uten å redigere matrisen for hånd.
+  Knappen **Forhåndsvalg** under matrisen har:
+  - **Navngitte forhåndsvalg som lagres i showet** (f.eks. «Hoved» = utgang 1-2, «Monitor» = 3-4, «Hoved + monitor» = 1-2, 3-4). Et forhåndsvalg er en liste med utgangspar, eventuelt med nivå i dB per par («3-4:-6»), så det passer filer med hvilket som helst antall kanaler: mono går til begge utgangene i hvert par, stereo går venstre/høyre, og flerkanalsfiler summeres annenhver til venstre/høyre med −3 dB. Lag, endre (også nytt navn) og slett fra menyen.
+  - **Bruk på alle valgte cuer:** et valgt forhåndsvalg settes på alle valgte cuer som har lyd, og statuslinja sier hvor mange som ble endret og hvor mange som ble hoppet over (ingen lyd, eller ingen utgang i patchen som forhåndsvalget passer til).
+  - **Kopier routing / Lim inn routing** mellom cuer, og **Bruk denne routingen på alle valgte cuer**. Kanaler og utganger som mottakeren ikke har, blir utelatt.
+  - **Oppsummering av routingen over matrisen:** navnet på forhåndsvalget som passer, «Standard», «Av» eller «Utgang 1-2, 5».
+- Showfil: det nye valgfrie feltet `RoutingPresets` (liste med `Name` og `Pairs` med `Bus` og `GainDb`). Eldre filer åpnes som før; eldre versjoner ignorerer feltet. Et skadet felt hindrer aldri at showet åpnes.
+- Ingenting av dette kjører i lydtråden: forhåndsvalgene endrer bare routingen til cuen (på hovedtråden), og cuer som spiller følger med nøyaktig som når matrisen redigeres for hånd. Det endrer ikke avspillingen og har ingen innstilling som må slås på.
+
+## 0.22.0 – 2026-11-25
+
+### Nytt
+- **Scener (cuelister)** (Windows og Mac, samme oppførsel): et langt show trenger ikke lenger være én lang liste. Cuer hører til en *scene* (f.eks. «Akt 1», «Akt 2»), og hver scene har egen nummerering, egen GO-markør og egen GO-rekkefølge.
+  Velg aktiv scene i velgeren over cuelista (◀ ▶ går mellom scener; **Ctrl+Page Up/Down** på Windows, **⌘⌥←/→** på Mac). Menyen *Scener* lager, gir nytt navn, sletter og flytter scener, og flytter valgte cuer til en annen scene.
+- **GO hopper aldri til en annen scene av seg selv.** Ved slutten av en scene stopper markøren på «slutt på lista»; auto-fortsett/auto-følg holder seg også innen scenen. Hver scene husker hvor markøren sto.
+- **Nummer per scene:** samme cuenummer kan brukes i flere scener. *Nummerer på nytt* gjelder den aktive scenen og oppdaterer mål i fade-, stopp-, gå til- og gruppe-cuer. Mål i fade-, stopp-, gå til- og gruppe-cuer søkes først i cuens egen scene og deretter i alle scener; skriv `Akt 2:5` for å peke på cue 5 i en bestemt scene.
+- **Gå til scene:** en «gå til»-cue har et nytt felt *Scene*. Med bare scene byttes scenen (markøren står der den sist var); med nummer hoppes det til den cuen i den scenen. OSC: `/scene/{navn}` (eller `/scene "Akt 2"`) bytter scene. De eksisterende OSC-kommandoene søker først i aktiv scene.
+- **Sjekk showet** godtar samme nummer i ulike scener, melder duplikater innen én scene og sjekker at scenene «gå til»-cuer bruker finnes.
+- Showfil: nytt valgfritt felt `Scene` per cue og en liste `Scenes`. Show uten scener åpnes som én scene, og eldre versjoner åpner nye filer som én liste.
+
 ## 0.21.0 – 2026-11-24
 
 ### Nytt

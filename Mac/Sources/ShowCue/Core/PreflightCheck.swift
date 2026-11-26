@@ -46,6 +46,8 @@ enum PreflightCheck {
     static let targetDisabled = "targetDisabled"
     static let groupNoMatch = "groupNoMatch"
     static let clockTriggerOff = "clockTriggerOff"
+    static let rehearsalOn = "rehearsalOn"
+    static let rehearsalFlagged = "rehearsalFlagged"
     static let valuesOk = "valuesOk"
     static let audioDeviceMissing = "audioDeviceMissing"
     static let previewDeviceMissing = "previewDeviceMissing"
@@ -53,15 +55,17 @@ enum PreflightCheck {
     static let screenMissing = "screenMissing"
     static let devicesOk = "devicesOk"
     static let numberDuplicate = "numberDuplicate"
+    static let sceneMissing = "sceneMissing"
     static let numbersOk = "numbersOk"
 
     /// Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.
-    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment) -> [PreflightFinding] {
+    /// `rehearsalMode`: øvelsesmodus er på akkurat nå (kjøretid, lagres ikke) og gir en advarsel.
+    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment, scenes: [String] = [], rehearsalMode: Bool = false) -> [PreflightFinding] {
         var media: [PreflightFinding] = [], values: [PreflightFinding] = [], devices: [PreflightFinding] = [], numbers: [PreflightFinding] = []
         var fileCount = 0
         for (i, c) in cues.enumerated() where !c.disabled {
             fileCount += checkMedia(c, i, env, &media)
-            checkValues(c, i, cues, &values)
+            checkValues(c, i, cues, &values, scenes)
         }
         checkClockTriggers(cues, settings, &values)
         checkDevices(cues, settings, env, &devices)
@@ -78,6 +82,7 @@ enum PreflightCheck {
         if devices.isEmpty { all.append(PreflightFinding(severity: .ok, code: devicesOk, message: L("Lydutgang og skjermer finnes."))) }
         all += numbers
         if numbers.isEmpty { all.append(PreflightFinding(severity: .ok, code: numbersOk, message: L("Ingen duplikate cue-numre."))) }
+        checkRehearsal(cues, rehearsalMode, &all)
         return all
     }
 
@@ -129,7 +134,7 @@ enum PreflightCheck {
 
     // MARK: Verdier og mål
 
-    private static func checkValues(_ c: Cue, _ index: Int, _ all: [Cue], _ list: inout [PreflightFinding]) {
+    private static func checkValues(_ c: Cue, _ index: Int, _ all: [Cue], _ list: inout [PreflightFinding], _ scenes: [String] = []) {
         let lbl = label(c, index)
         func time(_ field: String, _ v: Double) {
             if !v.isFinite || v < 0 { add(&list, .error, valueInvalid, L("{0}: «{1}» er ikke en gyldig tid.", lbl, field), index) }
@@ -188,7 +193,7 @@ enum PreflightCheck {
             time(L("Fade-tid"), c.fadeTime)
             checkTarget(c, index, required: false, all, &list)
         case .goto:
-            checkTarget(c, index, required: true, all, &list)
+            checkGoto(c, index, all, scenes, &list)
         case .group:
             checkGroup(c, index, all, &list)
         case .osc:
@@ -212,14 +217,15 @@ enum PreflightCheck {
     }
 
     /// Mål-cuen slås opp på nummer, uten hensyn til store/små bokstaver (som i GO-motoren).
-    private static func checkTarget(_ c: Cue, _ index: Int, required: Bool, _ all: [Cue], _ list: inout [PreflightFinding]) {
+    private static func checkTarget(_ c: Cue, _ index: Int, required: Bool, _ all: [Cue], _ list: inout [PreflightFinding],
+                                    target: String? = nil, home: String? = nil) {
         let lbl = label(c, index)
-        let t = c.target.trimmingCharacters(in: .whitespaces)
+        let t = (target ?? c.target).trimmingCharacters(in: .whitespaces)
         if t.isEmpty {
             if required { add(&list, .error, targetEmpty, L("{0}: mål-cue er ikke valgt.", lbl), index) }
             return
         }
-        let hits = all.filter { $0.number.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(t) == .orderedSame }
+        let hits = SceneLogic.matching(all, t, home: home ?? c.scene)
         if hits.isEmpty {
             add(&list, .error, targetMissing, L("{0}: mål-cuen «{1}» finnes ikke.", lbl, t), index)
         } else if hits.allSatisfy({ $0 === c }) {
@@ -227,6 +233,17 @@ enum PreflightCheck {
         } else if hits.allSatisfy({ $0.disabled }) {
             add(&list, .warning, targetDisabled, L("{0}: mål-cuen «{1}» er deaktivert.", lbl, t), index)
         }
+    }
+
+    /// «Gå til»: scenen må finnes, og nummeret søkes i målscenen. Bare scene (uten nummer) er lov.
+    private static func checkGoto(_ g: Cue, _ index: Int, _ all: [Cue], _ scenes: [String], _ list: inout [PreflightFinding]) {
+        let scene = g.targetScene
+        if !scene.isEmpty, SceneLogic.canonical(scenes, all, scene) == nil {
+            add(&list, .error, sceneMissing, L("{0}: scenen «{1}» finnes ikke.", label(g, index), scene), index)
+            return
+        }
+        if !scene.isEmpty && g.target.trimmingCharacters(in: .whitespaces).isEmpty { return }
+        checkTarget(g, index, required: true, all, &list, target: SceneLogic.gotoSpec(target: g.target, targetScene: scene), home: scene.isEmpty ? nil : scene)
     }
 
     /// Gruppe-cue: listen må ha mål, målene må finnes, og minst én cue må treffes. Deaktiverte mål gir advarsel (GO hopper over dem).
@@ -283,6 +300,19 @@ enum PreflightCheck {
             L("{0} cue(r) har klokketrigger, men «Klokke-triggere aktive» er av i innstillingene. Cuene starter ikke av seg selv.", withTrigger.count), first.offset)
     }
 
+    /// Øvelsesmodus på: advarsel (cuene spilles ikke i showet). Merkede cuer telles som en merknad, også når modusen er av.
+    private static func checkRehearsal(_ cues: [Cue], _ rehearsalMode: Bool, _ list: inout [PreflightFinding]) {
+        let flagged = cues.enumerated().filter { !$0.element.disabled && $0.element.skipInRehearsal }
+        if rehearsalMode {
+            add(&list, .warning, rehearsalOn,
+                L("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO. Slå den av før forestillingen (⌘R).", flagged.count), flagged.first?.offset ?? -1)
+        }
+        if let first = flagged.first {
+            add(&list, .ok, rehearsalFlagged,
+                L("{0} cue(r) er merket «Hopp over i øvelse» (gjelder bare i øvelsesmodus).", flagged.count), first.offset)
+        }
+    }
+
     private static func checkDevices(_ cues: [Cue], _ s: AppSettings, _ env: PreflightEnvironment, _ list: inout [PreflightFinding]) {
         let active = cues.enumerated().filter { !$0.element.disabled }
 
@@ -313,19 +343,24 @@ enum PreflightCheck {
 
     // MARK: Cue-numre
 
+    /// Samme nummer i ulike scener er lov; to cuer med samme nummer i én scene (eller i et show uten scener) gir feil.
     private static func checkNumbers(_ cues: [Cue], _ list: inout [PreflightFinding]) {
-        var order: [String] = [], rows: [String: [Int]] = [:], shown: [String: String] = [:]
+        var order: [String] = [], rows: [String: [Int]] = [:], shown: [String: String] = [:], sceneOf: [String: String] = [:]
         for (i, c) in cues.enumerated() {
             let n = c.number.trimmingCharacters(in: .whitespaces)
             if n.isEmpty { continue }
-            let key = n.lowercased()
-            if rows[key] == nil { order.append(key); shown[key] = n }
+            let key = n.lowercased() + "\u{1}" + c.scene.lowercased()
+            if rows[key] == nil { order.append(key); shown[key] = n; sceneOf[key] = c.scene }
             rows[key, default: []].append(i)
         }
         for key in order {
             guard let r = rows[key], r.count > 1 else { continue }
-            add(&list, .error, numberDuplicate,
-                L("Cue-nummer «{0}» brukes av {1} cuer (rad {2}).", shown[key] ?? key, r.count, r.map { String($0 + 1) }.joined(separator: ", ")), r[0])
+            let rowText = r.map { String($0 + 1) }.joined(separator: ", ")
+            let scene = sceneOf[key] ?? ""
+            let message = scene.isEmpty
+                ? L("Cue-nummer «{0}» brukes av {1} cuer (rad {2}).", shown[key] ?? key, r.count, rowText)
+                : L("Cue-nummer «{0}» brukes av {1} cuer i scenen «{2}» (rad {3}).", shown[key] ?? key, r.count, scene, rowText)
+            add(&list, .error, numberDuplicate, message, r[0])
         }
     }
 }

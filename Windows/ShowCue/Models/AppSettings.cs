@@ -53,6 +53,13 @@ public sealed class AppSettings
     /// <summary>Standard port for OSC inn (8000, vanlig standard for OSC-kontrollere, f.eks. Companion).</summary>
     public int OscInPort { get; set; } = 8000;
 
+    // ---- Nettside (fjernstyring fra mobil/nettbrett) ----
+    /// <summary>Av som standard. Når den er på, krever alt unntatt innloggingssiden PIN-koden.</summary>
+    public bool WebRemoteEnabled { get; set; }
+    public int WebRemotePort { get; set; } = WebRemote.DefaultPort;
+    /// <summary>PIN-kode (6–32 bokstaver/siffer). Lages tilfeldig når den mangler eller er for lett å gjette.</summary>
+    public string WebRemotePin { get; set; } = "";
+
     // ---- OSC-status ut (til kontrollpaneler) ----
     public bool OscFeedbackEnabled { get; set; }
     public string OscFeedbackHost { get; set; } = "127.0.0.1";
@@ -88,6 +95,8 @@ public sealed class AppSettings
     public bool ClockTriggersEnabled { get; set; }
     /// <summary>Skriv showloggen til fil (en fil per kjøring i Logs-mappa). På som standard: den er begrenset og ufarlig.</summary>
     public bool WriteShowLog { get; set; } = true;
+    /// <summary>Forbered cuen GO-markøren står på (og cuene den starter automatisk) i bakgrunnen. Av som standard til den er prøvd på ekte utstyr.</summary>
+    public bool PreloadNextCue { get; set; }
     /// <summary>Lydenhet for live-inngang-cuer (WASAPI-opptaksenhet, tom = Windows standard).</summary>
     public string InputDeviceId { get; set; } = "";
     public int LatencyMs { get; set; } = 60;
@@ -142,6 +151,8 @@ public sealed class AppSettings
         s.SampleRate = Math.Clamp(s.SampleRate, 8000, 192000);
         s.OscInPort = Math.Clamp(s.OscInPort, 1, 65535);
         s.OscFeedbackPort = Math.Clamp(s.OscFeedbackPort, 1, 65535);
+        s.WebRemotePort = s.WebRemotePort is >= 1024 and <= 65535 ? s.WebRemotePort : WebRemote.DefaultPort;
+        s.WebRemotePin = WebRemote.NormalizePin(s.WebRemotePin, s.WebRemoteEnabled);
         s.MidiInChannel = Math.Clamp(s.MidiInChannel, 0, 16);
         s.MscInDeviceId = Math.Clamp(s.MscInDeviceId, 0, 127);
         s.LatencyMs = Math.Clamp(s.LatencyMs, 10, 500);

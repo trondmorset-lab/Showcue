@@ -132,6 +132,28 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- ================= Web ================= -->
+            <TabItem Header="{local:T 'Web'}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Style="{StaticResource Page}">
+                        <CheckBox x:Name="WebEnabledBox" Content="{local:T 'Slå på nettside for fjernstyring fra mobil eller nettbrett'}" Margin="0,4,0,0" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'TCP-port'}" />
+                        <TextBox x:Name="WebPortBox" />
+                        <TextBlock Style="{StaticResource Label}" Text="{local:T 'PIN-kode'}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBox x:Name="WebPinBox" />
+                            <Button Grid.Column="2" Content="{local:T 'Ny PIN-kode'}" Padding="12,4" Click="WebNewPin_Click" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource Hint}" x:Name="WebAddressText" />
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="{local:T 'Åpne adressen i nettleseren på en mobil eller et nettbrett som er på samme Wi-Fi eller nettverk som denne maskinen, og skriv inn PIN-koden. Siden viser neste cue og hva som spiller, og har knappene GO, Stopp alt, Pause, Neste og Forrige. Cuelista kan bare leses; ingenting kan redigeres. Showmodus stopper ikke fjernstyringen.'}" />
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="{local:T 'Trafikken er vanlig HTTP, uten kryptering. PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på. Bruk aldri nettsiden på åpent eller delt nett, og ikke åpne porten mot internett. Windows-brannmuren spør første gang: tillat ShowCue på private nettverk.'}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- ================= MIDI ================= -->
             <TabItem Header="{local:T 'MIDI inn'}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -205,6 +227,8 @@
                     <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka.'}" />
                     <CheckBox x:Name="ShowLogBox" Content="{local:T 'Skriv showlogg'}" Margin="0,14,0,0" />
                     <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Skriver en logg over hva som skjedde under showet (cuer, pause, stopp, feil) til en fil per kjøring i mappa Logs. De 30 nyeste beholdes. Loggen kan også vises og eksporteres fra Fil-menyen.'}" />
+                    <CheckBox x:Name="PreloadBox" Content="{local:T 'Forhåndslast neste cue (forbereder lyd, video og bilde før GO)'}" Margin="0,14,0,0" />
+                    <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Av som standard til den er prøvd på ekte utstyr. Når den er på, åpner ShowCue filene til cuen GO-markøren står på, og cuene den starter automatisk, i bakgrunnen (høyst tre). Filene slippes når markøren flytter seg eller ved stopp. Feiler forberedelsen, starter cuen som vanlig.'}" />
                 </StackPanel>
             </TabItem>
         </TabControl>

@@ -9,6 +9,9 @@
   Selve driveren (ekte ASIO-utstyr) kan ikke testes i CI eller i utviklingsmiljøet.
   `ShowLogTests` dekker showloggen (formatering, escaping, CSV, filrotasjon, begrenset kø, skriving til fil, feil på disk, flere tråder); samme tilfeller på Mac.
 - **Mac** `Mac/Tests/ShowCueTests`- **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
+  `WebRemoteTests` (begge plattformer, like tilfeller) dekker HTTP-tolking (ufullstendig, feil, for stort, stitraversering), ruter, PIN, sperre, økter, JSON og sidene; `WebParserTests`/`WebRemoteCoreTests`/`WebRemoteContentTests`.
+  Selve socket-løkka (`WebServer`) testes ikke i CI; stresstesten fuzzer `WebRemoteCore.Handle`.
+- **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
 - Nye funksjoner får tester på begge plattformer. Rettede feil får en regresjonstest.
 
 ## Sjekke kode uten Windows eller Mac (Linux-miljøet)

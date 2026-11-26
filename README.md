@@ -22,15 +22,19 @@ Both have:
 - Cues for audio, video, image, PDF, web page, fade, stop, OSC, MIDI, playlist, slideshow, “go to”, group, message and network (UDP/TCP/HTTP)
 - **Timecode** (MTC/LTC out, MTC triggers in), **lighting over Art-Net** and **live input** through the audio patch
 - **Button panel** with large buttons (jingles, effects, touch screens), **loudness normalisation** (LUFS) **find/collect media files** and a **pre-show check** (*File → Check the show*)
+- **Scenes (cue lists):** split a long show into scenes such as “Act 1” and “Act 2”, each with its own numbering and GO playhead; switch scene from the picker, a hotkey, a *go to* cue or OSC
 - **Slideshow** that moves between images, PDF pages and videos automatically (or by hand), with crossfades and loop
 - **Pause/resume all**, **real-time scrubbing** in audio and video while playing, release loop (devamp), start from the cursor and fade curves
 - **Start and end with waveform**, zoom and preview through the audio patch
 - Pre-wait, auto-continue and auto-follow
 - **Show log** of cue starts and stops, pauses, errors and more (*File → Show log*), written to a file per run and exportable as CSV
+- Optional background preparation of the next cue (preload, off by default)
 - Hotkeys, MIDI triggers, timecode triggers and clock-time triggers per cue
+- Rehearsal mode: skip chosen cues during rehearsals without deleting them (never saved as on)
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
+- **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue (and saved routing presets such as “Main” or “Monitor”), test tone and level meters
 - **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
-- **Remote control** with OSC in, MIDI in and MSC
+- **Remote control** with OSC in, MIDI in and MSC, and an optional **web page for phone/tablet** (PIN-protected, off by default)
 - **Status out over OSC** (e.g. to Companion): next cue, what is playing and time remaining
 - **Dark, grey, light and night themes**, **zoom** and larger text in the cue list, and colour coding of cues
 - **Norwegian and English** user interface (chosen under *Settings → Appearance*)

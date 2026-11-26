@@ -24,6 +24,12 @@ protocol ShowControl: AnyObject {
     @discardableResult func stepCue(_ number: String, _ delta: Int) -> Bool
     /// Start cuer med tidskode-trigger mellom de to bildene (ikke medregnet forrige). Returnerer antall.
     func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int
+    /// Bytt aktiv scene (navn, store/små bokstaver likegyldig). False hvis scenen ikke finnes.
+    @discardableResult func selectScene(_ name: String) -> Bool
+}
+
+extension ShowControl {
+    func selectScene(_ name: String) -> Bool { false }
 }
 
 /// Oversetter OSC, MIDI og MSC til kommandoer. Samme kommandoer som Windows-versjonen:
@@ -31,6 +37,7 @@ protocol ShowControl: AnyObject {
 ///   /go  /go/{nr}  /stop  /panic  /hardstop  /next  /previous  /refresh
 ///   /playhead/{nr}  /select/{nr}  /cue/{nr}/start|stop|go|select|devamp|next|previous  /hotkey/{tast}
 ///   /pause  /resume  /pause/toggle
+///   /scene/{navn}  bytter aktiv scene (navnet kan også sendes som argument: /scene "Akt 2")
 ///   Cuenummer kan også sendes som argument: /cue/start "12". Prefikset /showcue/ er tillatt.
 final class RemoteRouter {
     weak var show: ShowControl?
@@ -106,6 +113,9 @@ final class RemoteRouter {
             if parts.count == 2 && (parts[1] == "previous" || parts[1] == "prev") { show.movePlayhead(-1); return true }
             guard let n = parts.count >= 2 ? parts[1] : argNumber else { return false }
             return show.selectCue(n)
+        case ("scene", _):
+            guard let name = parts.count >= 2 ? parts[1] : argNumber else { return false }
+            return show.selectScene(name)
         case ("hotkey", _):
             guard let k = parts.count >= 2 ? parts[1] : argNumber else { return false }
             return show.fireHotkey(k.uppercased())
@@ -127,6 +137,22 @@ final class RemoteRouter {
         default:
             return false
         }
+    }
+
+    // MARK: Nettside
+
+    /// Utfører en kommando fra nettsiden med samme grensesnitt som OSC. Ingenting her kan endre showet.
+    func handleWeb(_ cmd: WebCommand, from: String) {
+        guard let show else { return }
+        switch cmd {
+        case .go: show.go()
+        case .stopAll: show.stopAll()
+        case .pause: show.setPaused(true)
+        case .resume: show.setPaused(false)
+        case .next: show.movePlayhead(1)
+        case .previous: show.movePlayhead(-1)
+        }
+        show.remoteLog(L("Web fra {0}: {1}", from, WebRemote.commandName(cmd)))
     }
 
     // MARK: MIDI
