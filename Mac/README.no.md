@@ -95,6 +95,7 @@ Show lagret på Mac krever Windows-versjon 0.4 eller nyere.
 | Mellomrom | GO |
 | Esc | Stopp alt (to ganger = umiddelbart) |
 | ↑ / ↓ | Flytt GO-markøren |
+| ⌥⌘← / ⌥⌘→ | Forrige / neste scene (menyen *Scene* og velgeren over cuelista styrer scenene) |
 | ⌘1 … ⌘8 | Legg til lyd, video, bilde, PDF, fade, stopp, OSC, MIDI |
 | ⌘9, ⌘0 | Legg til spilleliste, gå til-cue |
 | ⌘P | Pause / fortsett alt |

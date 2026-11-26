@@ -94,10 +94,16 @@ Hva som vises avgjøres av ren logikk i `CueDisplay` (radtilstand, «gjenstår»
 Cuen har kjøretidsfeltene `RemainingText` og (Windows) `IsNext`/`RowState`, satt av motoren og hovedvinduet og aldri lagret i showfila. Cuetypens egne felt ligger i Grunnleggende,
 og for typer med lyd/bilde/video i Lyd/media (Windows: egne `DataTemplate`-er i `ContentControl.Resources`, Mac: `basicSection`/`mediaSection`). Se [beslutninger.md](beslutninger.md#0200--nytt-hovedvindu).
 
+## Scener
+
+Cuene ligger i én liste i showfila; hver cue har `Scene` (navn) og showet `Scenes` (rekkefølge). Cuelista viser bare aktiv scene. All logikk (nummerering, GO-markør, oppslag av mål, nytt navn/sletting) står i `SceneLogic`
+(Windows `Models/Scenes.cs`, Mac `Core/Scenes.swift`) uten GUI. Hovedvinduet holder aktiv scene og en GO-markør per scene (Windows `MainWindow` `_activeScene`/`_playheads`/`VisibleCues`, Mac `AppModel.activeScene`/`playheads`/`visibleCues`).
+Regler for oppslag og begrunnelse: [beslutninger.md](beslutninger.md#0220--scener-cuelister).
+
 ## Fjernstyring og status
 
 - **OSC inn** (UDP 8000): `/go`, `/stop`, `/panic`, `/hardstop`, `/next`, `/previous`, `/playhead/{nr}`, `/cue/{nr}/start|stop|go|devamp|next|previous`,
-  `/hotkey/{tast}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
+  `/hotkey/{tast}`, `/scene/{navn}`, `/pause`, `/resume`, `/refresh`. Prefikset `/showcue/` er tillatt; argument 0/false ignoreres. Bundles støttes (maks 8 nivåer).
   Dekoderen leser aldri utenfor pakken, uansett hva lengdefeltene påstår.
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);

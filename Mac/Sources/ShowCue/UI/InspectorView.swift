@@ -492,7 +492,9 @@ struct CueInspector: View {
     private var gotoSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             FieldLabel(L("Mål-cue (nummer)")); TextInput($cue.target, mono: true)
+            FieldLabel(L("Scene (tom = nummeret søkes i denne scenen først, så i alle)")); TextInput($cue.targetScene)
             Toggle(L("Kjør mål-cuen med en gang (ellers flyttes bare GO-markøren)"), isOn: $cue.fire).padding(.top, 8)
+            Hint(L("Flytter GO-markøren, f.eks. for å hoppe tilbake og gjenta en del, eller hoppe over en del. Fyller du bare ut scene, byttes scenen og GO-markøren står der den sist var. Nummeret kan også skrives som Scene:nummer."))
         }
     }
 

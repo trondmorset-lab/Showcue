@@ -110,6 +110,7 @@ og samplingsfrekvens direkte. ASIO anbefales for lavest forsinkelse.
 | `/cue/{nr}/stop` | Stopp cue (med cuens fade ut) |
 | `/cue/{nr}/go` eller `/go/{nr}` | Sett markøren til cue og kjør GO |
 | `/hotkey/{tast}` | Som å trykke hurtigtasten, f.eks. `/hotkey/F1` |
+| `/scene/{navn}` | Bytt aktiv scene (eller `/scene "Akt 2"`). Cuenumre i kommandoene over søkes først i aktiv scene, og `Akt 2:5` peker på en bestemt scene |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / fortsett alt |
 | `/cue/{nr}/devamp` | Slipp loopen i en cue (spiller ferdig og fortsetter til filslutt) |
 | `/cue/{nr}/next`, `/cue/{nr}/previous` | Bla til neste / forrige lysbilde i en lysbildeserie som kjører |
@@ -179,6 +180,7 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
 | **Ctrl+Shift+T / L / I / W** | Legg til tidskode-, lys-, inngang-, nettside-cue |
 | **Ctrl+D** | Dupliser |
 | **Ctrl+↑ / Ctrl+↓** | Flytt cue opp/ned |
+| **Ctrl+Page Up / Page Down** | Forrige / neste scene |
 | **Delete** | Slett valgte cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Lagre / åpne / nytt show |
 | **Ctrl+Z / Ctrl+Y** | Angre / gjør om (også Ctrl+Shift+Z) |
@@ -201,7 +203,8 @@ OSC og MIDI **ut** gjøres med OSC- og MIDI-cuer i cuelista.
   Bilder og PDF-sider vises i *Tid per bilde* sekunder (hver PDF-side blir et eget lysbilde), videoer spiller til de er ferdige,
   og lysbildene krysstones. Velg loop og tilfeldig rekkefølge, eller slå av *Bytt automatisk* og bla med ⏮ / ⏭ under *Aktive cuer*
   (eller OSC `/cue/{nr}/next` og `/cue/{nr}/previous`). Stopp cuen for å avslutte serien.
-- **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang.
+- **Gå til:** flytter GO-markøren til en annen cue (f.eks. tilbake til starten av en sekvens), og kan kjøre den med en gang. Med feltet *Scene* hopper den til en annen scene (se Scener).
+- **Scener:** velgeren over cuelista bestemmer aktiv scene. Hver scene er en egen cueliste med egen nummerering, GO-markør og GO-rekkefølge; GO flytter aldri til en annen scene av seg selv. **Ctrl+Page Up / Page Down** bytter scene, og menyen *Scener* lager, gir nytt navn, sletter og flytter scener og flytter valgte cuer. Samme nummer kan brukes i ulike scener. Mål i fade-, stopp-, gå til- og gruppe-cuer søkes først i cuens egen scene og deretter i alle scener; skriv `Akt 2:5` for en bestemt scene.
 - **Gruppe:** starter flere cuer med én GO. Skriv numrene, f.eks. `2, 5, 8-10` (`8-10` er alle cuer fra 8 til 10). Hver cue følger sin egen pre-wait, og deaktiverte cuer hoppes over.
 - **Slipp loop (devamp):** kryss av «Slipp loop» i en stopp-cue. Mål-cuen (lyd, video eller spilleliste) spiller ferdig
   runden og fortsetter til slutten av fila i stedet for å stoppe. ⤼-knappen i panelet gjør det samme for valgt cue.
