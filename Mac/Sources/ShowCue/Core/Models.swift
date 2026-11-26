@@ -158,6 +158,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var continueMode: ContinueMode = .none
     @Published var hotkey = "" { didSet { let u = hotkey.uppercased(); if u != hotkey { hotkey = u } } }
     @Published var disabled = false
+    /// Scenen cuen hører til (navnet). Tom = første (eller eneste) scene. Se `SceneLogic`.
+    @Published var scene = "" { didSet { let c = SceneLogic.cleanName(scene); if c != scene { scene = c } } }
     @Published var color: CueColor = .none
     /// "N:60", "CC:20", "PC:5" eller tom.
     @Published var midiTrigger = ""
@@ -211,6 +213,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // Gå til
     /// Kjør mål-cuen også (GO), ikke bare flytt markøren.
     @Published var fire = false
+    /// Scenen hoppet går til. Tom = nummeret søkes i scenen cuen står i først, så i alle scener.
+    @Published var targetScene = "" { didSet { let c = SceneLogic.cleanName(targetScene); if c != targetScene { targetScene = c } } }
 
     // Gruppe
     /// Cuenumrene gruppen starter, skilt med komma. Et område skrives «8-10».
@@ -392,7 +396,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .osc: return "OSC " + address
         case .midi: return "MIDI"
         case .playlist: return L("Spilleliste")
-        case .goto: return target.isEmpty ? L("Gå til") : L("Gå til {0}", target)
+        case .goto: return gotoText.isEmpty ? L("Gå til") : L("Gå til {0}", gotoText)
         case .group: return targets.isEmpty ? L("Gruppe") : L("Gruppe {0}", targets)
         case .memo: return memoFirstLine.isEmpty ? L("Beskjed") : memoFirstLine
         case .network:
@@ -403,6 +407,11 @@ final class Cue: ObservableObject, Identifiable, Codable {
         case .web: return webURL.flatMap { $0.isFileURL ? nil : $0.host } ?? L("Nettside")
         case .slideshow: return L("Lysbildeserie")
         }
+    }
+
+    /// «Gå til»-målet slik det vises i lista: «5», «Akt 2:5» eller «scene Akt 2».
+    var gotoText: String {
+        target.isEmpty && !targetScene.isEmpty ? L("scene {0}", targetScene) : SceneLogic.gotoSpec(target: target, targetScene: targetScene)
     }
 
     var summary: String {
@@ -439,7 +448,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             return L("{0} spor", files.count) + (shuffle ? L("  tilfeldig") : "") + (loop ? "  ⟲" : "")
                 + (crossfade > 0 ? L("  krysstoning {0}s", Cue.fmt(crossfade)) : "")
         case .goto:
-            return (target.isEmpty ? L("(mål mangler)") : "→ " + target) + (fire ? "  + GO" : "")
+            return (gotoText.isEmpty ? L("(mål mangler)") : "→ " + gotoText) + (fire ? "  + GO" : "")
         case .group:
             return targets.isEmpty ? L("(mål mangler)") : "→ " + targets
         case .memo:
@@ -542,7 +551,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // MARK: Codable – samme feltnavn som Windows-versjonen (PascalCase)
 
     enum K: String, CodingKey {
-        case type, Number, Name, Notes, PreWait, ContinueMode, Hotkey, Disabled, Color, MidiTrigger
+        case type, Number, Name, Notes, Scene, TargetScene, PreWait, ContinueMode, Hotkey, Disabled, Color, MidiTrigger
         case FilePath, VolumeDb, Volume, StartTime, EndTime, Loop, FadeIn, FadeOut, FileDuration, FileChannels, Routes
         case ReplaceOthers, Stretch, OutputScreen, KnownDuration, HoldTime, Page
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
@@ -562,6 +571,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         func v<T: Decodable>(_ k: K, _ def: T) -> T { ((try? c.decodeIfPresent(T.self, forKey: k)) ?? nil) ?? def }
 
         number = v(.Number, ""); name = v(.Name, ""); notes = v(.Notes, "")
+        scene = v(.Scene, ""); targetScene = v(.TargetScene, "")
         preWait = v(.PreWait, 0.0); continueMode = v(.ContinueMode, ContinueMode.none)
         hotkey = v(.Hotkey, ""); disabled = v(.Disabled, false); color = v(.Color, CueColor.none)
         midiTrigger = v(.MidiTrigger, "")
@@ -638,6 +648,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(number, forKey: .Number)
         try c.encode(name, forKey: .Name)
         try c.encode(notes, forKey: .Notes)
+        try c.encode(scene, forKey: .Scene)
         try c.encode(Cue.finite(preWait), forKey: .PreWait)
         try c.encode(continueMode, forKey: .ContinueMode)
         try c.encode(hotkey, forKey: .Hotkey)
@@ -694,6 +705,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
             try c.encode(release, forKey: .Release)
         case .goto:
             try c.encode(target, forKey: .Target)
+            try c.encode(targetScene, forKey: .TargetScene)
             try c.encode(fire, forKey: .Fire)
         case .group:
             try c.encode(targets.trimmingCharacters(in: .whitespacesAndNewlines), forKey: .Targets)
@@ -781,8 +793,13 @@ struct ShowDocument: Codable {
     var formatVersion = 1
     var title = L("Nytt show")
     var cues: [Cue] = []
+    /// Navngitte routingforhåndsvalg for showet (valgfritt felt; eldre filer har det ikke).
+    var routingPresets: [RoutingPreset] = []
 
-    enum CodingKeys: String, CodingKey { case formatVersion = "FormatVersion", title = "Title", cues = "Cues" }
+    /// Scenenavnene i rekkefølge (cuelistene). Tom = én scene uten navn. Eldre versjoner ignorerer feltet og leser alle cuene som én liste.
+    var scenes: [String] = []
+
+    enum CodingKeys: String, CodingKey { case formatVersion = "FormatVersion", title = "Title", cues = "Cues", routingPresets = "RoutingPresets", scenes = "Scenes" }
 
     init() {}
 
@@ -792,7 +809,14 @@ struct ShowDocument: Codable {
         title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? L("Show")
         // «null» i lista er ingen cue (en ødelagt fil) og hoppes over.
         cues = (try c.decodeIfPresent([Cue?].self, forKey: .cues) ?? []).compactMap { $0 }
+        // Feil type på feltet, eller en skadet oppføring, gir tom liste eller hopper over oppføringen i stedet for at showet ikke åpnes.
+        let lossy = ((try? c.decodeIfPresent([LossyRoutingPreset].self, forKey: .routingPresets)) ?? nil) ?? []
+        routingPresets = RoutingPresets.cleanList(lossy.map { $0.value })
+        scenes = SceneLogic.normalize(((try? c.decodeIfPresent([String?].self, forKey: .scenes)) ?? nil)?.compactMap { $0 }, cues)
     }
+
+    /// Retter opp scenene etter redigering: tar med scener cuene bruker, og gir hver cue sitt kanoniske scenenavn.
+    mutating func normalizeScenes() { scenes = SceneLogic.normalize(scenes, cues) }
 
     func jsonData() throws -> Data {
         let e = JSONEncoder()

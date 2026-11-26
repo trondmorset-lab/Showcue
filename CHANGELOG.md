@@ -16,6 +16,29 @@ The full history of earlier versions is in the Norwegian changelog.
   Preparation never runs on the audio thread. The files are released when the playhead moves, on stop, when a show is opened and on exit. If preparation fails, or the file has changed, the cue starts exactly as before.
   Note: the gain in start latency has not been measured; please try it on real equipment before relying on it.
 
+## 0.23.0 – 2026-11-25
+
+### New
+- **Routing presets** (Windows and Mac, same behaviour): the routing matrix per cue already existed; now you can send a cue to e.g. the main speakers or the monitors in one click, without editing the matrix by hand.
+  The **Presets** button under the matrix has:
+  - **Named presets saved in the show** (e.g. “Main” = outputs 1-2, “Monitor” = 3-4, “Main + Monitor” = 1-2, 3-4). A preset is a list of output pairs, optionally with a level in dB per pair (“3-4:-6”), so it fits files with any number of channels: mono goes to both outputs of each pair, stereo goes left/right, and multichannel files are summed alternately to left/right at −3 dB. Create, edit (including renaming) and delete from the menu.
+  - **Apply to all selected cues:** choosing a preset sets it on every selected cue that has audio, and the status line says how many were changed and how many were skipped (no audio, or no output in the patch that the preset fits).
+  - **Copy routing / Paste routing** between cues, and **Use this routing on all selected cues**. Channels and outputs a target cue does not have are left out.
+  - **A routing summary above the matrix:** the name of the matching preset, “Default”, “Off”, or “Output 1-2, 5”.
+- Showfile: the new optional field `RoutingPresets` (list of `Name` and `Pairs` with `Bus` and `GainDb`). Older files open as before; older versions ignore the field. A damaged field never stops a show from opening.
+- Nothing in this feature runs in the audio thread: presets only change the routing of the cue (on the main thread), which playing cues pick up exactly as when the matrix is edited by hand. It does not change playback and has no setting to turn on.
+
+## 0.22.0 – 2026-11-25
+
+### New
+- **Scenes (cue lists)** (Windows and Mac, same behaviour): a long show no longer has to be one long list. Cues belong to a *scene* (e.g. “Act 1”, “Act 2”), and each scene has its own numbering, its own GO playhead and its own GO order.
+  Choose the active scene in the picker above the cue list (◀ ▶ step between scenes; **Ctrl+Page Up/Down** on Windows, **⌘⌥←/→** on Mac). The *Scenes* menu creates, renames, deletes and reorders scenes and moves the selected cues to another scene.
+- **GO never jumps to another scene by itself.** At the end of a scene the playhead stops at “end of list”; auto-continue/auto-follow also stay inside the scene. Each scene remembers where its playhead was.
+- **Numbers per scene:** the same cue number can be used in several scenes. *Renumber* renumbers the active scene and updates fade, stop, go to and group targets. Fade, stop, go to and group targets look in the scene of the cue first and then in all scenes; write `Act 2:5` to point at cue 5 in a specific scene.
+- **Go to scene:** a *go to* cue has a new *Scene* field. With only a scene it switches scene (the playhead is where it last was); with a number it jumps to that cue in that scene. OSC: `/scene/{name}` (or `/scene "Act 2"`) switches scene. The existing OSC commands look in the active scene first.
+- **Check the show** accepts the same number in different scenes, reports duplicates inside one scene and checks that the scenes used by *go to* cues exist.
+- Show files: a new optional `Scene` field per cue and a `Scenes` list. Shows without scenes load as one scene, and older versions open new files as one list.
+
 ## 0.21.0 – 2026-11-24
 
 ### New

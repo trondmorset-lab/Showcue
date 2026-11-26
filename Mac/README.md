@@ -78,6 +78,8 @@ The sample rate follows the device, and files with a different rate are converte
 | Zoom in the waveform | Pinch on the trackpad or −/+ | Mouse wheel |
 | Hotkeys | The F keys require `fn`, unless “Use F1, F2, etc. keys as standard function keys” is turned on | |
 
+Routing presets work as on Windows: the *Presets* button under the routing matrix sets a named preset (output pairs such as `1-2` or `3-4:-6`, saved in the show) on the cue and all other selected cues, and copies/pastes routing between cues.
+
 Everything else is the same: language (Norwegian/English), cue types, start/end editing with waveform and preview, routing matrix, audio patch, video audio through the patch, OSC/MIDI in and out, MSC, status out over OSC, themes and cue colours.
 See the README in the Windows folder for a full description of OSC commands and status variables.
 
@@ -92,6 +94,7 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | Space | GO |
 | Esc | Stop all (twice = immediately) |
 | ↑ / ↓ | Move the GO playhead |
+| ⌥⌘← / ⌥⌘→ | Previous / next scene (the *Scene* menu and the picker above the cue list manage scenes) |
 | ⌘1 … ⌘8 | Add audio, video, image, PDF, fade, stop, OSC, MIDI |
 | ⌘9, ⌘0 | Add playlist, go to cue |
 | ⌘P | Pause / resume all |

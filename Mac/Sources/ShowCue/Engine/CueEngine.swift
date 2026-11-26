@@ -172,27 +172,22 @@ final class CueEngine: ObservableObject {
         }
     }
 
+    /// Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.
     private func fireNext(after cue: Cue) {
-        let list = cueList()
-        guard let i = list.firstIndex(where: { $0 === cue }) else { return }
-        if let next = list[(i + 1)...].first(where: { !$0.disabled }) { fire(next) }
+        if let next = SceneLogic.nextEnabled(cueList(), after: cue) { fire(next) }
     }
 
     /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
-    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int {
-        var i = fired
-        while i < list.count && list[i].continueMode != .none {
-            i += 1
-            while i < list.count && list[i].disabled { i += 1 }
-        }
-        i += 1
-        while i < list.count && list[i].disabled { i += 1 }
-        return min(i, list.count)
-    }
+    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int { SceneLogic.nextPlayheadIndex(list, fired: fired) }
 
-    func findActive(_ number: String) -> [ActiveCue] {
+    /// Aktive cuer et nummer peker på. `homeScene` er scenen til cuen som spør (nummeret søkes der først, se `SceneLogic`).
+    func findActive(_ number: String, homeScene: String? = nil) -> [ActiveCue] {
         let n = number.trimmingCharacters(in: .whitespaces)
         guard !n.isEmpty else { return [] }
+        let targets = SceneLogic.matching(cueList(), n, home: homeScene)
+        if !targets.isEmpty {
+            return active.filter { a in a.started && !a.done && targets.contains { $0 === a.cue } }
+        }
         return active.filter { $0.started && !$0.done && $0.cue.number.caseInsensitiveCompare(n) == .orderedSame }
     }
 
