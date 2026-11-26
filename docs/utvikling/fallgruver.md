@@ -23,6 +23,9 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - **`byte.TryParse(…, HexNumber)` godtar mellomrom, Swifts `UInt8(_, radix: 16)` godtar «+»:** sjekk at begge tegn er sifre først (`\xHH`).
 - Endre aldri en `ObservableCollection` mens den gjennomgås: bruk `.ToList()` før `Pause()`/`Resume()`/`Stop()` på aktive cuer.
 
+- **Forhåndslasting:** aldri bruk en forberedt fil uten å sjekke at den fortsatt stemmer (størrelse/endringstid, samplingsfrekvens, start/slutt/loop); `Take…` skal returnere null, ikke kaste. En forberedt leser/dekoder har én eier: den som tar den, må lukke den. Ikke rør lydløkken for å «hjelpe» forberedelsen.
+- Windows: `MediaCache.Images` brukes nå også fra bakgrunnen (`Warm`), så alle tilganger går gjennom `ImagesLock`.
+
 ## Showfiler
 - Windows leste en cue med ett ugyldig felt (f.eks. `"FadeTime": "tre"`) som feil for hele filen. Nå leses feltene hver for seg (`CueJsonConverter.ReadFieldByField`),
   og «null» i `Cues`, `Files` og `Routes` fjernes i egenskapene. Mac har alltid brukt standardverdi per felt.

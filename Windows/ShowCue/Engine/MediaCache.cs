@@ -19,9 +19,15 @@ public static class MediaCache
     /// <summary>Bredde PDF-sider rendres i (piksler).</summary>
     private const uint PdfRenderWidth = 1920;
 
+    /// <summary>Beskytter <see cref="Images"/>: forberedelsen i bakgrunnen og UI-tråden bruker den samtidig.</summary>
+    private static readonly object ImagesLock = new();
+
+    /// <summary>Dekoder bildet (hvis det ikke allerede er cachet). Trygt å kalle fra en bakgrunnstråd.</summary>
+    public static void Warm(string path) => GetImage(path);
+
     public static BitmapSource GetImage(string path)
     {
-        if (Images.TryGetValue(path, out var bmp)) return bmp;
+        lock (ImagesLock) { if (Images.TryGetValue(path, out var cached)) return cached; }
         var img = new BitmapImage();
         img.BeginInit();
         img.CacheOption = BitmapCacheOption.OnLoad;
@@ -29,7 +35,7 @@ public static class MediaCache
         img.UriSource = new Uri(path);
         img.EndInit();
         img.Freeze();
-        Images[path] = img;
+        lock (ImagesLock) Images[path] = img;
         return img;
     }
 
@@ -99,7 +105,7 @@ public static class MediaCache
 
     public static void Clear()
     {
-        Images.Clear();
+        lock (ImagesLock) Images.Clear();
         Pdfs.Clear();
         PageCounts.Clear();
     }

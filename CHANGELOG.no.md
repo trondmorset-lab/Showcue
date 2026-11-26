@@ -6,6 +6,16 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.24.0 – 2026-11-25
+
+### Nytt
+- **Forhåndslast neste cue** (Windows og Mac, samme oppførsel; *Innstillinger → Sikkerhet*, **av** som standard til den er prøvd på ekte utstyr).
+  Når den er på, forbereder ShowCue cuen GO-markøren står på, og cuene den starter automatisk etterpå (høyst tre filer om gangen), i en bakgrunnstråd så snart markøren flytter seg:
+  lydfiler åpnes og de første sekundene leses på forhånd (Mac: dekodes inn i ringbufferen), lydsporet i en video åpnes på samme måte (Mac laster også videofilas egenskaper), og bilder dekodes.
+  «Gå til»-cuer følges til målet, og gruppe-cuer forbereder sine aktive mål. Deaktiverte cuer hoppes over, slik GO gjør.
+  Forberedelsen skjer aldri i lydtråden. Filene slippes når markøren flytter seg, ved stopp, når et show åpnes og ved avslutning. Feiler forberedelsen, eller er fila endret, starter cuen akkurat som før.
+  Merk: gevinsten i starttid er ikke målt; prøv den på ekte utstyr før du stoler på den.
+
 ## 0.23.0 – 2026-11-25
 
 ### Nytt

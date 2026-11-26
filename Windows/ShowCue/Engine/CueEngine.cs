@@ -21,6 +21,10 @@ public sealed class CueEngine : IDisposable
     private readonly Dictionary<int, OutputWindow> _extraOutputs = new();
 
     public AudioEngine Audio { get; } = new();
+    /// <summary>Forbereder cuene GO snart starter (se <see cref="Preloader"/>). Av til innstillingen er slått på.</summary>
+    public Preloader Preloader { get; } = new();
+    /// <summary>Forberedelsen er sluppet (stopp, nye innstillinger): hovedvinduet bør be om ny forberedelse for markøren.</summary>
+    public event Action? PreloadRefreshRequested;
     /// <summary>Egen lydenhet for forhåndslytting (f.eks. hodetelefoner). Kjører bare når en er valgt.</summary>
     public AudioEngine PreviewAudio { get; } = new();
     private string _previewDevice = "";
@@ -51,6 +55,7 @@ public sealed class CueEngine : IDisposable
     public CueEngine(AppSettings settings, Func<IList<Cue>> cueList)
     {
         Settings = settings;
+        Preloader.Enabled = settings.PreloadNextCue;
         _cueList = cueList;
         Preview = new AudioPreview(PreviewTarget);
         _timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
@@ -72,11 +77,13 @@ public sealed class CueEngine : IDisposable
     public void ApplySettings(AppSettings s, bool restartAudio = true)
     {
         Settings = s;
+        Preloader.Enabled = s.PreloadNextCue;
         if (restartAudio)
         {
             StopAll(0);
             Audio.Start(s);
         }
+        PreloadRefreshRequested?.Invoke();
         if (s.PreviewDeviceId != _previewDevice || (restartAudio && s.PreviewDeviceId != ""))
         {
             Preview.Stop();
@@ -240,6 +247,8 @@ public sealed class CueEngine : IDisposable
         if (IsPaused) ResumeAll(); // stoppfader skal kunne høres
         Preview.Stop();
         foreach (var a in Active.ToList()) a.Stop(fade);
+        Preloader.Clear(); // filene slippes ved stopp; hovedvinduet forbereder markøren på nytt
+        PreloadRefreshRequested?.Invoke();
     }
 
     // ------------------------------------------------------------------
@@ -319,6 +328,7 @@ public sealed class CueEngine : IDisposable
         Try(() => StopAll(0));
         foreach (var w in _extraOutputs.Values.Append(_output).OfType<OutputWindow>())
             Try(() => { w.AllowClose = true; w.Close(); });
+        Try(Preloader.Dispose);
         Try(Audio.Dispose);
         Try(PreviewAudio.Dispose);
         Try(Midi.Dispose);

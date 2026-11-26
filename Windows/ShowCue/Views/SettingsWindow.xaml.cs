@@ -107,6 +107,7 @@ public partial class SettingsWindow : Window
         LoudnessBox.Text = settings.LoudnessTarget.ToString(CultureInfo.CurrentCulture);
         DoubleGoBox.Text = settings.DoubleGoProtectionMs.ToString();
         ClockTriggersBox.IsChecked = settings.ClockTriggersEnabled;
+        PreloadBox.IsChecked = settings.PreloadNextCue;
 
         UpdatePanels();
         ThemeManager.Register(this);
@@ -221,6 +222,7 @@ public partial class SettingsWindow : Window
         if (TryDouble(PanicBox.Text, out var p)) Result.PanicFadeTime = Math.Clamp(p, 0, 30);
         if (TryDouble(LoudnessBox.Text, out var lufs)) Result.LoudnessTarget = Math.Clamp(lufs, -40, -5);
         Result.ClockTriggersEnabled = ClockTriggersBox.IsChecked == true;
+        Result.PreloadNextCue = PreloadBox.IsChecked == true;
         if (int.TryParse(DoubleGoBox.Text, out var dg)) Result.DoubleGoProtectionMs = Math.Clamp(dg, 0, 2000);
 
         if (Result.AudioDriver == AudioDriverType.Asio && string.IsNullOrEmpty(Result.AsioDriverName))

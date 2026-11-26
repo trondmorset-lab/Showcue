@@ -13,8 +13,8 @@ final class AppModel: ObservableObject, ShowControl {
     static let showType = UTType(filenameExtension: "showcue") ?? .json
 
     // Show
-    @Published var cues: [Cue] = [] { didSet { observeCues() } }
-    @Published var selection: Set<UUID> = [] { didSet { recordPlayhead() } }
+    @Published var cues: [Cue] = [] { didSet { observeCues(); updatePreload() } }
+    @Published var selection: Set<UUID> = [] { didSet { recordPlayhead(); updatePreload() } }
     /// Scenenavnene i rekkefølge. Tom = én scene uten navn (`SceneLogic`).
     @Published var scenes: [String] = []
     /// Aktiv scene (kanonisk navn; tom i et show uten scener). Cuelista viser bare cuene i den.
@@ -94,6 +94,7 @@ final class AppModel: ObservableObject, ShowControl {
         engine = CueEngine(audio: audio, output: output, midi: midi) { [weak self] in self?.cues ?? [] }
         router.show = self
         engine.onLog = { [weak self] in self?.statusText = $0 }
+        engine.onPreloadRefresh = { [weak self] in DispatchQueue.main.async { self?.updatePreload() } }
         engine.onTick = { [weak self] in self?.tick() }
         // «Gå til»-cue: vent til GO er ferdig med å flytte markøren, så flytt den til målet.
         engine.onGoto = { [weak self] target, fire in
@@ -418,8 +419,26 @@ final class AppModel: ObservableObject, ShowControl {
 
     // MARK: - Show-fil
 
+    /// Be om at cuen GO-markøren står på (og cuene den starter automatisk) forberedes i bakgrunnen.
+    func updatePreload() {
+        guard let engine else { return }
+        engine.preloader.update(cues: cues, playheadIndex: playhead.flatMap(index(of:)) ?? -1,
+                                sampleRate: audio.sampleRate > 0 ? audio.sampleRate : nil, enabled: settings.preloadNextCue)
+    }
+
+    private var preloadPending = false
+    /// Endringer i en cue (fil, deaktivert, fortsett, mål) kan endre hva som skal forberedes; samles opp så det ikke kjøres for hver endring.
+    private func schedulePreloadUpdate() {
+        guard !preloadPending else { return }
+        preloadPending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.preloadPending = false
+            self?.updatePreload()
+        }
+    }
+
     private func observeCues() {
-        cueSubs = cues.map { $0.objectWillChange.sink { [weak self] _ in self?.markMaybeDirty() } }
+        cueSubs = cues.map { $0.objectWillChange.sink { [weak self] _ in self?.markMaybeDirty(); self?.schedulePreloadUpdate() } }
     }
 
     private var dirtyCheckPending = false
@@ -629,9 +648,11 @@ final class AppModel: ObservableObject, ShowControl {
             c.fileDuration = p.duration; c.fileChannels = p.channels
         }
         MediaCache.shared.clear()
+        engine.preloader.clear() // nytt show: slipp alt som var forberedt
         MediaCache.shared.preload(cues)
         for c in cues where c.type == .video && c.fileChannels < 0 { probeVideo(c) }
         savedData = currentData()
+        updatePreload()
         isDirty = false
         history.reset(cueData())
         refreshUndo()
@@ -881,7 +902,9 @@ final class AppModel: ObservableObject, ShowControl {
         }
         for c in cues where c.isFileCue && FileManager.default.fileExists(atPath: c.filePath) { c.error = nil }
         MediaCache.shared.clear()
+        engine.preloader.clear()
         MediaCache.shared.preload(cues)
+        updatePreload()
         let left = MediaTools.missing(cues).count
         statusText = L("Fant {0} fil(er).", found) + (left > 0 ? L(" {0} mangler fortsatt.", left) : L(" Alle mediefiler er på plass."))
         updateDirty()
@@ -1097,6 +1120,7 @@ final class AppModel: ObservableObject, ShowControl {
         engine.setDefaultScreen(settings.videoScreen)
         if settings.videoScreen >= 0 { output.ensureVisible() }
         applyRemoteSettings()
+        updatePreload()
     }
 
     /// Zoom inn (`direction` > 0), ut (< 0) eller tilbake til vanlig størrelse (0).

@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.24.0 | (åpen) | Forhåndslasting av neste cue (innstillingen «Forhåndslast neste cue», av som standard): ren planlegger (`PreloadPlanner`) og regnskap (`PreloadBook`) med tester på begge plattformer, `Preloader` i bakgrunnen på Windows og Mac, stresstest-case |
 | 0.23.0 | (åpen) | Routingforhåndsvalg: navngitte utgangspar i showet (`RoutingPresets`), sett på alle valgte cuer med ett klikk, kopier/lim inn routing, oppsummering av routingen i inspektøren. Ren logikk (`RoutingPresets`, `RouteClipboard`) med tester på begge plattformer |
 | 0.22.0 | (åpen) | Scener (cuelister): `Scene` per cue og `Scenes` i showet, egen nummerering og GO-markør per scene, velger over lista, bytte med hurtigtast/«gå til»/OSC `/scene/{navn}`, «Sjekk showet» godtar samme nummer i ulike scener. Ren logikk (`SceneLogic`) med tester på begge plattformer |
 | 0.21.0 | (åpen) | Klokkeslett-trigger per cue (`ClockTrigger`, «tt:mm:ss», lokal tid) med innstillingen «Klokke-triggere aktive» (av som standard), felt i Tidsstyring og advarsel i Sjekk showet. Ren logikk (`ClockTriggers`) med tester på begge plattformer |
