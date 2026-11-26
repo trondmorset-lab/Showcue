@@ -874,18 +874,21 @@ public static partial class Program
             // Stopp mens forbindelser er åpne.
             var open = new List<TcpClient>();
             for (int k = 0; k < 10; k++) { var c = new TcpClient(); c.Connect(IPAddress.Loopback, port); open.Add(c); }
+            Thread.Sleep(300); // la tjeneren ta imot forbindelsene (ikke-aksepterte i køen avgjøres av operativsystemet)
             var sw = Stopwatch.StartNew();
             server.Stop();
             if (sw.ElapsedMilliseconds > 2000) Bug(S, "Stop brukte over 2 s", $"{sw.ElapsedMilliseconds} ms");
             if (server.IsRunning) Bug(S, "IsRunning er sann etter Stop", "");
-            var gone = open.Select(c => new Thread(() =>
+            var gone = open.Select((c, idx) => new Thread(() =>
             {
                 try
                 {
                     c.ReceiveTimeout = 4000;
-                    c.GetStream().Read(new byte[16], 0, 16);
+                    var buf = new byte[256];
+                    int total = 0, n;
+                    while ((n = c.GetStream().Read(buf, 0, buf.Length)) > 0 && (total += n) < 8192) { } // et eventuelt 503-svar, så lukking
                 }
-                catch (IOException e) when (e.InnerException is SocketException { SocketErrorCode: SocketError.TimedOut }) { Bug(S, "forbindelser ble ikke lukket av Stop", ""); }
+                catch (IOException e) when (e.InnerException is SocketException { SocketErrorCode: SocketError.TimedOut }) { Bug(S, "forbindelser ble ikke lukket av Stop", $"forbindelse {idx} av {open.Count}, {sw.ElapsedMilliseconds} ms etter Stop"); }
                 catch { }
             })).ToList();
             gone.ForEach(t => t.Start());
