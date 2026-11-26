@@ -74,6 +74,10 @@ file channels ──(routing per cue)──▶ outputs ──(audio patch)──
 - **Routing per audio cue**: the matrix in the panel on the right, with file channels as rows and outputs as columns. Enter the level in dB,
   or double-click a cell to turn it on/off. “Default” means mono → 1+2, stereo → 1/2, and multichannel files channel by channel.
   Changes to routing and level are heard immediately while the cue is playing.
+- **Routing presets**: the *Presets* button under the matrix. A preset is a named list of output pairs saved in the show (e.g. “Main” = `1-2`,
+  “Monitor” = `3-4`, “Main + Monitor” = `1-2, 3-4`, optionally with a level: `3-4:-6`). Choose one to set it on the cue and on all other selected cues
+  (mono goes to both outputs of each pair, stereo left/right, multichannel summed alternately at −3 dB). You can also copy a cue's routing and paste it on others.
+  The line above the matrix shows what the routing matches (a preset name, “Default”, “Off” or the outputs).
 
 **Audio in video (“de-embedding”):** the audio track in video files is decoded by Windows (Media Foundation: AAC, PCM, WMA …)
 and played by ShowCue's own audio engine. It goes through the audio patch just like an audio cue, with

@@ -79,6 +79,8 @@ Samplingsfrekvensen følger enheten, og filer med en annen frekvens konverteres 
 | Zoom i bølgeform | Knip på styreflaten eller −/+ | Musehjul |
 | Hurtigtaster | F-tastene krever `fn`, med mindre «Bruk F1, F2 osv. som standard funksjonstaster» er slått på | |
 
+Routingforhåndsvalg fungerer som på Windows: knappen *Forhåndsvalg* under routingmatrisen setter et navngitt forhåndsvalg (utgangspar som `1-2` eller `3-4:-6`, lagret i showet) på cuen og alle andre valgte cuer, og kopierer/limer inn routing mellom cuer.
+
 Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
 Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
 

@@ -793,10 +793,13 @@ struct ShowDocument: Codable {
     var formatVersion = 1
     var title = L("Nytt show")
     var cues: [Cue] = []
+    /// Navngitte routingforhåndsvalg for showet (valgfritt felt; eldre filer har det ikke).
+    var routingPresets: [RoutingPreset] = []
+
     /// Scenenavnene i rekkefølge (cuelistene). Tom = én scene uten navn. Eldre versjoner ignorerer feltet og leser alle cuene som én liste.
     var scenes: [String] = []
 
-    enum CodingKeys: String, CodingKey { case formatVersion = "FormatVersion", title = "Title", cues = "Cues", scenes = "Scenes" }
+    enum CodingKeys: String, CodingKey { case formatVersion = "FormatVersion", title = "Title", cues = "Cues", routingPresets = "RoutingPresets", scenes = "Scenes" }
 
     init() {}
 
@@ -806,6 +809,9 @@ struct ShowDocument: Codable {
         title = ((try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil) ?? L("Show")
         // «null» i lista er ingen cue (en ødelagt fil) og hoppes over.
         cues = (try c.decodeIfPresent([Cue?].self, forKey: .cues) ?? []).compactMap { $0 }
+        // Feil type på feltet, eller en skadet oppføring, gir tom liste eller hopper over oppføringen i stedet for at showet ikke åpnes.
+        let lossy = ((try? c.decodeIfPresent([LossyRoutingPreset].self, forKey: .routingPresets)) ?? nil) ?? []
+        routingPresets = RoutingPresets.cleanList(lossy.map { $0.value })
         scenes = SceneLogic.normalize(((try? c.decodeIfPresent([String?].self, forKey: .scenes)) ?? nil)?.compactMap { $0 }, cues)
     }
 

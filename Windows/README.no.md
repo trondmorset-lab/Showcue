@@ -74,6 +74,10 @@ lydfil-kanaler ──(routing per cue)──▶ utganger ──(lydpatch)──�
 - **Routing per lyd-cue**: matrisen i panelet til høyre, med filkanaler som rader og utganger som kolonner. Skriv nivå i dB,
   eller dobbeltklikk en rute for å slå av/på. «Standard» betyr mono → 1+2, stereo → 1/2, og flerkanalsfiler kanal for kanal.
   Endringer i routing og nivå høres med en gang mens cuen spiller.
+- **Routingforhåndsvalg**: knappen *Forhåndsvalg* under matrisen. Et forhåndsvalg er en navngitt liste med utgangspar som lagres i showet (f.eks. «Hoved» = `1-2`,
+  «Monitor» = `3-4`, «Hoved + monitor» = `1-2, 3-4`, eventuelt med nivå: `3-4:-6`). Velg ett for å sette det på cuen og på alle andre valgte cuer
+  (mono går til begge utgangene i hvert par, stereo venstre/høyre, flerkanal summeres annenhver med −3 dB). Du kan også kopiere routingen til en cue og lime den inn på andre.
+  Linja over matrisen viser hva routingen svarer til (navn på forhåndsvalg, «Standard», «Av» eller utgangene).
 
 **Lyd i video («de-embedding»):** lydsporet i videofiler dekodes av Windows (Media Foundation: AAC, PCM, WMA …)
 og spilles av ShowCue sin egen lydmotor. Det går gjennom lydpatchen akkurat som en lyd-cue, med

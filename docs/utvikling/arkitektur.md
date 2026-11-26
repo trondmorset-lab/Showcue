@@ -108,6 +108,10 @@ Regler for oppslag og begrunnelse: [beslutninger.md](beslutninger.md#0220--scene
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
   hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.
+- **Routingforhåndsvalg**: `RoutingPresets` (`Models/RoutingPresets.cs`, `Core/RoutingPresets.swift`) er ren logikk uten UI: lage/endre/slette forhåndsvalg, lese og skrive utgangspar som tekst («1-2, 3-4:-6»),
+  gjøre et forhåndsvalg om til `AudioRoute`-er for en cue med et gitt antall kanaler, sette det på flere cuer (`Apply`, `ApplyRoutes`, `Paste`) og beskrive routingen (`Describe`). `RouteClipboard` holder kopiert routing.
+  Forhåndsvalg lagres i showet (`RoutingPresets` i `ShowDocument`), ikke i innstillingene, og tas ikke med i angre-historikken. UI: knappen «Forhåndsvalg» i `RoutingMatrix` (Windows, via `IRoutingHost` i `MainWindow`) og `RoutingMatrixView` (Mac, via `AppModel`).
+  Alt skjer på hovedtråden og endrer bare `Routes` på cuene; lydtråden får det nye mønsteret på samme måte som ved redigering av matrisen.
 - **Status ut over OSC** (`OscFeedback`): format «Companion» (egendefinerte variabler `sc_*`, port 12321) eller generisk `/showcue/...`.
 
 ## Showfil
@@ -116,6 +120,8 @@ JSON (`.showcue`), lesbar. Cuer har `"type"` (`audio`, `video`, `image`, `pdf`, 
 `playlist`, `slideshow`, `group`, `memo`, `network`, `timecode`, `light`, `input`). Egenskapsnavn er PascalCase og like på begge plattformer.
 Mediefiler letes etter ved siden av showfila og i `Media/` når stien ikke finnes (show flyttes mellom maskiner).
 Nøkkelen for knappepanelet er `InButtonPanel` (het `Cart` før 0.12.0; den gamle leses ikke).
+Valgfritt felt på toppnivå: `RoutingPresets` (liste av `{ "Name", "Pairs": [ { "Bus", "GainDb" } ] }`, `Bus` = utgang for venstre kanal i paret). Skrives alltid (tom liste hvis ingen); leses tolerant:
+feil type eller skadet oppføring gir tom liste/hopper over oppføringen, og navn/par/nivå begrenses.
 Kodenavnet for beskjed-cuen er fortsatt `memo`/`MemoCue` (bare navnet i brukerflaten er endret).
 
 ## Språk
