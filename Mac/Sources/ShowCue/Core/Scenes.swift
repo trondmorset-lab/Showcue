@@ -202,32 +202,31 @@ enum SceneLogic {
 
     // MARK: GO-markør og rekkefølge innen en scene
 
-    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt: hopper over cuer som starter automatisk og deaktiverte.
-    /// Gir `list.count` ved slutten.
-    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int {
+    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt: hopper over cuer som starter automatisk og deaktiverte
+    /// (i øvelsesmodus også merkede). Gir `list.count` ved slutten.
+    static func nextPlayheadIndex(_ list: [Cue], fired: Int, rehearsal: Bool = false) -> Int {
         var i = fired
         while i < list.count && list[i].continueMode != .none {
-            i += 1
-            while i < list.count && list[i].disabled { i += 1 }
+            i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
         }
-        i += 1
-        while i < list.count && list[i].disabled { i += 1 }
+        i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
         return min(i, list.count)
     }
 
     /// Neste cue for GO etter at `fired` er avfyrt, bare innen samme scene. nil = slutten av scenen (GO hopper aldri til en annen scene).
-    static func nextPlayhead(_ cues: [Cue], after fired: Cue) -> Cue? {
+    static func nextPlayhead(_ cues: [Cue], after fired: Cue, rehearsal: Bool = false) -> Cue? {
         let list = Self.cues(in: fired.scene, of: cues)
         guard let idx = list.firstIndex(where: { $0 === fired }) else { return nil }
-        let n = nextPlayheadIndex(list, fired: idx)
+        let n = nextPlayheadIndex(list, fired: idx, rehearsal: rehearsal)
         return n < list.count ? list[n] : nil
     }
 
-    /// Første ikke-deaktiverte cue etter `cue` i samme scene (for auto-fortsett og GO på en deaktivert cue).
-    static func nextEnabled(_ cues: [Cue], after cue: Cue) -> Cue? {
+    /// Første cue etter `cue` i samme scene som kan spilles: ikke deaktivert, og i øvelsesmodus ikke merket (for auto-fortsett).
+    static func nextEnabled(_ cues: [Cue], after cue: Cue, rehearsal: Bool = false) -> Cue? {
         let list = Self.cues(in: cue.scene, of: cues)
         guard let idx = list.firstIndex(where: { $0 === cue }) else { return nil }
-        return list[(idx + 1)...].first { !$0.disabled }
+        let n = Rehearsal.nextPlayableIndex(list, from: idx + 1, mode: rehearsal)
+        return n < list.count ? list[n] : nil
     }
 
     /// Første ikke-deaktiverte cue i scenen (der GO-markøren starter).

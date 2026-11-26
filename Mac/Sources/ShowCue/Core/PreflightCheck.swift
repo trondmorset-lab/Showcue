@@ -60,8 +60,7 @@ enum PreflightCheck {
 
     /// Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.
     /// `rehearsalMode`: øvelsesmodus er på akkurat nå (kjøretid, lagres ikke) og gir en advarsel.
-    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment, rehearsalMode: Bool = false) -> [PreflightFinding] {
-    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment, scenes: [String] = []) -> [PreflightFinding] {
+    static func run(cues: [Cue], settings: AppSettings, environment env: PreflightEnvironment, scenes: [String] = [], rehearsalMode: Bool = false) -> [PreflightFinding] {
         var media: [PreflightFinding] = [], values: [PreflightFinding] = [], devices: [PreflightFinding] = [], numbers: [PreflightFinding] = []
         var fileCount = 0
         for (i, c) in cues.enumerated() where !c.disabled {

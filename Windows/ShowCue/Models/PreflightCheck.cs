@@ -57,9 +57,9 @@ public static class PreflightCheck
     public const string NumbersOk = "numbersOk";
 
     /// <summary>Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.</summary>
+    /// <param name="scenes">Sceneliste i showet (for å sjekke GOTO-mål).</param>
     /// <param name="rehearsalMode">Øvelsesmodus er på akkurat nå (kjøretid, lagres ikke): gir en advarsel.</param>
-    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, bool rehearsalMode = false)
-    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, IReadOnlyList<string>? scenes = null)
+    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, IReadOnlyList<string>? scenes = null, bool rehearsalMode = false)
     {
         var media = new List<PreflightFinding>();
         var values = new List<PreflightFinding>();

@@ -174,28 +174,15 @@ final class CueEngine: ObservableObject {
         }
     }
 
-    /// Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.
+    /// Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).
     private func fireNext(after cue: Cue) {
-        let list = cueList()
-        guard let i = list.firstIndex(where: { $0 === cue }) else { return }
-        let next = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsalMode)
-        if next < list.count { fire(list[next]) }
+        if let next = SceneLogic.nextEnabled(cueList(), after: cue, rehearsal: rehearsalMode) { fire(next) }
     }
 
     /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte, og merkede cuer i øvelsesmodus).
     static func nextPlayheadIndex(_ list: [Cue], fired: Int, rehearsal: Bool = false) -> Int {
-        var i = fired
-        while i < list.count && list[i].continueMode != .none {
-            i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
-        }
-        i = Rehearsal.nextPlayableIndex(list, from: i + 1, mode: rehearsal)
-        return min(i, list.count)
+        SceneLogic.nextPlayheadIndex(list, fired: fired, rehearsal: rehearsal)
     }
-        if let next = SceneLogic.nextEnabled(cueList(), after: cue) { fire(next) }
-    }
-
-    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
-    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int { SceneLogic.nextPlayheadIndex(list, fired: fired) }
 
     /// Aktive cuer et nummer peker på. `homeScene` er scenen til cuen som spør (nummeret søkes der først, se `SceneLogic`).
     func findActive(_ number: String, homeScene: String? = nil) -> [ActiveCue] {

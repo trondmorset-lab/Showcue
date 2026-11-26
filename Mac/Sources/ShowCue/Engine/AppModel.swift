@@ -315,22 +315,16 @@ final class AppModel: ObservableObject, ShowControl {
     func go(explicitStart: Bool) {
         guard Date().timeIntervalSince(lastGo) * 1000 >= Double(settings.doubleGoProtectionMs) else { return }
         lastGo = Date()
-        guard let cue = playhead, let at = index(of: cue) else { return }
-        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue som kan spilles.
-        let idx = Rehearsal.goIndex(cues, playhead: at, mode: rehearsalMode, explicitStart: explicitStart)
+        guard let cue = playhead else { return }
+        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue i scenen som kan spilles.
+        let list = SceneLogic.cues(in: cue.scene, of: cues)
+        guard let at = list.firstIndex(where: { $0 === cue }) else { return }
+        let idx = Rehearsal.goIndex(list, playhead: at, mode: rehearsalMode, explicitStart: explicitStart)
         guard idx >= 0 else { return }
-        engine.fire(cues[idx])
-        let n = CueEngine.nextPlayheadIndex(cues, fired: idx, rehearsal: rehearsalMode)
-        select(n < cues.count ? cues[n] : nil)
-        guard var cue = playhead else { return }
-        if cue.disabled {
-            // Hopp til neste aktive cue i scenen og kjør den.
-            guard let next = SceneLogic.nextEnabled(cues, after: cue) else { return }
-            cue = next
-        }
-        engine.fire(cue)
+        let fired = list[idx]
+        engine.fire(fired)
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        select(SceneLogic.nextPlayhead(cues, after: cue))
+        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode))
     }
 
     func panic() {
@@ -1018,8 +1012,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Kjører forhåndssjekken mot gjeldende show og maskininnstillinger.
     func runPreflight() -> [PreflightFinding] {
         NSApp.keyWindow?.makeFirstResponder(nil)
-        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), rehearsalMode: rehearsalMode)
-        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), scenes: scenes)
+        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), scenes: scenes, rehearsalMode: rehearsalMode)
     }
 
     /// «Sjekk showet»: åpner vinduet med funnene (sjekken kjøres hver gang vinduet vises).

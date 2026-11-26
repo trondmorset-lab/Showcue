@@ -562,23 +562,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
 
         var cue = SelectedCue;
         if (cue == null) return;
-        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue som kan spilles.
-        int idx = Rehearsal.GoIndex(Cues, Cues.IndexOf(cue), Engine.RehearsalMode, explicitStart);
+        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue i scenen som kan spilles.
+        var list = SceneLogic.CuesIn(Cues, cue.Scene);
+        int idx = Rehearsal.GoIndex(list, list.IndexOf(cue), Engine.RehearsalMode, explicitStart);
         if (idx < 0) return;
-        cue = Cues[idx];
-        Engine.Fire(cue);
-        int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx, Engine.RehearsalMode);
-        SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null;
-        if (cue.Disabled)
-        {
-            // Hopp til neste aktive cue i scenen og kjør den.
-            var next = SceneLogic.NextEnabledAfter(Cues, cue);
-            if (next == null) return;
-            cue = next;
-        }
+        cue = list[idx];
         Engine.Fire(cue);
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        SelectedCue = SceneLogic.NextPlayhead(Cues, cue);
+        SelectedCue = SceneLogic.NextPlayhead(Cues, cue, Engine.RehearsalMode);
     }
 
     private void Panic()
@@ -1309,8 +1300,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
     {
         CommitFocusedTextBox();
         var env = new SystemPreflightEnvironment();
-        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env, Engine.RehearsalMode)) { Owner = this }.ShowDialog();
-        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env, _show.Scenes)) { Owner = this }.ShowDialog();
+        new PreflightWindow(() => PreflightCheck.Run(Cues, _settings, env, _show.Scenes, Engine.RehearsalMode)) { Owner = this }.ShowDialog();
     }
 
     private void Collect_Click(object sender, RoutedEventArgs e)

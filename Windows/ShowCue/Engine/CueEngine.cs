@@ -173,33 +173,14 @@ public sealed class CueEngine : IDisposable
         if (Active.Remove(a)) a.Cue.ActiveCount--;
     }
 
-    /// <summary>Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.</summary>
+    /// <summary>Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).</summary>
     private void FireNextAfter(Cue cue)
     {
-        var list = _cueList();
-        var idx = list.IndexOf(cue);
-        if (idx < 0) return;
-        var next = Rehearsal.NextPlayableIndex(list, idx + 1, RehearsalMode);
-        if (next < list.Count) Fire(list[next]);
+        if (SceneLogic.NextEnabledAfter(_cueList(), cue, RehearsalMode) is { } next) Fire(next);
     }
 
-    /// <summary>Finn neste cue for GO etter at <paramref name="cue"/> er avfyrt (hopper over kjeder). Med <paramref name="rehearsal"/> hoppes også merkede cuer over.</summary>
-    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex, bool rehearsal = false)
-    {
-        int i = firedIndex;
-        // Hopp over cues som blir trigget automatisk av forrige cue.
-        while (i < list.Count && list[i].ContinueMode != ContinueMode.None)
-        {
-            i = Rehearsal.NextPlayableIndex(list, i + 1, rehearsal);
-        }
-        i = Rehearsal.NextPlayableIndex(list, i + 1, rehearsal);
-        return Math.Min(i, list.Count);
-    }
-        if (SceneLogic.NextEnabledAfter(_cueList(), cue) is { } next) Fire(next);
-    }
-
-    /// <summary>Finn neste cue for GO etter at <paramref name="cue"/> er avfyrt (hopper over kjeder).</summary>
-    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex) => SceneLogic.NextPlayheadIndex(list, firedIndex);
+    /// <summary>Finn neste cue for GO etter at cuen på <paramref name="firedIndex"/> er avfyrt (hopper over kjeder). Med <paramref name="rehearsal"/> hoppes også merkede cuer over.</summary>
+    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex, bool rehearsal = false) => SceneLogic.NextPlayheadIndex(list, firedIndex, rehearsal);
 
     /// <summary>Aktive cuer et nummer peker på. <paramref name="homeScene"/> er scenen til cuen som spør (nummeret søkes der først, se <see cref="SceneLogic"/>).</summary>
     public IEnumerable<ActiveCue> FindActive(string number, string? homeScene = null)
