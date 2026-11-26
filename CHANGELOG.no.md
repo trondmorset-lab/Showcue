@@ -6,6 +6,20 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.27.1 – 2026-11-26
+
+### Rettet
+- **Gå til scene** (Windows og Mac): en «Gå til»-cue som bare oppgir en scene (uten cuenummer) svarte alltid «fant ikke cue» og byttet aldri scene. Nå bytter den scene som tiltenkt.
+- **Gå til-løkker** (Windows og Mac): «Gå til»-cuer som starter hverandre uten pause (for eksempel to cuer som peker på hverandre) holdt programmet opptatt for alltid. Etter 25 hopp på rad uten pause stoppes kjeden, med melding i statuslinja og en feil i showloggen. Vanlige løkker med lyd eller ventetid imellom påvirkes ikke.
+- **Forhåndslasting følger GO** (Windows og Mac): planleggeren holder seg i scenen til GO-markøren (auto-fortsett fører aldri inn i en annen scene), følger en «Gå til»-cue til målet i riktig scene, og hopper over cuer merket «Hopp over i øvelse» når øvelsesmodus er på. Å slå øvelsesmodus av eller på oppdaterer forhåndslastingen med en gang. Dette gjelder bare hvilke filer som forberedes på forhånd.
+- **Nettside med scener** (Windows og Mac): cuelista og posisjonen («3 / 12») på nettsiden viser nå aktiv scene. Før ble et cuenummer som brukes i flere scener utheva i alle.
+- **Live-inngang** (Windows og Mac): en driver som leverer NaN eller uendelige samples kan ikke lenger sende dem videre til mikseren; de blir til stillhet.
+- Klokke-triggere: cuer uten trigger tolkes ikke lenger ved hvert tick (16 ms).
+
+### Tester
+- Stresstesten (`tools/stress`) har nye tilfeller for funksjonene som ble slått sammen i 0.27.0: scener sammen med øvelsesmodus, GO og forhåndslasting; redigering av scener; showfiler med de nye feltene (gamle filer, ødelagte verdier, rundtur); routingforhåndsvalg; klokke-triggere over midnatt og hopp i klokka; innstillinger med feil typer og ekstreme tall; planlegging av ASIO-innganger og driverhendelser; avslutning av showloggen og diskfeil; og nettsiden over ekte sockets (ødelagte og for store forespørsler, mange og trege forbindelser, sperre ved feil PIN, en kommando som kaster, stopp med åpne forbindelser, omstart på samme port).
+- Nye enhetstester på begge plattformer (`InteractionTests`).
+
 ## 0.27.0 – 2026-11-25
 
 ### Nytt

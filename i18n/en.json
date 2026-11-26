@@ -337,6 +337,7 @@
   "Gå til cue (nummer)": "Go to cue (number)",
   "Gå til {0}": "Go to {0}",
   "Gå til: fant ikke cue {0}.": "Go to: cue {0} not found.",
+  "Gå til stoppet: cuer hopper til hverandre uten pause.": "Go to stopped: cues are jumping to each other without a pause.",
   "HTTP-forespørsel": "HTTP request",
   "HURTIGTASTER": "HOTKEYS",
   "Hele": "All",

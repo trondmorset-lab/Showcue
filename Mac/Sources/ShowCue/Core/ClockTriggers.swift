@@ -49,6 +49,6 @@ enum ClockTriggers {
 
     /// Cuene som skal starte: ikke deaktiverte, med klokketrigger som ble passert. Hver cue er med høyst én gang.
     static func due(_ cues: [Cue], previous: Date, now: Date, calendar: Calendar = .current) -> [Cue] {
-        cues.filter { !$0.disabled && crossed(previous: previous, now: now, trigger: $0.clockTrigger, calendar: calendar) }
+        cues.filter { !$0.disabled && !$0.clockTrigger.isEmpty && crossed(previous: previous, now: now, trigger: $0.clockTrigger, calendar: calendar) }
     }
 }

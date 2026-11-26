@@ -6,6 +6,20 @@ All user-visible changes, newest first. The version number is in the file `VERSI
 Each version gets its own release on GitHub (`v0.5.0` etc.) with the Windows and Mac programs.
 The full history of earlier versions is in the Norwegian changelog.
 
+## 0.27.1 – 2026-11-26
+
+### Fixed
+- **Go to scene** (Windows and Mac): a *Go to* cue that only names a scene (no cue number) always answered "cue not found" and never switched scene. It now switches scene as intended.
+- **Go to loops** (Windows and Mac): *Go to* cues that start each other without any pause (for example two cues pointing at each other) kept the program busy for ever. After 25 jumps in a row without a pause the chain is stopped, with a message in the status line and an error in the show log. Normal loops with sound or waiting in between are not affected.
+- **Preload follows GO** (Windows and Mac): the preload planner now stays inside the scene of the GO cursor (auto-continue never leads into another scene), follows a *Go to* cue to its target in the right scene, and skips cues marked *Skip in rehearsal* while rehearsal mode is on. Turning rehearsal mode on or off updates the preload at once. This only affects which files are prepared in advance.
+- **Web remote with scenes** (Windows and Mac): the cue list and the position (*3 / 12*) on the web page now show the active scene. Before, a cue number used in several scenes was highlighted in all of them.
+- **Live input** (Windows and Mac): a driver that delivers NaN or infinite samples can no longer send them on to the mixer; they are replaced by silence.
+- Clock triggers: cues without a trigger are no longer parsed on every 16 ms tick.
+
+### Tests
+- The stress test (`tools/stress`) has new cases for the features merged in 0.27.0: scenes combined with rehearsal mode, GO and preload; scene editing; show files with the new fields (old files, corrupted values, round trip); routing presets; clock triggers around midnight and clock jumps; settings with wrong types and extreme numbers; ASIO input planning and driver events; show log shutdown and disk errors; and the web server over real sockets (malformed and oversized requests, many and slow connections, wrong PIN lock-out, a failing command handler, stopping with open connections, restart on the same port).
+- New unit tests on both platforms (`InteractionTests`).
+
 ## 0.27.0 – 2026-11-25
 
 ### New

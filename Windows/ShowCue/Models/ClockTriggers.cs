@@ -59,5 +59,5 @@ public static class ClockTriggers
 
     /// <summary>Cuene som skal starte: ikke deaktiverte, med klokketrigger som ble passert. Hver cue er med høyst én gang.</summary>
     public static List<Cue> Due(IEnumerable<Cue> cues, DateTime previous, DateTime now) =>
-        cues.Where(c => !c.Disabled && Crossed(previous, now, c.ClockTrigger)).ToList();
+        cues.Where(c => !c.Disabled && !string.IsNullOrEmpty(c.ClockTrigger) && Crossed(previous, now, c.ClockTrigger)).ToList();
 }

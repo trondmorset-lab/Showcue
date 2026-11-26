@@ -10,7 +10,7 @@ using ShowCue.Models;
 
 // Stresstest av ShowCue-kjernen (det som ikke trenger WPF): fuzzing av inndata, rundtur av showfiler,
 // lydmikseren under samtidige endringer og grensetilfeller i avspilling. Se README.md i denne mappa.
-public static class Program
+public static partial class Program
 {
     static readonly ConcurrentDictionary<string, (int Count, string Example)> Bugs = new();
     static Random Rng = new(12345);
@@ -83,6 +83,15 @@ public static class Program
             Run("Show save/load files", SaveLoadFiles);
             Run("Show log flood", ShowLogFlood);
             Run("Preload planning", PreloadPlanning);
+            Run("Scenes x rehearsal", SceneRehearsalFlow);
+            Run("Scene operations", SceneOperations);
+            Run("Show file new fields", ShowFileCompat);
+            Run("Routing presets", RoutingPresetFuzz);
+            Run("Clock triggers", ClockTriggerFuzz);
+            Run("Settings", SettingsFuzz);
+            Run("ASIO input", AsioInputStress);
+            Run("Show log dispose", ShowLogDisposeRace);
+            Run("Web server sockets", WebServerSockets);
             var text = new StringBuilder($"Runder: {round}, feiltyper: {Bugs.Count}\n\n");
             foreach (var (k, v) in Bugs.OrderBy(b => b.Key)) text.Append($"[{v.Count}x] {k}\n      eksempel: {v.Example}\n");
             File.WriteAllText(report, text.ToString());

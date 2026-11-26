@@ -25,21 +25,23 @@ enum PreloadPlanner {
     /// Cuen under markøren (eller neste som ikke er deaktivert, slik GO velger), så cuene den starter automatisk
     /// (fortsett automatisk / følg automatisk), «gå til» følges til målet, og en gruppe gir sine mål.
     /// Deaktiverte cuer, PDF, nettsider, spillelister og lysbildeserier forberedes ikke.
-    static func plan(cues: [Cue], playheadIndex: Int, max limit: Int = maxItems) -> [PreloadItem] {
+    /// Planen følger det GO og motoren gjør: «neste» er alltid neste i samme scene (aldri en cue i en annen scene), «gå til» følges til
+    /// målet i riktig scene, og i øvelsesmodus (`rehearsal`) hoppes merkede cuer over.
+    static func plan(cues: [Cue], playheadIndex: Int, max limit: Int = maxItems, rehearsal: Bool = false) -> [PreloadItem] {
         var result: [PreloadItem] = []
         let limit = Swift.min(Swift.max(limit, 0), maxItems)
         guard limit > 0, playheadIndex >= 0, playheadIndex < cues.count else { return result }
 
         var visited = Set<Int>()
-        var i = firstEnabled(cues, from: playheadIndex)
+        var i = nextPlayable(cues, from: playheadIndex, scene: cues[playheadIndex].scene, rehearsal: rehearsal)
         var step = 0
         while i >= 0, i < cues.count, step < maxSteps, result.count < limit, visited.insert(i).inserted {
             step += 1
             let cue = cues[i]
             if cue.type == .goto {
-                let target = indexOfNumber(cues, cue.target)
-                if target < 0 { break }
-                i = firstEnabled(cues, from: target) // GO på en deaktivert mål-cue hopper videre
+                guard let targetCue = SceneLogic.find(cues, SceneLogic.gotoSpec(target: cue.target, targetScene: cue.targetScene), home: cue.scene),
+                      let target = cues.firstIndex(where: { $0 === targetCue }) else { break } // mangler målet, eller bare scenen byttes: ingen fil å forberede
+                i = nextPlayable(cues, from: target, scene: targetCue.scene, rehearsal: rehearsal) // GO på en deaktivert mål-cue hopper videre
                 continue
             }
             if cue.type == .group {
@@ -48,22 +50,19 @@ enum PreloadPlanner {
                 add(&result, cue, limit)
             }
             if cue.continueMode == .none { break }
-            i = firstEnabled(cues, from: i + 1)
+            i = nextPlayable(cues, from: i + 1, scene: cue.scene, rehearsal: rehearsal)
         }
         return result
     }
 
-    /// Første cue fra `from` som ikke er deaktivert (−1 hvis ingen).
-    private static func firstEnabled(_ cues: [Cue], from: Int) -> Int {
+    /// Første cue fra `from` i `scene` som GO kan starte (ikke deaktivert, og i øvelsesmodus ikke merket). −1 hvis ingen.
+    private static func nextPlayable(_ cues: [Cue], from: Int, scene: String, rehearsal: Bool) -> Int {
         var i = Swift.max(0, from)
-        while i < cues.count { if !cues[i].disabled { return i }; i += 1 }
+        while i < cues.count {
+            if SceneLogic.inScene(cues[i], scene) && Rehearsal.isPlayable(cues[i], mode: rehearsal) { return i }
+            i += 1
+        }
         return -1
-    }
-
-    private static func indexOfNumber(_ cues: [Cue], _ number: String) -> Int {
-        let n = number.trimmingCharacters(in: .whitespaces)
-        if n.isEmpty { return -1 }
-        return cues.firstIndex { $0.number.caseInsensitiveCompare(n) == .orderedSame } ?? -1
     }
 
     private static func add(_ result: inout [PreloadItem], _ cue: Cue, _ limit: Int) {
