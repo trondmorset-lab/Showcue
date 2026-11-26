@@ -12,6 +12,7 @@
   `WebRemoteTests` (begge plattformer, like tilfeller) dekker HTTP-tolking (ufullstendig, feil, for stort, stitraversering), ruter, PIN, sperre, økter, JSON og sidene; `WebParserTests`/`WebRemoteCoreTests`/`WebRemoteContentTests`.
   Selve socket-løkka (`WebServer`) testes ikke i CI; stresstesten fuzzer `WebRemoteCore.Handle`.
 - **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
+- `InteractionTests` (begge plattformer): regresjonstester for feil i samspillet mellom scener, øvelsesmodus, forhåndslasting, «gå til» og live-inngang (0.27.1).
 - Nye funksjoner får tester på begge plattformer. Rettede feil får en regresjonstest.
 
 ## Sjekke kode uten Windows eller Mac (Linux-miljøet)
@@ -33,3 +34,5 @@ Etterpå: 176 runder på 2 timer uten feil og uten minnevekst (styrt minne stabi
 Spoling (0.14.0) er lagt inn i testen og kjørt 10 runder uten feil.
 
 Ikke dekket av stresstesten: WPF/SwiftUI, video, PDF, ekte lydkort og MIDI-enheter.
+
+0.27.1: stresstesten har fått tilfeller for samspillet mellom 0.21–0.27-funksjonene (`tools/stress/Interactions.cs`), blant annet nettsiden over ekte sockets. Den kjører i Windows-jobben i CI; Mac-jobben kjører bare Swift-testene.

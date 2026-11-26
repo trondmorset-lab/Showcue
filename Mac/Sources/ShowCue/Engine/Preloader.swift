@@ -29,10 +29,10 @@ final class Preloader {
 
     /// Kalles fra hovedtråden når markøren, cuelista eller innstillingen er endret.
     /// `sampleRate` er lydutgangens frekvens (nil = lyden er ikke startet, da forberedes ikke lyd).
-    func update(cues: [Cue], playheadIndex: Int, sampleRate: Double?, enabled on: Bool) {
+    func update(cues: [Cue], playheadIndex: Int, sampleRate: Double?, enabled on: Bool, rehearsal: Bool = false) {
         lock.lock(); enabled = on; lock.unlock()
         guard on else { clear(); return }
-        let plan = PreloadPlanner.plan(cues: cues, playheadIndex: playheadIndex)
+        let plan = PreloadPlanner.plan(cues: cues, playheadIndex: playheadIndex, rehearsal: rehearsal)
         var starts: [Entry] = []
         lock.lock()
         let diff = book.sync(plan.map(\.key))

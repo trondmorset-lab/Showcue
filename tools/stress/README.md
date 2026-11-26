@@ -26,3 +26,12 @@ enn 3 minutter, avbrytes kjøringen og saken står i `hang.txt`. Minnebruken skr
 | Loudness extremes, Waveform, LTC source, OSC feedback, Dmx fader, Undo history, Safety/Media tools paths | Grensetilfeller |
 | Preload planning | Tilfeldige cuelister (gå til-løkker, grupper, deaktiverte) mot planleggeren for forhåndslasting og regnskapet: aldri unntak, aldri over grensen, ingen doble |
 | Network sender | UDP/TCP/HTTP mot lokale mottakere og ugyldige adresser – skal aldri henge eller kaste |
+| Scenes x rehearsal | Tilfeldige cuelister med scener, deaktiverte og merkede cuer: GO gjennom hver scene med og uten øvelsesmodus. Markøren går alltid framover, auto-fortsett forlater aldri scenen, og forhåndslastingen planlegger bare det GO starter |
+| Scene operations | Tilfeldig legg til / nytt navn / slett / flytt / nummerer om scener: reglene gjelder etter hvert steg, og showfila får samme innhold etter åpne + lagre |
+| Show file new fields | Scener, routingforhåndsvalg, klokketrigger og «Hopp over i øvelse»: rundtur, gamle filer uten feltene og ødelagte verdier |
+| Routing presets | Tilfeldige operasjoner på forhåndsvalg (NaN, uendelig, utenfor grensene), ruter fra forhåndsvalg, kopier/lim inn |
+| Clock triggers | Tolker med tull, nøyaktig én utløsing over midnatt, aldri utløsing ved hopp i klokka (sommertid, stilling, dvale) |
+| Settings | Innstillingsfil med feil typer og ekstreme tall: åpnes eller avvises, og grensene gjelder etter `Normalize` |
+| ASIO input | Planlegging med ekstreme tall, kanalomforming, driverhendelser med NaN/uendelig/feil kanalantall mens lyttere åpnes og lukkes |
+| Show log dispose | Avslutning av loggen mens fire tråder skriver, og disk som feiler (meldes én gang) |
+| Web server sockets | Nettsiden mot ekte sockets: ødelagte og for store forespørsler, feil PIN og sperre, 60 samtidige og 10 trege forbindelser, kommando som kaster, stopp med åpne forbindelser, omstart på samme port (tar ca. 20 s) |
