@@ -176,21 +176,11 @@ public sealed class CueEngine : IDisposable
         if (Active.Remove(a)) a.Cue.ActiveCount--;
     }
 
+    /// <summary>Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).</summary>
     private void FireNextAfter(Cue cue, StartSource how)
     {
-        var list = _cueList();
-        var idx = list.IndexOf(cue);
-        if (idx < 0) return;
-        for (int i = idx + 1; i < list.Count; i++)
-        {
-            if (list[i].Disabled) continue;
-            using (ShowLog.Via(how)) Fire(list[i]);
-            return;
-        }
-    /// <summary>Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).</summary>
-    private void FireNextAfter(Cue cue)
-    {
-        if (SceneLogic.NextEnabledAfter(_cueList(), cue, RehearsalMode) is { } next) Fire(next);
+        if (SceneLogic.NextEnabledAfter(_cueList(), cue, RehearsalMode) is not { } next) return;
+        using (ShowLog.Via(how)) Fire(next);
     }
 
     /// <summary>Finn neste cue for GO etter at cuen på <paramref name="firedIndex"/> er avfyrt (hopper over kjeder). Med <paramref name="rehearsal"/> hoppes også merkede cuer over.</summary>

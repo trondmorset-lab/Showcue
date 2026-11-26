@@ -588,12 +588,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged, IShowControl, 
         if (idx < 0) return;
         cue = list[idx];
         Engine.Fire(cue);
-        int nextIdx = CueEngine.NextPlayheadIndex(Cues, idx);
-        _playheadLogMuted = true;
-        try { SelectedCue = nextIdx < Cues.Count ? Cues[nextIdx] : null; }
-        finally { _playheadLogMuted = false; }
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        SelectedCue = SceneLogic.NextPlayhead(Cues, cue, Engine.RehearsalMode);
+        _playheadLogMuted = true;
+        try { SelectedCue = SceneLogic.NextPlayhead(Cues, cue, Engine.RehearsalMode); }
+        finally { _playheadLogMuted = false; }
     }
 
     private void Panic()

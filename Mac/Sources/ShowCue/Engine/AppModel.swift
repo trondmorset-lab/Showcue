@@ -172,10 +172,9 @@ final class AppModel: ObservableObject, ShowControl {
     func index(of c: Cue) -> Int? { cues.firstIndex { $0 === c } }
 
     /// - Parameter logged: false når programmet selv flytter markøren (GO, «gå til», nytt show), så det ikke logges som brukerens flytting.
+    /// Velger cuen (GO-markøren). Står cuen i en annen scene, byttes det til den scenen først.
     func select(_ c: Cue?, logged: Bool = true) {
         if logged, let c, c !== playhead { ShowLog.add(.playhead, cue: c) }
-    /// Velger cuen (GO-markøren). Står cuen i en annen scene, byttes det til den scenen først.
-    func select(_ c: Cue?) {
         if let c, !SceneLogic.sameScene(c.scene, activeScene) { activeScene = c.scene }
         selection = c.map { [$0.id] } ?? []
     }
@@ -334,14 +333,6 @@ final class AppModel: ObservableObject, ShowControl {
     func go(explicitStart: Bool) {
         guard Date().timeIntervalSince(lastGo) * 1000 >= Double(settings.doubleGoProtectionMs) else { return }
         lastGo = Date()
-        guard var cue = playhead, var idx = index(of: cue) else { return }
-        if cue.disabled {
-            guard let next = cues[(idx + 1)...].first(where: { !$0.disabled }), let ni = index(of: next) else { return }
-            cue = next; idx = ni
-        }
-        ShowLog.via(.go, keepExisting: true) { engine.fire(cue) }
-        let n = CueEngine.nextPlayheadIndex(cues, fired: idx)
-        select(n < cues.count ? cues[n] : nil, logged: false)
         guard let cue = playhead else { return }
         // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue i scenen som kan spilles.
         let list = SceneLogic.cues(in: cue.scene, of: cues)
@@ -349,9 +340,9 @@ final class AppModel: ObservableObject, ShowControl {
         let idx = Rehearsal.goIndex(list, playhead: at, mode: rehearsalMode, explicitStart: explicitStart)
         guard idx >= 0 else { return }
         let fired = list[idx]
-        engine.fire(fired)
+        ShowLog.via(.go, keepExisting: true) { engine.fire(fired) }
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode))
+        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode), logged: false)
     }
 
     func panic() {

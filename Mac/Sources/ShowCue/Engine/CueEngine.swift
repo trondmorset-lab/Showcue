@@ -177,13 +177,10 @@ final class CueEngine: ObservableObject {
         }
     }
 
-    private func fireNext(after cue: Cue, how: StartSource) {
-        let list = cueList()
-        guard let i = list.firstIndex(where: { $0 === cue }) else { return }
-        if let next = list[(i + 1)...].first(where: { !$0.disabled }) { ShowLog.via(how) { fire(next) } }
     /// Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).
-    private func fireNext(after cue: Cue) {
-        if let next = SceneLogic.nextEnabled(cueList(), after: cue, rehearsal: rehearsalMode) { fire(next) }
+    private func fireNext(after cue: Cue, how: StartSource) {
+        guard let next = SceneLogic.nextEnabled(cueList(), after: cue, rehearsal: rehearsalMode) else { return }
+        ShowLog.via(how) { fire(next) }
     }
 
     /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte, og merkede cuer i øvelsesmodus).
