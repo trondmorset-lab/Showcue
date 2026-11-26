@@ -144,6 +144,7 @@ final class FakeShow: ShowControl {
     func releaseCue(_ n: String) -> Bool { log.append("release \(n)"); return true }
     func stepCue(_ n: String, _ d: Int) -> Bool { log.append("step \(n) \(d)"); return true }
     func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int { log.append("tc \(previous)-\(frame)"); return 0 }
+    func selectScene(_ name: String) -> Bool { log.append("scene \(name)"); return true }
 }
 
 final class RemoteTests: XCTestCase {

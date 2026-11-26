@@ -44,6 +44,8 @@ public static class PreflightCheck
     public const string TargetDisabled = "targetDisabled";
     public const string GroupNoMatch = "groupNoMatch";
     public const string ClockTriggerOff = "clockTriggerOff";
+    public const string RehearsalOn = "rehearsalOn";
+    public const string RehearsalFlagged = "rehearsalFlagged";
     public const string ValuesOk = "valuesOk";
     public const string AudioDeviceMissing = "audioDeviceMissing";
     public const string PreviewDeviceMissing = "previewDeviceMissing";
@@ -51,10 +53,13 @@ public static class PreflightCheck
     public const string ScreenMissing = "screenMissing";
     public const string DevicesOk = "devicesOk";
     public const string NumberDuplicate = "numberDuplicate";
+    public const string SceneMissing = "sceneMissing";
     public const string NumbersOk = "numbersOk";
 
     /// <summary>Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.</summary>
-    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env)
+    /// <param name="scenes">Sceneliste i showet (for å sjekke GOTO-mål).</param>
+    /// <param name="rehearsalMode">Øvelsesmodus er på akkurat nå (kjøretid, lagres ikke): gir en advarsel.</param>
+    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, IReadOnlyList<string>? scenes = null, bool rehearsalMode = false)
     {
         var media = new List<PreflightFinding>();
         var values = new List<PreflightFinding>();
@@ -66,7 +71,7 @@ public static class PreflightCheck
         {
             if (cues[i].Disabled) continue;
             fileCount += CheckMedia(cues[i], i, env, media);
-            CheckValues(cues[i], i, cues, values);
+            CheckValues(cues[i], i, cues, values, scenes);
         }
         CheckClockTriggers(cues, settings, values);
         CheckDevices(cues, settings, env, devices);
@@ -82,6 +87,7 @@ public static class PreflightCheck
         if (devices.Count == 0) all.Add(new(PreflightSeverity.Ok, DevicesOk, Loc.T("Lydutgang og skjermer finnes.")));
         all.AddRange(numbers);
         if (numbers.Count == 0) all.Add(new(PreflightSeverity.Ok, NumbersOk, Loc.T("Ingen duplikate cue-numre.")));
+        CheckRehearsal(cues, rehearsalMode, all);
         return all;
     }
 
@@ -125,7 +131,7 @@ public static class PreflightCheck
 
     // ---------------- Verdier og mål ----------------
 
-    private static void CheckValues(Cue c, int index, IReadOnlyList<Cue> all, List<PreflightFinding> list)
+    private static void CheckValues(Cue c, int index, IReadOnlyList<Cue> all, List<PreflightFinding> list, IReadOnlyList<string>? scenes = null)
     {
         var label = Label(c, index);
         void Time(string field, double seconds)
@@ -203,7 +209,7 @@ public static class PreflightCheck
                 CheckTarget(c, index, st.Target, required: false, all, list);
                 break;
             case GotoCue g:
-                CheckTarget(c, index, g.Target, required: true, all, list);
+                CheckGoto(g, index, all, scenes, list);
                 break;
             case GroupCue gr:
                 CheckGroup(gr, index, all, list);
@@ -243,8 +249,21 @@ public static class PreflightCheck
             withTrigger[0].i));
     }
 
+    /// <summary>Øvelsesmodus på: advarsel (cuene spilles ikke i showet). Merkede cuer telles som en merknad, også når modusen er av.</summary>
+    private static void CheckRehearsal(IReadOnlyList<Cue> cues, bool rehearsalMode, List<PreflightFinding> list)
+    {
+        var flagged = cues.Select((c, i) => (c, i)).Where(x => !x.c.Disabled && x.c.SkipInRehearsal).ToList();
+        if (rehearsalMode)
+            list.Add(new(PreflightSeverity.Warning, RehearsalOn,
+                Loc.F("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO. Slå den av før forestillingen (Ctrl+R).", flagged.Count),
+                flagged.Count > 0 ? flagged[0].i : -1));
+        if (flagged.Count > 0)
+            list.Add(new(PreflightSeverity.Ok, RehearsalFlagged,
+                Loc.F("{0} cue(r) er merket «Hopp over i øvelse» (gjelder bare i øvelsesmodus).", flagged.Count), flagged[0].i));
+    }
+
     /// <summary>Mål-cuen slås opp på nummer, uten hensyn til store/små bokstaver (som i GO-motoren).</summary>
-    private static void CheckTarget(Cue c, int index, string? target, bool required, IReadOnlyList<Cue> all, List<PreflightFinding> list)
+    private static void CheckTarget(Cue c, int index, string? target, bool required, IReadOnlyList<Cue> all, List<PreflightFinding> list, string? home = null)
     {
         var label = Label(c, index);
         var t = (target ?? "").Trim();
@@ -253,13 +272,26 @@ public static class PreflightCheck
             if (required) list.Add(new(PreflightSeverity.Error, TargetEmpty, Loc.F("{0}: mål-cue er ikke valgt.", label), index));
             return;
         }
-        var hits = all.Where(x => string.Equals(x.Number.Trim(), t, StringComparison.OrdinalIgnoreCase)).ToList();
+        var hits = SceneLogic.Matching(all, t, home ?? c.Scene);
         if (hits.Count == 0)
             list.Add(new(PreflightSeverity.Error, TargetMissing, Loc.F("{0}: mål-cuen «{1}» finnes ikke.", label, t), index));
         else if (hits.All(x => ReferenceEquals(x, c)))
             list.Add(new(PreflightSeverity.Warning, TargetSelf, Loc.F("{0}: peker på seg selv.", label), index));
         else if (hits.All(x => x.Disabled))
             list.Add(new(PreflightSeverity.Warning, TargetDisabled, Loc.F("{0}: mål-cuen «{1}» er deaktivert.", label, t), index));
+    }
+
+    /// <summary>«Gå til»: scenen må finnes, og nummeret søkes i målscenen. Bare scene (uten nummer) er lov.</summary>
+    private static void CheckGoto(GotoCue g, int index, IReadOnlyList<Cue> all, IReadOnlyList<string>? scenes, List<PreflightFinding> list)
+    {
+        var scene = g.TargetScene;
+        if (scene.Length > 0 && SceneLogic.Canonical(scenes ?? Array.Empty<string>(), all, scene) == null)
+        {
+            list.Add(new(PreflightSeverity.Error, SceneMissing, Loc.F("{0}: scenen «{1}» finnes ikke.", Label(g, index), scene), index));
+            return;
+        }
+        if (scene.Length > 0 && g.Target.Length == 0) return;
+        CheckTarget(g, index, SceneLogic.GotoSpec(g.Target, scene), required: true, all, list, home: scene.Length > 0 ? scene : null);
     }
 
     /// <summary>Gruppe-cue: listen må ha mål, målene må finnes, og minst én cue må treffes. Deaktiverte mål gir advarsel (GO hopper over dem).</summary>
@@ -344,12 +376,20 @@ public static class PreflightCheck
 
     // ---------------- Cue-numre ----------------
 
+    /// <summary>Samme nummer i ulike scener er lov; to cuer med samme nummer i én scene (eller i et show uten scener) gir feil.</summary>
     private static void CheckNumbers(IReadOnlyList<Cue> cues, List<PreflightFinding> list)
     {
-        var groups = cues.Select((c, i) => (n: c.Number.Trim(), i)).Where(x => x.n.Length > 0)
-            .GroupBy(x => x.n, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1);
+        var groups = cues.Select((c, i) => (n: c.Number.Trim(), i, scene: c.Scene)).Where(x => x.n.Length > 0)
+            .GroupBy(x => (x.n.ToUpperInvariant(), x.scene.ToUpperInvariant())).Where(g => g.Count() > 1);
         foreach (var g in groups)
-            list.Add(new(PreflightSeverity.Error, NumberDuplicate,
-                Loc.F("Cue-nummer «{0}» brukes av {1} cuer (rad {2}).", g.First().n, g.Count(), string.Join(", ", g.Select(x => x.i + 1))), g.First().i));
+        {
+            var first = g.First();
+            if (first.scene.Length == 0)
+                list.Add(new(PreflightSeverity.Error, NumberDuplicate,
+                    Loc.F("Cue-nummer «{0}» brukes av {1} cuer (rad {2}).", first.n, g.Count(), string.Join(", ", g.Select(x => x.i + 1))), first.i));
+            else
+                list.Add(new(PreflightSeverity.Error, NumberDuplicate,
+                    Loc.F("Cue-nummer «{0}» brukes av {1} cuer i scenen «{2}» (rad {3}).", first.n, g.Count(), first.scene, string.Join(", ", g.Select(x => x.i + 1))), first.i));
+        }
     }
 }

@@ -101,6 +101,8 @@ struct AppSettings: Codable, Equatable {
     var mtcInEnabled = false
     /// Start cuer med klokketrigger når veggklokka passerer klokkeslettet. Av som standard, så ingenting starter uventet.
     var clockTriggersEnabled = false
+    /// Forbered cuen GO-markøren står på (og cuene den starter automatisk) i bakgrunnen. Av som standard til den er prøvd på ekte utstyr.
+    var preloadNextCue = false
     /// Lydenhet for live-inngang-cuer (UID, tom = systemets standard inngang).
     var inputDeviceUID = ""
 
@@ -128,7 +130,7 @@ struct AppSettings: Codable, Equatable {
         case oscFeedbackEnabled, oscFeedbackHost, oscFeedbackPort, oscFeedbackFormat
         case webRemoteEnabled, webRemotePort, webRemotePin
         case midiInDevice, midiInChannel, midiGo, midiStopAll, midiNext, midiPrevious, mscInEnabled, mscInDeviceId
-        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, inputDeviceUID
+        case theme, language, zoom, listTextScale, panicFadeTime, doubleGoProtectionMs, lastShowPath, loudnessTarget, buttonPanelColumns, mtcInEnabled, clockTriggersEnabled, preloadNextCue, inputDeviceUID
     }
 
     init(from decoder: Decoder) throws {
@@ -171,6 +173,7 @@ struct AppSettings: Codable, Equatable {
         buttonPanelColumns = v(.buttonPanelColumns, d.buttonPanelColumns)
         mtcInEnabled = v(.mtcInEnabled, d.mtcInEnabled)
         clockTriggersEnabled = v(.clockTriggersEnabled, d.clockTriggersEnabled)
+        preloadNextCue = v(.preloadNextCue, d.preloadNextCue)
         inputDeviceUID = v(.inputDeviceUID, d.inputDeviceUID)
         normalize()
     }

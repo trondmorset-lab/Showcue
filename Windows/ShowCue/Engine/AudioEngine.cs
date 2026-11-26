@@ -163,10 +163,17 @@ public sealed class AudioEngine : IDisposable
         StatusChanged?.Invoke(s);
     }
 
-    public CuePlayback Play(AudioCue cue, double offset = 0)
+    /// <param name="prepared">Lydfil som er åpnet på forhånd. Virker den ikke, åpnes fila på vanlig måte.</param>
+    public CuePlayback Play(AudioCue cue, double offset = 0, WaveStream? prepared = null)
     {
-        if (_mixer == null) throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger."));
-        var pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate, offset);
+        if (_mixer == null) { prepared?.Dispose(); throw new InvalidOperationException(Loc.T("Lydutgangen er ikke startet. Sjekk innstillinger.")); }
+        CuePlayback pb;
+        try { pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate, offset, prepared); }
+        catch when (prepared != null)
+        {
+            prepared.Dispose();
+            pb = new CuePlayback(cue, _mixer.WaveFormat.SampleRate, offset);
+        }
         _mixer.Add(pb);
         return pb;
     }

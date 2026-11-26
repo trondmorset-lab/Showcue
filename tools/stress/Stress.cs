@@ -81,6 +81,7 @@ public static class Program
             Run("OSC feedback", FeedbackValues);
             Run("Undo history", UndoFuzz);
             Run("Show save/load files", SaveLoadFiles);
+            Run("Preload planning", PreloadPlanning);
             var text = new StringBuilder($"Runder: {round}, feiltyper: {Bugs.Count}\n\n");
             foreach (var (k, v) in Bugs.OrderBy(b => b.Key)) text.Append($"[{v.Count}x] {k}\n      eksempel: {v.Example}\n");
             File.WriteAllText(report, text.ToString());
@@ -308,6 +309,45 @@ public static class Program
             if (c is LightCue l) DmxLevels.TryParse(l.Levels, out _, out _);
         }
         catch (Exception e) { Bug(where, e, $"{c.GetType().Name} {JsonSerializer.Serialize<Cue>(c, ShowDocument.JsonOptions)}"); }
+    }
+
+    /// <summary>Planlegging av forhåndslasting på tilfeldige cuelister (gå til-løkker, grupper, deaktiverte, rare stier): aldri unntak, aldri over grensen, ingen doble.</summary>
+    static void PreloadPlanning()
+    {
+        var book = new PreloadBook();
+        for (int i = 0; i < 4000; i++)
+        {
+            CurrentCase = $"runde {i}";
+            var cues = new List<Cue>();
+            for (int n = Rng.Next(0, 12); n > 0; n--)
+            {
+                string num = Rng.Next(6).ToString();
+                Cue c = Rng.Next(7) switch
+                {
+                    0 => new AudioCue { FilePath = RandText() },
+                    1 => new VideoCue { FilePath = RandText() },
+                    2 => new ImageCue { FilePath = RandText() },
+                    3 => new GotoCue { Target = Rng.Next(8).ToString() },
+                    4 => new GroupCue { Targets = RandText() },
+                    5 => new PdfCue { FilePath = RandText() },
+                    _ => new MemoCue(),
+                };
+                c.Number = num;
+                c.Disabled = Rng.Next(4) == 0;
+                c.ContinueMode = (ContinueMode)Rng.Next(3);
+                cues.Add(c);
+            }
+            try
+            {
+                var plan = PreloadPlanner.Plan(cues, Rng.Next(-2, 14), Rng.Next(-1, 6));
+                if (plan.Count > PreloadPlanner.MaxItems) Bug("Preload planning", "for mange elementer i planen", plan.Count.ToString());
+                if (plan.Select(p => p.Key).Distinct().Count() != plan.Count) Bug("Preload planning", "dobbelt element i planen", "");
+                book.Sync(plan.Select(p => p.Key));
+                if (book.Keys.Count > book.Capacity) Bug("Preload planning", "regnskapet har flere enn grensen", book.Keys.Count.ToString());
+                if (Rng.Next(10) == 0) book.Clear();
+            }
+            catch (Exception e) { Bug("Preload planning", e, string.Join(",", cues.Select(c => c.GetType().Name))); }
+        }
     }
 
     static void ShowRoundtrip()

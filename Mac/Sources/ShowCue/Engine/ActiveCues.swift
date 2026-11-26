@@ -328,7 +328,9 @@ final class VideoActive: VisualActive {
     static let maxDrift = 0.12
 
     override func makeLayers() throws -> VisualLayers {
-        let item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath))
+        let item: AVPlayerItem
+        if let ready = engine.preloader.takeVideoAsset(path: cue.filePath) { item = AVPlayerItem(asset: ready) } // egenskapene er lastet i bakgrunnen
+        else { item = AVPlayerItem(url: URL(fileURLWithPath: cue.filePath)) }
         startTime = max(0, cue.startTime) + startOffset
         endTime = cue.endTime > startTime ? cue.endTime : 0
         if endTime > 0 { item.forwardPlaybackEndTime = CMTime(seconds: endTime, preferredTimescale: 600) }
@@ -691,7 +693,7 @@ class TimedActive: ActiveCue {
 
 final class FadeActive: TimedActive {
     override func act() {
-        let targets = engine.findActive(cue.target)
+        let targets = engine.findActive(cue.target, homeScene: cue.scene)
         if targets.isEmpty { cue.error = cue.target.isEmpty ? L("Mangler mål-cue") : L("Cue {0} kjører ikke", cue.target) }
         targets.forEach { $0.applyFade(cue) }
     }
@@ -702,7 +704,7 @@ final class StopActive: TimedActive {
     override func act() {
         let targets = cue.target.isEmpty
             ? engine.active.filter { $0 !== self && !($0 is StopActive) }
-            : engine.findActive(cue.target)
+            : engine.findActive(cue.target, homeScene: cue.scene)
         guard cue.release else { targets.forEach { $0.stop(fade: cue.fadeTime) }; return }
         if !targets.map({ $0.release() }).contains(true) {
             cue.error = cue.target.isEmpty ? L("Ingen cue looper") : L("Cue {0} looper ikke", cue.target)
@@ -821,7 +823,7 @@ final class InstantActive: ActiveCue {
         case .midi:
             try engine.midi.send(MidiOut.bytes(for: cue), device: cue.device)
         case .goto:
-            engine.requestGoto(cue.target, fire: cue.fire)
+            engine.requestGoto(SceneLogic.gotoSpec(target: cue.target, targetScene: cue.targetScene), fire: cue.fire)
         case .group:
             engine.fireGroup(cue)
         case .memo:

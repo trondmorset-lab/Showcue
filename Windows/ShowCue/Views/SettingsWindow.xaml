@@ -225,6 +225,8 @@
                     <TextBlock Style="{StaticResource Hint}" Text="{local:T '−23 er EBU R128 (kringkasting). Lavere tall = svakere. Alle lyd-cuer som normaliseres får samme opplevde lydstyrke.'}" />
                     <CheckBox x:Name="ClockTriggersBox" Content="{local:T 'Klokke-triggere aktive (starter cuer med klokkeslett-trigger)'}" Margin="0,14,0,0" />
                     <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Av som standard, så ingenting starter uventet. Når den er på, starter hver cue med klokkeslett-trigger når klokka på maskinen passerer klokkeslettet (lokal tid). Cuer startes ikke etter dvale eller store hopp i klokka.'}" />
+                    <CheckBox x:Name="PreloadBox" Content="{local:T 'Forhåndslast neste cue (forbereder lyd, video og bilde før GO)'}" Margin="0,14,0,0" />
+                    <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Av som standard til den er prøvd på ekte utstyr. Når den er på, åpner ShowCue filene til cuen GO-markøren står på, og cuene den starter automatisk, i bakgrunnen (høyst tre). Filene slippes når markøren flytter seg eller ved stopp. Feiler forberedelsen, starter cuen som vanlig.'}" />
                 </StackPanel>
             </TabItem>
         </TabControl>
