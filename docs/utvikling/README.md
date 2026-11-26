@@ -15,4 +15,4 @@ Les dette før større endringer. Hold det oppdatert når noe viktig endres (sam
 | [agenter.md](agenter.md) | Agenter og felles utviklingsdatabase |
 | [agentlogg.md](agentlogg.md) | Logg over agentenes arbeidsøkter |
 
-Brukerdokumentasjonen står i `README.md` / `README.en.md` (rot, `Windows/`, `Mac/`) og `CHANGELOG.md` / `CHANGELOG.en.md`.
+Brukerdokumentasjonen står i `README.md` (engelsk) / `README.no.md` (norsk) (rot, `Windows/`, `Mac/`) og `CHANGELOG.md` / `CHANGELOG.no.md`.

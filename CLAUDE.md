@@ -7,5 +7,6 @@ Det viktigste:
   Funksjoner og tester lages på begge.
 - Ingen referanser til andre programmer, teknologier eller selskaper i kildekoden; nøytrale navn; kommentarer beskriver hva koden gjør.
 - All brukertekst på norsk i koden, oversatt i `i18n/en.json` (`python3 tools/i18n.py` skal gi 0 feil).
+- Alt på GitHub er på engelsk: commit-meldinger, PR-tekster, endringslogg (`CHANGELOG.md`), README-er og utgivelsestekster. Norsk står bare i egne `*.no.md`-filer (`README.no.md`, `CHANGELOG.no.md`, `Windows/README.no.md`, `Mac/README.no.md`).
 - Egen gren + pull request; CI grønn på Windows og Mac; merge bare når eieren ber om det. Øk `VERSION` og skriv i begge endringslogger.
 - Oppdater `docs/utvikling/` i samme PR når noe vesentlig endres.
