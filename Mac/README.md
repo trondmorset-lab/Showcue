@@ -50,6 +50,10 @@ The first time you start the app, macOS asks for access to the **local network**
 - **Bottom:** active cues with a progress bar and time left, hotkeys and output.
 - **Clock-time trigger:** enter a time (hh:mm:ss, local time, e.g. 19:00:00) in the *Timing* tab, and turn on *Clock triggers active* under *Settings → Safety* (off by default).
   The cue starts once when the computer's clock passes the time. After sleep, large jumps in the clock and daylight saving changes no cues are started. *Check the show* warns if the setting is off.
+- **Rehearsal mode** (*⌘R*, or *Setup → Rehearsal mode* / the *Rehearsal* button): skip chosen cues during rehearsals without deleting or disabling them.
+  Tick *Skip in rehearsal* in the *Timing* tab (a small *REH* marker shows in the cue list). While the mode is on, GO, auto-continue and auto-follow move past marked cues and never start them,
+  and clock and timecode triggers do not start them either. Starting a marked cue directly still works: by number (OSC, MIDI show control), hotkey, MIDI trigger, button panel, double-click and as a target of a group cue.
+  A bright bar at the top of the window stays visible while the mode is on, and the window title says so. The mode is **never saved**: the program always starts with it off. *Check the show* warns while it is on and counts the marked cues.
 - **Preload next cue:** *Settings → Safety → Preload next cue* (off by default, try it on your own equipment first) prepares the cue under the GO playhead and the cues it starts automatically (at most three files) in the background, so audio and video start with less delay. If preparation fails, the cue starts as usual.
 
 ## Multichannel audio interfaces and network audio
@@ -107,6 +111,7 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | ⌘S, ⇧⌘S, ⌘O, ⌘N | Save, save as, open, new |
 | ⌘Z, ⇧⌘Z | Undo, redo |
 | ⌘L | Show mode (lock editing) on/off |
+| ⌘R | Rehearsal mode on/off |
 | ⇧⌘T | Switch theme |
 | ⇧⌘U | Show/hide the output window |
 | ⌘, | Settings |

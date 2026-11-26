@@ -85,6 +85,15 @@ final class AppModel: ObservableObject, ShowControl {
         }
     }
     var isEditable: Bool { !showMode }
+    /// Øvelsesmodus: cuer merket «Hopp over i øvelse» hoppes over av GO og auto-fortsett/-følg. Lagres ikke; programmet starter alltid med den av.
+    @Published var rehearsalMode = false {
+        didSet {
+            guard rehearsalMode != oldValue else { return }
+            engine.rehearsalMode = rehearsalMode
+            let n = Rehearsal.countFlagged(cues)
+            statusText = rehearsalMode ? L("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO (⌘R for å slå av).", n) : L("Øvelsesmodus er av: alle cuer spilles.")
+        }
+    }
     private var subs: Set<AnyCancellable> = []
 
     init() {
@@ -300,18 +309,22 @@ final class AppModel: ObservableObject, ShowControl {
 
     // MARK: - GO / stopp
 
-    func go() {
+    /// `explicitStart`: cuen er valgt med nummer, så en cue merket «Hopp over i øvelse» startes likevel.
+    func go() { go(explicitStart: false) }
+
+    func go(explicitStart: Bool) {
         guard Date().timeIntervalSince(lastGo) * 1000 >= Double(settings.doubleGoProtectionMs) else { return }
         lastGo = Date()
-        guard var cue = playhead else { return }
-        if cue.disabled {
-            // Hopp til neste aktive cue i scenen og kjør den.
-            guard let next = SceneLogic.nextEnabled(cues, after: cue) else { return }
-            cue = next
-        }
-        engine.fire(cue)
+        guard let cue = playhead else { return }
+        // Deaktiverte cuer (og merkede, i øvelsesmodus) hoppes over: start neste cue i scenen som kan spilles.
+        let list = SceneLogic.cues(in: cue.scene, of: cues)
+        guard let at = list.firstIndex(where: { $0 === cue }) else { return }
+        let idx = Rehearsal.goIndex(list, playhead: at, mode: rehearsalMode, explicitStart: explicitStart)
+        guard idx >= 0 else { return }
+        let fired = list[idx]
+        engine.fire(fired)
         // GO-markøren flyttes bare innen scenen; slutten av scenen gir «slutt på lista».
-        select(SceneLogic.nextPlayhead(cues, after: cue))
+        select(SceneLogic.nextPlayhead(cues, after: fired, rehearsal: rehearsalMode))
     }
 
     func panic() {
@@ -380,7 +393,7 @@ final class AppModel: ObservableObject, ShowControl {
         guard let c = find(number) else { return false }
         select(c)
         lastGo = .distantPast // eksplisitt cue: ingen dobbel-GO-sperre
-        go()
+        go(explicitStart: true)
         return true
     }
     func fireHotkey(_ key: String) -> Bool {
@@ -397,8 +410,9 @@ final class AppModel: ObservableObject, ShowControl {
     func refreshFeedback() { feedback?.requestRefresh() }
 
     func fireTimecodeTriggers(from previous: Int, to frame: Int, rate: TimecodeRate) -> Int {
+        // Triggere starter av seg selv, så merkede cuer hoppes over i øvelsesmodus.
         let due = cues.filter { c in
-            guard !c.disabled, let t = Timecode.parse(c.timecodeTrigger) else { return false }
+            guard Rehearsal.isPlayable(c, mode: rehearsalMode), let t = Timecode.parse(c.timecodeTrigger) else { return false }
             return Timecode.crossed(previous: previous, now: frame, target: t.toFrame(rate), rate: rate)
         }
         due.forEach { engine.fire($0) }
@@ -410,7 +424,7 @@ final class AppModel: ObservableObject, ShowControl {
         let previous = lastClockCheck
         lastClockCheck = now
         guard settings.clockTriggersEnabled, let previous else { return }
-        let due = ClockTriggers.due(cues, previous: previous, now: now)
+        let due = ClockTriggers.due(cues, previous: previous, now: now).filter { !Rehearsal.isSkipped($0, mode: rehearsalMode) }
         due.forEach { engine.fire($0) }
         if !due.isEmpty {
             statusText = L("Klokke {0} → {1}", Self.clockFormatter.string(from: now), due.count == 1 ? L("1 cue") : L("{0} cuer", due.count))
@@ -476,7 +490,7 @@ final class AppModel: ObservableObject, ShowControl {
     }
 
     var windowTitle: String {
-        (showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn")) + (isDirty ? " •" : "") + (showMode ? L("  🔒 SHOWMODUS") : "")
+        (showURL?.deletingPathExtension().lastPathComponent ?? L("Uten navn")) + (isDirty ? " •" : "") + (showMode ? L("  🔒 SHOWMODUS") : "") + (rehearsalMode ? L("  🎭 ØVELSESMODUS") : "")
             + L(" — ShowCue ") + AppModel.version
     }
 
@@ -998,7 +1012,7 @@ final class AppModel: ObservableObject, ShowControl {
     /// Kjører forhåndssjekken mot gjeldende show og maskininnstillinger.
     func runPreflight() -> [PreflightFinding] {
         NSApp.keyWindow?.makeFirstResponder(nil)
-        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), scenes: scenes)
+        return PreflightCheck.run(cues: cues, settings: settings, environment: SystemPreflightEnvironment(), scenes: scenes, rehearsalMode: rehearsalMode)
     }
 
     /// «Sjekk showet»: åpner vinduet med funnene (sjekken kjøres hver gang vinduet vises).

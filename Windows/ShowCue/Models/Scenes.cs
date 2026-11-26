@@ -237,40 +237,35 @@ public static class SceneLogic
     // ------------------------------------------------------------------
 
     /// <summary>Indeksen GO-markøren skal til etter at cuen på <paramref name="firedIndex"/> er avfyrt: hopper over cuer som starter automatisk
-    /// og deaktiverte. Gir <c>list.Count</c> ved slutten.</summary>
-    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex)
+    /// og deaktiverte (i øvelsesmodus også merkede). Gir <c>list.Count</c> ved slutten.</summary>
+    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex, bool rehearsal = false)
     {
         int i = firedIndex;
         // Hopp over cues som blir trigget automatisk av forrige cue.
         while (i < list.Count && list[i].ContinueMode != ContinueMode.None)
-        {
-            i++;
-            while (i < list.Count && list[i].Disabled) i++;
-        }
-        i++;
-        while (i < list.Count && list[i].Disabled) i++;
+            i = Rehearsal.NextPlayableIndex(list, i + 1, rehearsal);
+        i = Rehearsal.NextPlayableIndex(list, i + 1, rehearsal);
         return Math.Min(i, list.Count);
     }
 
     /// <summary>Neste cue for GO etter at <paramref name="fired"/> er avfyrt, bare innen samme scene. Null = slutten av scenen (GO hopper aldri til en annen scene).</summary>
-    public static Cue? NextPlayhead(IList<Cue> cues, Cue fired)
+    public static Cue? NextPlayhead(IList<Cue> cues, Cue fired, bool rehearsal = false)
     {
         var list = CuesIn(cues, fired.Scene);
         int idx = list.IndexOf(fired);
         if (idx < 0) return null;
-        int n = NextPlayheadIndex(list, idx);
+        int n = NextPlayheadIndex(list, idx, rehearsal);
         return n < list.Count ? list[n] : null;
     }
 
-    /// <summary>Første ikke-deaktiverte cue etter <paramref name="cue"/> i samme scene (for auto-fortsett og GO på en deaktivert cue).</summary>
-    public static Cue? NextEnabledAfter(IList<Cue> cues, Cue cue)
+    /// <summary>Første cue etter <paramref name="cue"/> i samme scene som kan spilles: ikke deaktivert, og i øvelsesmodus ikke merket (for auto-fortsett).</summary>
+    public static Cue? NextEnabledAfter(IList<Cue> cues, Cue cue, bool rehearsal = false)
     {
         var list = CuesIn(cues, cue.Scene);
         int idx = list.IndexOf(cue);
         if (idx < 0) return null;
-        for (int i = idx + 1; i < list.Count; i++)
-            if (!list[i].Disabled) return list[i];
-        return null;
+        int n = Rehearsal.NextPlayableIndex(list, idx + 1, rehearsal);
+        return n < list.Count ? list[n] : null;
     }
 
     /// <summary>Første ikke-deaktiverte cue i scenen (der GO-markøren starter).</summary>

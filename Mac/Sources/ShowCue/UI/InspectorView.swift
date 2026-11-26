@@ -69,6 +69,8 @@ struct CueInspector: View {
                 mediaSection
             case .timing:
                 FieldLabel(L("Pre-wait (s)")); NumberInput(value: $cue.preWait, range: 0...3600)
+                Toggle(L("Hopp over i øvelse"), isOn: $cue.skipInRehearsal).padding(.top, 10)
+                    .help(L("Når øvelsesmodus er på, hoppes cuen over av GO og auto-fortsett/-følg. Den kan fortsatt startes direkte (nummer, hurtigtast, knappepanel)."))
                 FieldLabel(L("Etterpå"))
                 Picker("", selection: $cue.continueMode) {
                     ForEach(ContinueMode.allCases, id: \.self) { Text($0.label).tag($0) }

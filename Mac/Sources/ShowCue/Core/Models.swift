@@ -158,6 +158,8 @@ final class Cue: ObservableObject, Identifiable, Codable {
     @Published var continueMode: ContinueMode = .none
     @Published var hotkey = "" { didSet { let u = hotkey.uppercased(); if u != hotkey { hotkey = u } } }
     @Published var disabled = false
+    /// Hoppes over av GO, auto-fortsett og auto-følg mens øvelsesmodus er på. Har ingen virkning ellers.
+    @Published var skipInRehearsal = false
     /// Scenen cuen hører til (navnet). Tom = første (eller eneste) scene. Se `SceneLogic`.
     @Published var scene = "" { didSet { let c = SceneLogic.cleanName(scene); if c != scene { scene = c } } }
     @Published var color: CueColor = .none
@@ -551,7 +553,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
     // MARK: Codable – samme feltnavn som Windows-versjonen (PascalCase)
 
     enum K: String, CodingKey {
-        case type, Number, Name, Notes, Scene, TargetScene, PreWait, ContinueMode, Hotkey, Disabled, Color, MidiTrigger
+        case type, Number, Name, Notes, Scene, TargetScene, PreWait, ContinueMode, Hotkey, Disabled, SkipInRehearsal, Color, MidiTrigger
         case FilePath, VolumeDb, Volume, StartTime, EndTime, Loop, FadeIn, FadeOut, FileDuration, FileChannels, Routes
         case ReplaceOthers, Stretch, OutputScreen, KnownDuration, HoldTime, Page
         case Target, FadeTime, FadeAudio, TargetDb, FadeVisual, TargetOpacity, StopWhenDone
@@ -573,7 +575,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         number = v(.Number, ""); name = v(.Name, ""); notes = v(.Notes, "")
         scene = v(.Scene, ""); targetScene = v(.TargetScene, "")
         preWait = v(.PreWait, 0.0); continueMode = v(.ContinueMode, ContinueMode.none)
-        hotkey = v(.Hotkey, ""); disabled = v(.Disabled, false); color = v(.Color, CueColor.none)
+        hotkey = v(.Hotkey, ""); disabled = v(.Disabled, false); skipInRehearsal = v(.SkipInRehearsal, false); color = v(.Color, CueColor.none)
         midiTrigger = v(.MidiTrigger, "")
         filePath = v(.FilePath, "")
         volumeDb = v(.VolumeDb, 0.0)
@@ -653,6 +655,7 @@ final class Cue: ObservableObject, Identifiable, Codable {
         try c.encode(continueMode, forKey: .ContinueMode)
         try c.encode(hotkey, forKey: .Hotkey)
         try c.encode(disabled, forKey: .Disabled)
+        try c.encode(skipInRehearsal, forKey: .SkipInRehearsal)
         try c.encode(color, forKey: .Color)
         try c.encode(midiTrigger, forKey: .MidiTrigger)
         try c.encode(inButtonPanel, forKey: .InButtonPanel)

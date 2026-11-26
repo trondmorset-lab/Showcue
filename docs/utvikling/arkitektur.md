@@ -112,6 +112,9 @@ Regler for oppslag og begrunnelse: [beslutninger.md](beslutninger.md#0220--scene
 - **MIDI inn**: faste funksjoner (GO, stopp alt, neste, forrige) og MIDI-trigger per cue (`N:60`, `CC:20`, `PC:5`), MSC GO/STOP, MTC inn for tidskode-triggere.
 - **Klokkeslett-trigger**: `ClockTrigger` per cue og innstillingen `ClockTriggersEnabled`/`clockTriggersEnabled`. Den rene logikken ligger i `ClockTriggers` (`Models/ClockTriggers.cs`, `Core/ClockTriggers.swift`);
   hovedvinduet kaller den fra den vanlige takten (`MainWindow.CheckClockTriggers`, `AppModel.checkClockTriggers`) og starter cuene med `Engine.Fire`.
+- **Øvelsesmodus**: `SkipInRehearsal` per cue (nøkkel `SkipInRehearsal`, standard av) og en kjøretidsbryter som aldri lagres (`CueEngine.RehearsalMode` / `rehearsalMode`, `MainWindow.IsRehearsal` / `AppModel.rehearsalMode`).
+  Den rene logikken ligger i `Rehearsal` (`Models/Rehearsal.cs`, `Core/Rehearsal.swift`): `IsSkipped`, `IsPlayable`, `NextPlayableIndex`, `GoIndex`, `CountFlagged`.
+  Motoren endres bare i `FireNextAfter` og `NextPlayheadIndex` (som nå bruker `NextPlayableIndex`); GO (`Go`/`go`) bruker `GoIndex`. Banneret øverst, knappen, menyvalget og Ctrl+R/⌘R ligger i hovedvinduet.
 - **Routingforhåndsvalg**: `RoutingPresets` (`Models/RoutingPresets.cs`, `Core/RoutingPresets.swift`) er ren logikk uten UI: lage/endre/slette forhåndsvalg, lese og skrive utgangspar som tekst («1-2, 3-4:-6»),
   gjøre et forhåndsvalg om til `AudioRoute`-er for en cue med et gitt antall kanaler, sette det på flere cuer (`Apply`, `ApplyRoutes`, `Paste`) og beskrive routingen (`Describe`). `RouteClipboard` holder kopiert routing.
   Forhåndsvalg lagres i showet (`RoutingPresets` i `ShowDocument`), ikke i innstillingene, og tas ikke med i angre-historikken. UI: knappen «Forhåndsvalg» i `RoutingMatrix` (Windows, via `IRoutingHost` i `MainWindow`) og `RoutingMatrixView` (Mac, via `AppModel`).

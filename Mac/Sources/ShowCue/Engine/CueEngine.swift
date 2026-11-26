@@ -42,6 +42,8 @@ final class CueEngine: ObservableObject {
 
     /// Alt står stille: lyd, video og tiden for pre-wait og fader.
     @Published private(set) var isPaused = false
+    /// Øvelsesmodus: auto-fortsett og auto-følg hopper over cuer merket «Hopp over i øvelse». Lagres aldri; starter alltid av.
+    var rehearsalMode = false
     private var pausedTotal = 0.0
     private var pausedAt = 0.0
 
@@ -172,13 +174,15 @@ final class CueEngine: ObservableObject {
         }
     }
 
-    /// Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.
+    /// Auto-fortsett/auto-følg: starter neste cue som kan spilles i samme scene (deaktiverte, og merkede i øvelsesmodus, hoppes over).
     private func fireNext(after cue: Cue) {
-        if let next = SceneLogic.nextEnabled(cueList(), after: cue) { fire(next) }
+        if let next = SceneLogic.nextEnabled(cueList(), after: cue, rehearsal: rehearsalMode) { fire(next) }
     }
 
-    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte).
-    static func nextPlayheadIndex(_ list: [Cue], fired: Int) -> Int { SceneLogic.nextPlayheadIndex(list, fired: fired) }
+    /// Indeksen GO-markøren skal til etter at cuen på `fired` er avfyrt (hopper over kjeder og deaktiverte, og merkede cuer i øvelsesmodus).
+    static func nextPlayheadIndex(_ list: [Cue], fired: Int, rehearsal: Bool = false) -> Int {
+        SceneLogic.nextPlayheadIndex(list, fired: fired, rehearsal: rehearsal)
+    }
 
     /// Aktive cuer et nummer peker på. `homeScene` er scenen til cuen som spør (nummeret søkes der først, se `SceneLogic`).
     func findActive(_ number: String, homeScene: String? = nil) -> [ActiveCue] {

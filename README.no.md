@@ -29,6 +29,8 @@ Begge har:
 - Pre-wait, auto-continue og auto-follow
 - Valgfri forberedelse av neste cue i bakgrunnen (forhåndslasting, av som standard)
 - Hurtigtaster, MIDI-triggere, tidskode-triggere og klokkeslett-triggere per cue
+- Øvelsesmodus: hopp over valgte cuer under øvelser uten å slette dem (lagres aldri som på)
+- **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue, testtone og nivåmålere
 - **Lydpatch** for flerkanals lydkort og nettverkslyd (f.eks. Dante), med routingmatrise per cue (og lagrede routingforhåndsvalg som «Hoved» eller «Monitor»), testtone og nivåmålere
 - **Lyd i video** som går gjennom lydpatchen og holdes i synk med bildet, og **valgfri skjerm per cue**
 - **Fjernstyring** med OSC inn, MIDI inn og MSC

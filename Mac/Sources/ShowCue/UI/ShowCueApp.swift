@@ -303,6 +303,7 @@ struct ShowCommands: Commands {
             Button(L("Slipp loop (devamp) i valgt cue")) { model.releaseSelected() }
             Divider()
             Button(L("Showmodus (lås/lås opp redigering)")) { model.showMode.toggle() }.keyboardShortcut("l")
+            Button(model.rehearsalMode ? L("Øvelsesmodus: slå av") : L("Øvelsesmodus (hopp over merkede cuer)")) { model.rehearsalMode.toggle() }.keyboardShortcut("r")
             Divider()
             Button(L("Vis/skjul utgang")) { model.output.toggle() }.keyboardShortcut("u", modifiers: [.command, .shift])
             Button(L("Knappepanel")) { model.showButtonPanel() }.keyboardShortcut("k")

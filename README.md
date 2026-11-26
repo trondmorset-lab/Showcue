@@ -29,6 +29,8 @@ Both have:
 - Pre-wait, auto-continue and auto-follow
 - Optional background preparation of the next cue (preload, off by default)
 - Hotkeys, MIDI triggers, timecode triggers and clock-time triggers per cue
+- Rehearsal mode: skip chosen cues during rehearsals without deleting them (never saved as on)
+- **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue (and saved routing presets such as “Main” or “Monitor”), test tone and level meters
 - **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
 - **Remote control** with OSC in, MIDI in and MSC

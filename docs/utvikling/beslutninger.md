@@ -2,6 +2,20 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.25.0 – øvelsesmodus
+- **Merking per cue, bryter i kjøretid.** `SkipInRehearsal` lagres i showfila (valgfri, standard av, gamle show åpnes uendret), men selve modusen er bare i minnet og er **alltid av ved oppstart**, også etter at et show er åpnet med merkede cuer.
+  Den lagres hverken i showfila eller innstillingene, så den kan ikke «henge igjen» til forestillingen. Den ligger på motoren (`RehearsalMode`), ikke i showet.
+- **Umulig å glemme:** et oransje felt øverst i hovedvinduet (med «Slå av»-knapp) står så lenge modusen er på, knappen i verktøylinjen viser «Øvelse PÅ», vindustittelen sier ØVELSESMODUS, og «Sjekk showet» gir en advarsel.
+  Modusen følger programmet, ikke showet: åpnes et annet show, står den på til brukeren slår den av (banneret er synlig hele tiden).
+- **Hva hoppes over:** alt som «kjører videre av seg selv» – GO (også «gå til» med GO), auto-fortsett, auto-følg, og klokkeslett- og tidskode-triggere (ingen trykker noe, så merkede cuer skal ikke starte). Markøren flyttes forbi merkede cuer på samme måte som forbi deaktiverte.
+  En merket cue som står under markøren når modusen slås på, flyttes ikke: neste GO hopper forbi den (som for deaktiverte), så valget i inspektøren forsvinner ikke uventet.
+- **Hva som fortsatt starter en merket cue (eksplisitt valg):** cuenummer (OSC `/cue/{nr}/start|go`, MIDI show control med cuenummer), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk/«Test» og mål i en gruppe-cue.
+  Begrunnelse: operatøren har da pekt på akkurat denne cuen, og målet med modusen er å slippe å fjerne cuer, ikke å stenge for dem. Ikke vurdert som farlig, men det er en bevisst avgrensning: skal en gruppe aldri trekke inn en merket cue, merk gruppen også.
+  Deaktiverte cuer startes fortsatt aldri av GO, og `GoCue` på en deaktivert cue hopper videre som før.
+- **Alle cuer merket / slutten av lista:** GO gjør ingenting (som for deaktiverte i dag), og markøren settes til slutten (ingen valgt) når ingenting spillbart er igjen etter en cue.
+- **Preflight:** advarsel (`rehearsalOn`) når modusen er på, og en merknad med antall (`rehearsalFlagged`, alvorlighet ok, også når modusen er av). Deaktiverte cuer telles ikke. `PreflightCheck.Run/run` fikk en valgfri parameter, så eksisterende kall og tester er uendret.
+- Ekstra tastatursnarvei: Ctrl+R (Windows) / ⌘R (Mac); ledig fra før på begge.
+
 ## 0.24.0 – forhåndslasting av neste cue
 - **Hvor starttiden kommer fra (resonnert, ikke målt):** Windows åpner `AudioFileReader`/`MediaFoundationReader` først i `AudioActive.Start` (åpning, header, `CurrentTime`-søk, resampler) og første lesing av fila skjer i lydtråden (kald filbuffer). Mac lager `AVAudioFile`/`AVAssetReader`, ringbuffer (2 s) og dekoder 0,3 s på hovedtråden ved GO. Video: `MediaElement`/`AVPlayerItem` opprettes først ved GO og må åpne fila før bilde og lyd starter sammen; det er sannsynligvis den største delen for video. Bilder og PDF var allerede forhåndslastet for hele showet (`MediaCache`), så der gjør forhåndslasting lite.
 - Planleggeren er ren (`PreloadPlanner.Plan`/`plan`): cuen GO starter (første ikke-deaktiverte fra markøren), så kjeden av cuer med fortsett automatisk/følg automatisk, «gå til» følges til målet (løkker og manglende mål stopper), gruppe gir sine aktive mål. Høyst 3 filer, ingen doble, bare lyd/video/bilde (PDF, nett, spilleliste, lysbildeserie forberedes ikke).

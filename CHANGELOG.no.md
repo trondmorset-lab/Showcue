@@ -6,6 +6,17 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.25.0 – 2026-11-25
+
+### Nytt
+- **Øvelsesmodus** (Windows og Mac, samme oppførsel): hopp over valgte cuer under øvelser uten å slette eller deaktivere dem.
+  - Nytt cuefelt **Hopp over i øvelse** (fanen *Tidsstyring*; lagres som `SkipInRehearsal`, av som standard, så gamle show åpnes uendret). Merkede cuer har en liten *ØV*-merking i cuelista.
+  - **Slå modusen av og på** med Ctrl+R (⌘R på Mac), *Oppsett → Øvelsesmodus* eller knappen *Øvelse*. Mens den er på, viser et tydelig felt øverst i vinduet og vindustittelen det.
+    Modusen **lagres aldri**: programmet starter alltid med den av.
+  - Mens modusen er på, flytter **GO, auto-fortsett og auto-følg** seg forbi merkede cuer og starter dem aldri. Klokkeslett- og tidskode-triggere starter dem heller ikke.
+    Å starte en merket cue direkte virker fortsatt: med cuenummer (OSC, MIDI show control), hurtigtast, MIDI-trigger, knappepanel, dobbeltklikk og som mål i en gruppe-cue.
+  - **Sjekk showet** advarer mens øvelsesmodus er på og viser hvor mange cuer som er merket.
+
 ## 0.24.0 – 2026-11-25
 
 ### Nytt

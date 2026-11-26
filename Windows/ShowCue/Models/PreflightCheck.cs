@@ -44,6 +44,8 @@ public static class PreflightCheck
     public const string TargetDisabled = "targetDisabled";
     public const string GroupNoMatch = "groupNoMatch";
     public const string ClockTriggerOff = "clockTriggerOff";
+    public const string RehearsalOn = "rehearsalOn";
+    public const string RehearsalFlagged = "rehearsalFlagged";
     public const string ValuesOk = "valuesOk";
     public const string AudioDeviceMissing = "audioDeviceMissing";
     public const string PreviewDeviceMissing = "previewDeviceMissing";
@@ -55,7 +57,9 @@ public static class PreflightCheck
     public const string NumbersOk = "numbersOk";
 
     /// <summary>Kjører hele sjekken. Rekkefølgen er mediefiler, verdier og mål, enheter, cue-numre; en gruppe uten funn får én «ok»-linje.</summary>
-    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, IReadOnlyList<string>? scenes = null)
+    /// <param name="scenes">Sceneliste i showet (for å sjekke GOTO-mål).</param>
+    /// <param name="rehearsalMode">Øvelsesmodus er på akkurat nå (kjøretid, lagres ikke): gir en advarsel.</param>
+    public static List<PreflightFinding> Run(IReadOnlyList<Cue> cues, AppSettings settings, IPreflightEnvironment env, IReadOnlyList<string>? scenes = null, bool rehearsalMode = false)
     {
         var media = new List<PreflightFinding>();
         var values = new List<PreflightFinding>();
@@ -83,6 +87,7 @@ public static class PreflightCheck
         if (devices.Count == 0) all.Add(new(PreflightSeverity.Ok, DevicesOk, Loc.T("Lydutgang og skjermer finnes.")));
         all.AddRange(numbers);
         if (numbers.Count == 0) all.Add(new(PreflightSeverity.Ok, NumbersOk, Loc.T("Ingen duplikate cue-numre.")));
+        CheckRehearsal(cues, rehearsalMode, all);
         return all;
     }
 
@@ -242,6 +247,19 @@ public static class PreflightCheck
         list.Add(new(PreflightSeverity.Warning, ClockTriggerOff,
             Loc.F("{0} cue(r) har klokketrigger, men «Klokke-triggere aktive» er av i innstillingene. Cuene starter ikke av seg selv.", withTrigger.Count),
             withTrigger[0].i));
+    }
+
+    /// <summary>Øvelsesmodus på: advarsel (cuene spilles ikke i showet). Merkede cuer telles som en merknad, også når modusen er av.</summary>
+    private static void CheckRehearsal(IReadOnlyList<Cue> cues, bool rehearsalMode, List<PreflightFinding> list)
+    {
+        var flagged = cues.Select((c, i) => (c, i)).Where(x => !x.c.Disabled && x.c.SkipInRehearsal).ToList();
+        if (rehearsalMode)
+            list.Add(new(PreflightSeverity.Warning, RehearsalOn,
+                Loc.F("Øvelsesmodus er PÅ: {0} cue(r) hoppes over av GO. Slå den av før forestillingen (Ctrl+R).", flagged.Count),
+                flagged.Count > 0 ? flagged[0].i : -1));
+        if (flagged.Count > 0)
+            list.Add(new(PreflightSeverity.Ok, RehearsalFlagged,
+                Loc.F("{0} cue(r) er merket «Hopp over i øvelse» (gjelder bare i øvelsesmodus).", flagged.Count), flagged[0].i));
     }
 
     /// <summary>Mål-cuen slås opp på nummer, uten hensyn til store/små bokstaver (som i GO-motoren).</summary>

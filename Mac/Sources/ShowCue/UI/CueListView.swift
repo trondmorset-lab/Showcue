@@ -149,7 +149,17 @@ struct CueRow: View {
             }
             .foregroundColor(theme.muted).padding(.horizontal, 8).frame(width: col.type, alignment: .leading)
             Text(cue.displayName).lineLimit(1).padding(.horizontal, 8)
+                .padding(.trailing, cue.skipInRehearsal ? 34 : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .trailing) {
+                    if cue.skipInRehearsal {
+                        Text(L("ØV")).uiFont(10, weight: .bold).foregroundColor(theme.wait)
+                            .padding(.horizontal, 3)
+                            .overlay(RoundedRectangle(cornerRadius: 3).stroke(theme.wait))
+                            .padding(.trailing, 6)
+                            .help(L("Hoppes over i øvelsesmodus"))
+                    }
+                }
                 .overlay(alignment: .bottom) {
                     if cue.isRunning {
                         ProgressBar(value: cue.progress, height: 4).padding(.horizontal, 8).offset(y: 9)
@@ -190,6 +200,7 @@ struct CueRow: View {
                 ForEach(CueColor.allCases, id: \.self) { c in Button(c.label) { cue.color = c } }
             }
             Button(cue.disabled ? L("Aktiver") : L("Deaktiver")) { cue.disabled.toggle() }
+            Button(cue.skipInRehearsal ? L("Ikke hopp over i øvelse") : L("Hopp over i øvelse")) { cue.skipInRehearsal.toggle() }
             Button(L("Dupliser")) { model.select(cue); model.duplicateSelected() }
             if model.sceneItems.count > 1 {
                 Menu(L("Flytt til scene")) {
