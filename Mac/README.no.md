@@ -89,6 +89,8 @@ Routingforhåndsvalg fungerer som på Windows: knappen *Forhåndsvalg* under rou
 Alt annet er likt: språk (norsk/engelsk), cuetyper, start/slutt-redigering med bølgeform og forhåndslytting, routingmatrise, lydpatch, videolyd gjennom patchen, OSC/MIDI inn og ut, MSC, status ut over OSC, temaer og cuefarger.
 Se README i Windows-mappa for full beskrivelse av OSC-kommandoer og statusvariabler.
 
+**Nettside for mobil/nettbrett** (*Innstillinger → Web*, av som standard, krever PIN-kode): se «Nettside for mobil og nettbrett» i Windows-README. På Mac kan macOS spørre om tilgang til lokalt nettverk første gang. Trafikken er vanlig HTTP, så PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på.
+
 **Showfiler mellom Mac og Windows:** stiene til mediefilene er forskjellige på de to plattformene. ShowCue leter derfor etter mediefiler
 ved siden av showfila og i en undermappe `Media`, så legg showfil og media i samme mappe når du flytter mellom maskiner.
 Show lagret på Mac krever Windows-versjon 0.4 eller nyere.

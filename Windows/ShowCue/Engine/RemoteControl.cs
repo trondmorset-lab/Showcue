@@ -59,11 +59,18 @@ public sealed class RemoteControl : IDisposable
     private readonly Dispatcher _ui;
     private readonly OscServer _osc = new();
     private readonly MidiInput _midi = new();
+    private readonly WebServer _web = new();
+    private WebRemoteCore? _webCore;
+    private (int Port, string Pin)? _webKey;
     private AppSettings _settings;
     private Action<string>? _learn;
 
     public string OscStatus { get; private set; } = Loc.T("OSC inn: av");
     public string MidiStatus { get; private set; } = Loc.T("MIDI inn: av");
+    /// <summary>Status for nettsiden: av, adressen den svarer på, eller hvorfor den ikke startet.</summary>
+    public string WebStatus { get; private set; } = Loc.T("Web: av");
+    /// <summary>Nettsiden kjører og tar imot tilstand fra hovedvinduet.</summary>
+    public bool WebRunning => _webCore != null && _web.IsRunning;
     /// <summary>Siste mottatte tidskode (tom = ingen).</summary>
     public string TimecodeStatus { get; private set; } = "";
     private long? _lastTcFrame;
@@ -79,6 +86,7 @@ public sealed class RemoteControl : IDisposable
         _midi.Trigger += (t, ch) => _ui.BeginInvoke(() => HandleMidi(t, ch));
         _midi.Msc += m => _ui.BeginInvoke(() => HandleMsc(m));
         _midi.TimecodeReceived += (tc, r) => _ui.BeginInvoke(() => HandleTimecode(tc, r));
+        _web.Command = (cmd, from) => { try { _ui.BeginInvoke(() => HandleWeb(cmd, from)); } catch { /* UI-tråden er borte (avslutning) */ } };
     }
 
     public void Apply(AppSettings s)
@@ -109,7 +117,64 @@ public sealed class RemoteControl : IDisposable
         {
             MidiStatus = Loc.T("MIDI inn: ") + ex.Message;
         }
+        ApplyWeb(s);
         StatusChanged?.Invoke();
+    }
+
+    /// <summary>Starter, stopper eller omstarter nettsiden etter innstillingene. Uten godkjent PIN starter den aldri. Public for testing.</summary>
+    public void ApplyWeb(AppSettings s)
+    {
+        if (!s.WebRemoteEnabled)
+        {
+            _web.Stop();
+            _webCore = null;
+            _webKey = null;
+            WebStatus = Loc.T("Web: av");
+            return;
+        }
+        if (_web.IsRunning && _webKey == (s.WebRemotePort, s.WebRemotePin)) return;
+        _web.Stop();
+        _webCore = null;
+        _webKey = null;
+        try
+        {
+            var texts = WebRemote.PageTexts(Loc.Language);
+            var core = new WebRemoteCore(s.WebRemotePin, WebRemote.LoginPage(texts), WebRemote.ControlPage(texts),
+                () => Environment.TickCount64);
+            _web.Start(s.WebRemotePort, core);
+            _webCore = core;
+            _webKey = (s.WebRemotePort, s.WebRemotePin);
+            WebStatus = Loc.F("Web: {0}", WebRemote.Url(OscServer.LocalAddresses(), s.WebRemotePort));
+        }
+        catch (Exception ex)
+        {
+            WebStatus = Loc.F("Web: kunne ikke starte på port {0} – {1}", s.WebRemotePort, ex.Message);
+        }
+    }
+
+    /// <summary>Gir nettsiden siste tilstand (kalles fra UI-tråden; siden leser den ferdig bygde teksten).</summary>
+    public void PublishWebState(string stateJson, string? cuesJson)
+    {
+        var core = _webCore;
+        if (core == null) return;
+        core.SetState(stateJson);
+        if (cuesJson != null) core.SetCues(cuesJson);
+    }
+
+    /// <summary>Utfører en kommando fra nettsiden med samme grensesnitt som OSC. Ingenting her kan endre showet. Public for testing.</summary>
+    public void HandleWeb(WebCommand cmd, string from)
+    {
+        switch (cmd)
+        {
+            case WebCommand.Go: _show.Go(); break;
+            case WebCommand.StopAll: _show.StopAll(); break;
+            case WebCommand.Pause: _show.SetPaused(true); break;
+            case WebCommand.Resume: _show.SetPaused(false); break;
+            case WebCommand.Next: _show.MovePlayhead(1); break;
+            case WebCommand.Previous: _show.MovePlayhead(-1); break;
+            default: return;
+        }
+        _show.RemoteLog(Loc.F("Web fra {0}: {1}", from, WebRemote.CommandName(cmd)));
     }
 
     /// <summary>Neste MIDI-melding sendes til <paramref name="callback"/> i stedet for å utføres.</summary>
@@ -274,5 +339,6 @@ public sealed class RemoteControl : IDisposable
     {
         _osc.Dispose();
         _midi.Dispose();
+        _web.Dispose();
     }
 }

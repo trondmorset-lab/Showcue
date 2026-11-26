@@ -2,6 +2,23 @@
 
 Viktige valg og begrunnelsen. Nyeste først.
 
+## 0.26.0 – nettside for fjernstyring
+- **Sikkerhet er hovedkravet.** Av som standard; PIN er påkrevd (6–32 bokstaver/siffer a–z, A–Z, 0–9, ikke ett tegn gjentatt, ikke på lista over lette koder) og lages tilfeldig (6 siffer, kryptografisk tilfeldighet) når den mangler eller er svak.
+  Normaliseres ved lasting (`AppSettings.Normalize` / `normalize()`), og `WebRemoteCore` nekter å lages med en svak PIN, så tjeneren kan aldri starte uten godkjent PIN.
+  Tegnsettet er begrenset med vilje: PIN-en trenger da ingen URL-dekoding, og tolkingen av innloggingen blir triviell.
+- **Alt som ikke er nett eller tråder er rene funksjoner** med like tester på begge plattformer: `WebRemote` (tolking av HTTP-byte, PIN-regler, JSON, sider, svar) og `WebRemoteCore` (ruter, økter, sperre; tid, tilfeldighet og klientadresse kommer inn som parametre).
+  Tjeneren (`WebServer`: Windows `TcpListener`, Mac `NWListener`) er bare lim: les byte med tidsfrist, kall `Handle`, skriv svaret, lukk.
+- **Windows bruker `TcpListener`, ikke `HttpListener`:** `HttpListener` med jokertegn (alle nettverkskort) krever administrator/URL-reservasjon. Mac bruker Network-rammeverket.
+- **Ruter:** bare `GET /` (innloggingsside eller kontrollside etter om forespørselen har gyldig økt), `POST /api/login`, `GET /api/state`, `GET /api/cues`, `POST /api/cmd`. Alt annet gir 404. Stien fra forespørselen blir aldri brukt mot disken (ingen filer serveres; sidene er strenger i koden), og tolkeren avviser `%`, `\`, `#` og `..` i stien på forhånd.
+- **PIN-kontroll:** øktcookie (`sc_session`, 128 bit tilfeldig, `HttpOnly; SameSite=Strict`, 12 timer, maks 32 økter) etter innlogging; i tillegg godtas overskriften `X-ShowCue-Pin` for skript. Sammenligning i konstant tid (`ConstantTimeEquals`, fast løkke på 64 byte; økter sammenlignes mot alle uten å stoppe tidlig).
+  Sperre mot gjetting: 5 feil per klient på 60 s gir 60 s sperre (også for riktig PIN mens sperren varer), og 30 feil totalt på 10 min gir 5 min sperre for alle nye innlogginger (dekker mange klienter). Eksisterende økter virker under sperre.
+- **CSRF:** `POST /api/cmd` krever overskriften `X-ShowCue: 1` (kan ikke settes av en skjema-innsending fra en annen side, og CORS-forespørsel før sending besvares aldri) i tillegg til `SameSite=Strict`.
+- **Grenser:** forespørselslinje 2048 byte, hoder 8192 byte og 32 stk, kropp 1024 byte, bare `HTTP/1.1`, bare GET og POST, ingen `Transfer-Encoding`, ingen doble hoder, bare ASCII og CRLF; 16 samtidige forbindelser (6 per klientadresse), 5 s tidsfrist per forespørsel, alltid `Connection: close`. Ingen CORS-hoder. `Content-Security-Policy` tillater bare innebygd skript/stil og kall mot samme opphav.
+- **Bruker de samme styringene som OSC:** `RemoteControl.HandleWeb` (Windows) og `RemoteRouter.handleWeb` (Mac) kaller `IShowControl`/`ShowControl` (`Go`, `StopAll`, `SetPaused`, `MovePlayhead`), så sperren mot dobbel-GO og loggen gjelder. Ingen ny styringslogikk. Showmodus blokkerer ikke (som OSC), men ingen rute kan endre showet.
+- **Tråder:** tjeneren går på egne tråder (trådpoolen / en egen kø) og venter aldri på UI-tråden. Kommandoer sendes asynkront til UI-tråden (`Dispatcher.BeginInvoke` / `DispatchQueue.main.async`). Tilstanden bygges av hovedvinduet i den vanlige takten (ca. 4 ganger i sekundet; cuelista ca. 1 gang i sekundet) til ferdige JSON-tekster som tjenerens tråder bare leser. Alle unntak fanges.
+- **Sidene** er én HTML-streng hver (innlogging og kontroll) med inline CSS/JS, uten eksterne ressurser. Tekstene settes inn fra `PageTexts` via språksystemet (`Loc.T`/`L`, `{{navn}}` i malen, alt HTML-escapet), så siden følger programmets språk (valgt ved oppstart). Skriptet bruker bare `textContent` (aldri `innerHTML`). Siden henter `/api/state` hvert 500. ms og `/api/cues` hvert 3. s.
+- **Ikke gjort:** kryptering (vanlig HTTP; krever sertifikat som ikke kan håndteres uten oppsett), brukernavn/flere PIN-koder, redigering utenfra. Trafikken kan avlyttes på samme nett; PIN-koden beskytter bare mot tilfeldig bruk på et nettverk man stoler på.
+
 ## 0.25.0 – øvelsesmodus
 - **Merking per cue, bryter i kjøretid.** `SkipInRehearsal` lagres i showfila (valgfri, standard av, gamle show åpnes uendret), men selve modusen er bare i minnet og er **alltid av ved oppstart**, også etter at et show er åpnet med merkede cuer.
   Den lagres hverken i showfila eller innstillingene, så den kan ikke «henge igjen» til forestillingen. Den ligger på motoren (`RehearsalMode`), ikke i showet.

@@ -19,6 +19,7 @@ let package = Package(
                 .linkedFramework("AudioToolbox"),
                 .linkedFramework("AVFoundation"),
                 .linkedFramework("CoreMIDI"),
+                .linkedFramework("Network"),
                 .linkedFramework("PDFKit"),
                 .linkedFramework("AppKit"),
             ]

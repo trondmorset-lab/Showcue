@@ -64,6 +64,7 @@ public static class Program
             Run("OSC arguments", FuzzOscArgs);
             Run("Remote OSC routing", FuzzRemote);
             Run("MSC parse", FuzzMsc);
+            Run("Web request parse", FuzzWeb);
             Run("Network unescape", FuzzUnescape);
             Run("Show roundtrip", ShowRoundtrip);
             Run("Show mutation", ShowMutation);
@@ -231,6 +232,26 @@ public static class Program
             try { MscCommand.Parse(b); } catch (Exception e) { Bug("MSC parse", e, Convert.ToHexString(b)); }
         }
         try { MscCommand.Parse(null); MscCommand.Parse(Array.Empty<byte>()); } catch (Exception e) { Bug("MSC parse", e, "null/tom"); }
+    }
+
+    static void FuzzWeb()
+    {
+        var pin = "483920";
+        long clock = 0;
+        var core = new WebRemoteCore(pin, new byte[] { 1 }, new byte[] { 2 }, () => clock);
+        string[] pieces = { "GET ", "POST ", "/", "/api/state", "/api/cmd", "/api/login", " HTTP/1.1", "\r\n", "\r\n\r\n", "Host: x", "Content-Length: ", "12", "-1",
+            "Cookie: sc_session=", "X-ShowCue: 1", "X-ShowCue-Pin: ", "pin=", "cmd=go", "..", "%2e", ":", " ", "\0", "æ" };
+        for (int i = 0; i < 100_000; i++)
+        {
+            var text = string.Concat(Enumerable.Range(0, Rng.Next(14)).Select(_ => pieces[Rng.Next(pieces.Length)]));
+            var b = System.Text.Encoding.UTF8.GetBytes(text);
+            clock += Rng.Next(0, 3000);
+            try { core.Handle(b, b.Length, "10.0.0." + Rng.Next(1, 40)); }
+            catch (Exception e) { Bug("Web request", e, text); }
+            var r = RandBytes(300);
+            try { core.Handle(r, r.Length, "10.0.1.1"); }
+            catch (Exception e) { Bug("Web request (byte)", e, Convert.ToHexString(r)); }
+        }
     }
 
     static void FuzzUnescape()

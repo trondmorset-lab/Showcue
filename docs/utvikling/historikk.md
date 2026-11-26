@@ -2,6 +2,7 @@
 
 | Versjon | PR | Innhold |
 |---|---|---|
+| 0.26.0 | (åpen) | Nettside for fjernstyring fra mobil/nettbrett: liten innebygd webtjener (av som standard, PIN påkrevd, sperre mot gjetting, faste ruter), viser neste cue og hva som spiller, knapper for GO/stopp alt/pause/neste/forrige og skrivebeskyttet cueliste; ren logikk (`WebRemote`, `WebRemoteCore`) med tester på begge plattformer |
 | 0.25.0 | (åpen) | Øvelsesmodus: `SkipInRehearsal` per cue og en kjøretidsbryter (aldri lagret) som får GO, auto-fortsett/-følg og triggere til å hoppe over merkede cuer; felt i Tidsstyring, merke i lista, banner, advarsel i Sjekk showet. Ren logikk (`Rehearsal`) med tester på begge plattformer |
 | 0.24.0 | (åpen) | Forhåndslasting av neste cue (innstillingen «Forhåndslast neste cue», av som standard): ren planlegger (`PreloadPlanner`) og regnskap (`PreloadBook`) med tester på begge plattformer, `Preloader` i bakgrunnen på Windows og Mac, stresstest-case |
 | 0.23.0 | (åpen) | Routingforhåndsvalg: navngitte utgangspar i showet (`RoutingPresets`), sett på alle valgte cuer med ett klikk, kopier/lim inn routing, oppsummering av routingen i inspektøren. Ren logikk (`RoutingPresets`, `RouteClipboard`) med tester på begge plattformer |

@@ -7,6 +7,8 @@
   `TestAudio` lager testfiler (konstant verdi per kanal eller rampe = tid/10, så posisjonen kan leses rett av utgangen).
   `AsioInputTests` dekker valg av ASIO-innganger, innstillinger, kanalomforming og ringbuffer-flyt med lagde driverbuffere.
   Selve driveren (ekte ASIO-utstyr) kan ikke testes i CI eller i utviklingsmiljøet.
+  `WebRemoteTests` (begge plattformer, like tilfeller) dekker HTTP-tolking (ufullstendig, feil, for stort, stitraversering), ruter, PIN, sperre, økter, JSON og sidene; `WebParserTests`/`WebRemoteCoreTests`/`WebRemoteContentTests`.
+  Selve socket-løkka (`WebServer`) testes ikke i CI; stresstesten fuzzer `WebRemoteCore.Handle`.
 - **Mac** `Mac/Tests/ShowCueTests` (XCTest): de samme testene der koden finnes på Mac. `RampDecoder` er en dekoder uten fil.
 - Nye funksjoner får tester på begge plattformer. Rettede feil får en regresjonstest.
 

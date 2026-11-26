@@ -129,6 +129,29 @@ public class RemoteControlTests
 
     public RemoteControlTests() => _rc = new RemoteControl(_show, Dispatcher.CurrentDispatcher, _settings);
 
+    [Fact]
+    public void WebCommandsUseTheSameControls()
+    {
+        _rc.HandleWeb(WebCommand.Go, "10.0.0.5");
+        _rc.HandleWeb(WebCommand.StopAll, "10.0.0.5");
+        _rc.HandleWeb(WebCommand.Pause, "10.0.0.5");
+        _rc.HandleWeb(WebCommand.Resume, "10.0.0.5");
+        _rc.HandleWeb(WebCommand.Next, "10.0.0.5");
+        _rc.HandleWeb(WebCommand.Previous, "10.0.0.5");
+        Assert.Equal(new[] { "go", "stopall", "pause True", "pause False", "move 1", "move -1" }, _show.Log);
+        Assert.Equal(6, _show.Remote.Count);
+    }
+
+    [Fact]
+    public void WebIsOffByDefaultAndNeverStartsWithAWeakPin()
+    {
+        Assert.False(new AppSettings().WebRemoteEnabled);
+        Assert.False(_rc.WebRunning);
+        _rc.ApplyWeb(new AppSettings { WebRemoteEnabled = true, WebRemotePin = "123456", WebRemotePort = 8088 });
+        Assert.False(_rc.WebRunning);
+        Assert.StartsWith("Web: ", _rc.WebStatus);
+    }
+
     private void Osc1(string addr, params object[] args) => _rc.HandleOsc(new OscMessage(addr, args), "test");
     private void Midi(string trigger) => Invoke("HandleMidi", trigger, 1);
     private void Msc(MscCommand m) => Invoke("HandleMsc", m);

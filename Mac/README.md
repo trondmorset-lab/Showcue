@@ -87,6 +87,8 @@ Routing presets work as on Windows: the *Presets* button under the routing matri
 Everything else is the same: language (Norwegian/English), cue types, start/end editing with waveform and preview, routing matrix, audio patch, video audio through the patch, OSC/MIDI in and out, MSC, status out over OSC, themes and cue colours.
 See the README in the Windows folder for a full description of OSC commands and status variables.
 
+**Web page for phone/tablet** (*Settings → Web*, off by default, PIN required): see “Web page for phone and tablet” in the Windows README. On the Mac, macOS may ask for access to the local network the first time. The traffic is plain HTTP, so the PIN only protects against casual use on a trusted network.
+
 **Show files between Mac and Windows:** the paths to the media files differ on the two platforms. ShowCue therefore looks for media files
 next to the show file and in a subfolder `Media`, so put the show file and the media in the same folder when moving between computers.
 Shows saved on a Mac require Windows version 0.4 or newer.

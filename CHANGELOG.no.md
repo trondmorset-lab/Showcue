@@ -6,6 +6,18 @@ Alle endringer som merkes av brukere, nyeste først. Versjonsnummeret står i fi
 Hver versjon får en egen utgivelse på GitHub (`v0.5.0` osv.) med Windows- og Mac-programmet.
 Utgivelsen «siste» bygges på nytt ved hver endring og viser det nyeste, også det som ikke er gitt ut ennå.
 
+## 0.26.0 – 2026-11-25
+
+### Nytt
+- **Nettside for fjernstyring** (Windows og Mac, samme oppførsel): en liten innebygd webtjener lar en mobil eller et nettbrett på samme nettverk styre showet fra nettleseren.
+  Siden viser neste cue (nummer, navn, type), hva som spiller med tid igjen, og store knapper for **GO**, **Stopp alt**, **Pause/Fortsett**, **Neste** og **Forrige**, pluss en cueliste som bare kan leses.
+  Siden bruker de samme styringene som OSC, så sperren mot dobbel-GO gjelder. Showmodus stopper den ikke (som med OSC), men ingenting kan redigeres utenfra.
+- Innstillinger: *Innstillinger → Web* med av/på, port (standard 8088) og PIN-kode. Adressen (f.eks. `http://192.168.1.20:8088`) vises der og i statuslinja mens tjeneren går.
+- **Sikkerhet:** nettsiden er **av** som standard og krever **PIN-kode** (6–32 bokstaver eller siffer; en tilfeldig lages når den er tom eller lett å gjette, som `123456`).
+  Alt unntatt innloggingssiden krever PIN-koden (øktcookie etter innlogging), mislykkede forsøk begrenses med sperre, og tjeneren har bare faste ruter, ingen tilgang til filer, ingen CORS,
+  grenser for størrelse/tid/antall forbindelser og bare HTTP/1.1 med lukkede forbindelser. **Trafikken er vanlig HTTP (ikke kryptert), så PIN-koden beskytter bare mot tilfeldig bruk på et nettverk du stoler på.**
+  Siden er ennå ikke prøvd på ekte enheter.
+
 ## 0.25.0 – 2026-11-25
 
 ### Nytt

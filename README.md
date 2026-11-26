@@ -33,7 +33,7 @@ Both have:
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue, test tone and level meters
 - **Audio patch** for multichannel audio interfaces and network audio (e.g. Dante), with a routing matrix per cue (and saved routing presets such as “Main” or “Monitor”), test tone and level meters
 - **Audio in video** that goes through the audio patch and stays in sync with the picture, and an **optional screen per cue**
-- **Remote control** with OSC in, MIDI in and MSC
+- **Remote control** with OSC in, MIDI in and MSC, and an optional **web page for phone/tablet** (PIN-protected, off by default)
 - **Status out over OSC** (e.g. to Companion): next cue, what is playing and time remaining
 - **Dark, grey, light and night themes**, **zoom** and larger text in the cue list, and colour coding of cues
 - **Norwegian and English** user interface (chosen under *Settings → Appearance*)

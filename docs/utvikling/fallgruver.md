@@ -68,6 +68,15 @@ Ting som har gått galt eller nesten gått galt, og hvordan det unngås.
 - En PR med en annen PR-gren som base blir lukket/merget sammen med den; sett base til `main`.
 - Byggesjekken på `main` kan feile selv om PR-en var grønn (ustabil test). Utgivelsen stopper da; rett testen i en ny PR.
 
+## Nettside (0.26.0)
+- `HttpListener` med `http://+:port/` krever administrator (URL-reservasjon); bruk `TcpListener`. `ExclusiveAddressUse = true` hindrer at et annet program deler porten.
+- `NWListener` lages uten feil selv om porten er opptatt; feilen kommer først i `stateUpdateHandler` (`.failed`). Tjenerens `onFailure` oppdaterer statuslinja.
+- Swift: «\r\n» er ÉN `Character`; del byte-matrisen på CRLF i stedet for å splitte en `String` på tegn. Tolkeren arbeider på byte og avviser alt over ASCII på forhånd.
+- Språk i nettsiden: tekstene bygges ved start av tjeneren (ikke per forespørsel), så et språkbytte (som alltid krever omstart) følger med. Nye tekster i `PageTexts` må ha `{{navn}}` i begge malene og engelsk i `i18n/en.json`.
+- Skriptet i siden må aldri bruke `innerHTML` med data fra showet (cuenavn kan inneholde `<`); bruk `textContent`. Testen `PagesAreSelfContained` sjekker at siden ikke har `src=`, `href=`, `http://` eller `innerHTML`.
+- JSON til siden escaper også `<`, `>` og `&` (og U+2028/2029), så innholdet aldri kan tolkes som HTML selv om det en dag settes inn feil.
+- Stresstesten (`tools/stress`) kompilerer `RemoteControl.cs`, så `WebServer.cs` måtte med i `stress.csproj`.
+
 ## Scener
 - **Filtrert liste og valgt cue:** i WPF setter `DataGrid` `SelectedItem` til null når valgt rad skjules av filteret. Bytte av scene og redigering av scenelista må skje med `_switchingScene` satt, ellers nullstilles GO-markøren til scenen (og «slutt på lista» vises). Sett valgt cue eksplisitt etterpå.
 - **Scenenavn i mållister:** `:`, `,`, `;`, `/` og `\` er skilletegn i mål og OSC-adresser og fjernes fra navn (`SceneLogic.CleanName`). Et cuenummer som selv inneholder «:» finnes fortsatt som vanlig nummer hvis scenen før kolonet ikke har cuer.

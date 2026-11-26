@@ -139,6 +139,22 @@ final class RemoteRouter {
         }
     }
 
+    // MARK: Nettside
+
+    /// Utfører en kommando fra nettsiden med samme grensesnitt som OSC. Ingenting her kan endre showet.
+    func handleWeb(_ cmd: WebCommand, from: String) {
+        guard let show else { return }
+        switch cmd {
+        case .go: show.go()
+        case .stopAll: show.stopAll()
+        case .pause: show.setPaused(true)
+        case .resume: show.setPaused(false)
+        case .next: show.movePlayhead(1)
+        case .previous: show.movePlayhead(-1)
+        }
+        show.remoteLog(L("Web fra {0}: {1}", from, WebRemote.commandName(cmd)))
+    }
+
     // MARK: MIDI
 
     func handleMidiTrigger(_ trigger: String, channel: Int) {
