@@ -91,6 +91,7 @@ Shows saved on a Mac require Windows version 0.4 or newer.
 | Space | GO |
 | Esc | Stop all (twice = immediately) |
 | ↑ / ↓ | Move the GO playhead |
+| ⌥⌘← / ⌥⌘→ | Previous / next scene (the *Scene* menu and the picker above the cue list manage scenes) |
 | ⌘1 … ⌘8 | Add audio, video, image, PDF, fade, stop, OSC, MIDI |
 | ⌘9, ⌘0 | Add playlist, go to cue |
 | ⌘P | Pause / resume all |

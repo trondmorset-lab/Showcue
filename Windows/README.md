@@ -106,6 +106,7 @@ and sample rate are then used directly. ASIO is recommended for the lowest laten
 | `/cue/{no}/stop` | Stop a cue (with the cue's fade out) |
 | `/cue/{no}/go` or `/go/{no}` | Set the playhead to a cue and run GO |
 | `/hotkey/{key}` | Like pressing the hotkey, e.g. `/hotkey/F1` |
+| `/scene/{name}` | Switch the active scene (or `/scene "Act 2"`). Cue numbers in the commands above are looked up in the active scene first, and `Act 2:5` points at a specific scene |
 | `/pause`, `/resume`, `/pause/toggle` | Pause / resume all |
 | `/cue/{no}/devamp` | Release the loop in a cue (finishes and continues to the end of the file) |
 | `/cue/{no}/next`, `/cue/{no}/previous` | Step to the next / previous slide in a running slideshow |
@@ -175,6 +176,7 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
 | **Ctrl+Shift+T / L / I / W** | Add timecode, light, input, web page cue |
 | **Ctrl+D** | Duplicate |
 | **Ctrl+↑ / Ctrl+↓** | Move cue up/down |
+| **Ctrl+Page Up / Page Down** | Previous / next scene |
 | **Delete** | Delete selected cues |
 | **Ctrl+S / Ctrl+O / Ctrl+N** | Save / open / new show |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo (also Ctrl+Shift+Z) |
@@ -197,7 +199,8 @@ OSC and MIDI **out** are done with OSC and MIDI cues in the cue list.
   Images and PDF pages are shown for *Time per slide* seconds (each PDF page becomes a slide of its own), videos play until they finish,
   and the slides crossfade. Choose loop and random order, or turn off *Advance automatically* and step with ⏮ / ⏭ under *Active cues*
   (or OSC `/cue/{no}/next` and `/cue/{no}/previous`). Stop the cue to end the slideshow.
-- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away.
+- **Go to:** moves the GO playhead to another cue (e.g. back to the start of a sequence), and can run it straight away. With the *Scene* field it jumps to another scene (see Scenes).
+- **Scenes:** the picker above the cue list chooses the active scene. Each scene is its own cue list with its own numbering, GO playhead and GO order; GO never moves to another scene by itself. **Ctrl+Page Up / Page Down** switches scene, and the *Scenes* menu creates, renames, deletes and reorders scenes and moves the selected cues. The same number can be used in different scenes. Fade, stop, go to and group targets are looked up in the cue's own scene first, then in all scenes; write `Act 2:5` for a specific scene.
 - **Group:** starts several cues with one GO. Write the numbers, e.g. `2, 5, 8-10` (`8-10` is every cue from 8 to 10). Each cue follows its own pre-wait, and disabled cues are skipped.
 - **Release loop (devamp):** tick “Release loop” in a stop cue. The target cue (audio, video or playlist) finishes
   the current pass and continues to the end of the file instead of stopping. The ⤼ button in the panel does the same for the selected cue.

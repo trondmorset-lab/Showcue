@@ -163,38 +163,23 @@ public sealed class CueEngine : IDisposable
         if (Active.Remove(a)) a.Cue.ActiveCount--;
     }
 
+    /// <summary>Auto-fortsett/auto-følg: starter neste ikke-deaktiverte cue i samme scene.</summary>
     private void FireNextAfter(Cue cue)
     {
-        var list = _cueList();
-        var idx = list.IndexOf(cue);
-        if (idx < 0) return;
-        for (int i = idx + 1; i < list.Count; i++)
-        {
-            if (list[i].Disabled) continue;
-            Fire(list[i]);
-            return;
-        }
+        if (SceneLogic.NextEnabledAfter(_cueList(), cue) is { } next) Fire(next);
     }
 
     /// <summary>Finn neste cue for GO etter at <paramref name="cue"/> er avfyrt (hopper over kjeder).</summary>
-    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex)
-    {
-        int i = firedIndex;
-        // Hopp over cues som blir trigget automatisk av forrige cue.
-        while (i < list.Count && list[i].ContinueMode != ContinueMode.None)
-        {
-            i++;
-            while (i < list.Count && list[i].Disabled) i++;
-        }
-        i++;
-        while (i < list.Count && list[i].Disabled) i++;
-        return Math.Min(i, list.Count);
-    }
+    public static int NextPlayheadIndex(IList<Cue> list, int firedIndex) => SceneLogic.NextPlayheadIndex(list, firedIndex);
 
-    public IEnumerable<ActiveCue> FindActive(string number)
+    /// <summary>Aktive cuer et nummer peker på. <paramref name="homeScene"/> er scenen til cuen som spør (nummeret søkes der først, se <see cref="SceneLogic"/>).</summary>
+    public IEnumerable<ActiveCue> FindActive(string number, string? homeScene = null)
     {
         if (string.IsNullOrWhiteSpace(number)) return Enumerable.Empty<ActiveCue>();
-        return Active.Where(a => a.Started && !a.Done && string.Equals(a.Cue.Number, number.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+        var n = number.Trim();
+        var targets = SceneLogic.Matching(_cueList(), n, homeScene);
+        if (targets.Count > 0) return Active.Where(a => a.Started && !a.Done && targets.Contains(a.Cue)).ToList();
+        return Active.Where(a => a.Started && !a.Done && string.Equals(a.Cue.Number, n, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     public void Stop(Cue cue, double fade)

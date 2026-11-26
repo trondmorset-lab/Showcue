@@ -120,6 +120,7 @@ public class RemoteControlTests
         public bool ReleaseCue(string n) { Log.Add("release " + n); return true; }
         public bool StepCue(string n, int d) { Log.Add($"step {n} {d}"); return true; }
         public int FireTimecodeTriggers(long prev, long frame, TimecodeRate rate) { Log.Add($"tc {prev}-{frame}"); return 0; }
+        public bool SelectScene(string n) { Log.Add("scene " + n); return true; }
     }
 
     private readonly FakeShow _show = new();
@@ -133,6 +134,14 @@ public class RemoteControlTests
     private void Msc(MscCommand m) => Invoke("HandleMsc", m);
     private void Invoke(string method, params object[] args)
         => typeof(RemoteControl).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(_rc, args);
+
+    [Fact]
+    public void OscSwitchesScene()
+    {
+        Osc1("/scene/Akt 2");
+        Osc1("/showcue/scene", "Akt 3");
+        Assert.Equal(new[] { "scene Akt 2", "scene Akt 3" }, _show.Log);
+    }
 
     [Fact]
     public void TimecodeTriggersNeedMtcInAndTwoFrames()

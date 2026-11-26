@@ -830,7 +830,7 @@ public sealed class FadeActive : TimedActive
 
     protected override void Act()
     {
-        var targets = Engine.FindActive(F.Target).ToList();
+        var targets = Engine.FindActive(F.Target, F.Scene).ToList();
         if (targets.Count == 0) Cue.Error = string.IsNullOrEmpty(F.Target) ? Loc.T("Mangler mål-cue") : Loc.F("Cue {0} kjører ikke", F.Target);
         foreach (var t in targets) t.ApplyFade(F);
     }
@@ -847,7 +847,7 @@ public sealed class StopActive : TimedActive
     {
         var targets = string.IsNullOrEmpty(S.Target)
             ? Engine.Active.Where(a => a != this && a is not StopActive).ToList()
-            : Engine.FindActive(S.Target).ToList();
+            : Engine.FindActive(S.Target, S.Scene).ToList();
         if (!S.Release) { foreach (var t in targets) t.Stop(S.FadeTime); return; }
         if (!targets.Select(t => t.Release()).ToList().Any(released => released))
             Cue.Error = string.IsNullOrEmpty(S.Target) ? Loc.T("Ingen cue looper") : Loc.F("Cue {0} looper ikke", S.Target);
@@ -983,7 +983,7 @@ public sealed class InstantActive : ActiveCue
             {
                 case OscCue o: Osc.Send(o.Host, o.Port, o.Address, o.Arguments); break;
                 case MidiCue m: Engine.Midi.Send(m); break;
-                case GotoCue g: Engine.RequestGoto(g.Target, g.Fire); break;
+                case GotoCue g: Engine.RequestGoto(SceneLogic.GotoSpec(g.Target, g.TargetScene), g.Fire); break;
                 case GroupCue gc: Engine.FireGroup(gc); break;
                 case MemoCue m: Engine.ShowMemo(m); break;
                 case NetworkCue n: SendNetwork(n); break;

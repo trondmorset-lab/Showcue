@@ -28,6 +28,20 @@ public sealed class ShowDocument
         }
     }
 
+    private List<string> _scenes = new();
+
+    /// <summary>Scenenavnene i rekkefølge (cuelistene). Tom = én scene uten navn. Hver cue hører til scenen i <see cref="Cue.Scene"/>.
+    /// Eldre versjoner av programmet ignorerer feltet og leser alle cuene som én liste.</summary>
+    public List<string> Scenes
+    {
+        get => _scenes;
+        set => _scenes = (value ?? new()).Where(n => n != null).Select(SceneLogic.CleanName).Where(n => n.Length > 0)
+            .Aggregate(new List<string>(), (l, n) => { if (!l.Any(x => SceneLogic.SameScene(x, n))) l.Add(n); return l; });
+    }
+
+    /// <summary>Retter opp scenene etter lasting eller redigering: tar med scener cuene bruker, og gir hver cue sitt kanoniske scenenavn.</summary>
+    public void NormalizeScenes() => _scenes = SceneLogic.Normalize(_scenes, Cues);
+
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -59,6 +73,7 @@ public sealed class ShowDocument
                 if (File.Exists(candidate)) return Path.GetFullPath(candidate);
             return file;
         }
+        doc.NormalizeScenes();
         foreach (var fc in doc.Cues.OfType<IFileCue>()) fc.FilePath = Locate(fc.FilePath);
         foreach (var pl in doc.Cues.OfType<IFileListCue>())
             if (pl.Files.Any(f => Locate(f) != f)) pl.Files = pl.Files.Select(Locate).ToList();
